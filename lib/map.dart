@@ -11,11 +11,11 @@ import 'package:location/location.dart';
 
 class ForestParkMap extends StatefulWidget {
   final bool followPointer;
-  final VoidCallback onFirstMove;
+  final ValueSetter<bool> onStickyUpdate;
   const ForestParkMap({
     Key? key,
     required this.followPointer,
-    required this.onFirstMove,
+    required this.onStickyUpdate,
   }) : super(key: key);
 
   @override
@@ -55,6 +55,13 @@ class _ForestParkMapState extends State<ForestParkMap> {
   }
 
   void _subscribeLocation() {
+    _location.getLocation().then((l) {
+      _lastLoc = l;
+      widget.onStickyUpdate(true);
+      if (_mapController != null) {
+        _animateCamera(LatLng(l.latitude!, l.longitude!));
+      }
+    });
     _location.onLocationChanged.listen((l) {
       _lastLoc = l;
       if (widget.followPointer && _mapController != null) {
@@ -105,7 +112,7 @@ class _ForestParkMapState extends State<ForestParkMap> {
 
     return Listener(
       onPointerDown: (e) {
-        widget.onFirstMove();
+        widget.onStickyUpdate(false);
       },
       child: GoogleMap(
         polylines: _polylines,

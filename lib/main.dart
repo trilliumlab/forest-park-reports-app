@@ -48,9 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
       extendBodyBehindAppBar: true,
       body: ForestParkMap(
         followPointer: stickyLocation,
-        onFirstMove: () {
+        onStickyUpdate: (val) {
           setState(() {
-            stickyLocation = false;
+            stickyLocation = val;
           });
         }
       ),
