@@ -23,6 +23,8 @@ class ForestParkMap extends StatefulWidget {
 }
 
 class _ForestParkMapState extends State<ForestParkMap> {
+  bool _firstLoad = true;
+
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
 
@@ -50,13 +52,12 @@ class _ForestParkMapState extends State<ForestParkMap> {
         ));
       }
     });
-    _subscribeLocation();
   }
 
   void _subscribeLocation() {
     _location.onLocationChanged.listen((l) {
       _lastLoc = l;
-      if (widget.followPointer) {
+      if (widget.followPointer && _mapController != null) {
         _animateCamera(LatLng(l.latitude!, l.longitude!));
       }
     });
@@ -85,8 +86,9 @@ class _ForestParkMapState extends State<ForestParkMap> {
     ));
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-    // if our paths aren't loaded, load them now
-    if (trails.isEmpty) {
+    if (_firstLoad) {
+      _firstLoad = false;
+      _subscribeLocation();
       _loadGpx(context);
     }
 
