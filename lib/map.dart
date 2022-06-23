@@ -31,14 +31,36 @@ class _ForestParkMapState extends State<ForestParkMap> {
   final _location = Location();
   LocationData? _lastLoc;
   CameraPosition _lastCamera = const CameraPosition(
-    target: LatLng(45.527343, -122.727776),
-    zoom: 14.5,
+    target: LatLng(0, 0),
+    zoom: 12,
   );
   GoogleMapController? _mapController;
 
   bool _lastFollowPointer = true;
 
   List<Trail> trails = [];
+
+  void _subscribeLocation() {
+    _location.getLocation().then((l) {
+      _lastLoc = l;
+      widget.onStickyUpdate(true);
+      _lastCamera = CameraPosition(
+          target: LatLng(l.latitude!, l.longitude!),
+          zoom: 14.5
+      );
+      if (_mapController != null) {
+        _mapController!.moveCamera(
+            CameraUpdate.newCameraPosition(_lastCamera)
+        );
+      }
+    });
+    _location.onLocationChanged.listen((l) {
+      _lastLoc = l;
+      if (widget.followPointer && _mapController != null) {
+        _animateCamera(LatLng(l.latitude!, l.longitude!));
+      }
+    });
+  }
 
   void _buildPolyline() {
     setState(() {
@@ -50,22 +72,6 @@ class _ForestParkMapState extends State<ForestParkMap> {
           width: 3,
           color: Color((Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0),
         ));
-      }
-    });
-  }
-
-  void _subscribeLocation() {
-    _location.getLocation().then((l) {
-      _lastLoc = l;
-      widget.onStickyUpdate(true);
-      if (_mapController != null) {
-        _animateCamera(LatLng(l.latitude!, l.longitude!));
-      }
-    });
-    _location.onLocationChanged.listen((l) {
-      _lastLoc = l;
-      if (widget.followPointer && _mapController != null) {
-        _animateCamera(LatLng(l.latitude!, l.longitude!));
       }
     });
   }
