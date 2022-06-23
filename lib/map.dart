@@ -22,9 +22,7 @@ class ForestParkMap extends StatefulWidget {
   State<ForestParkMap> createState() => _ForestParkMapState();
 }
 
-class _ForestParkMapState extends State<ForestParkMap> {
-  bool _firstLoad = true;
-
+class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserver {
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
 
@@ -34,11 +32,52 @@ class _ForestParkMapState extends State<ForestParkMap> {
     target: LatLng(0, 0),
     zoom: 12,
   );
-  GoogleMapController? _mapController;
+  final Completer<GoogleMapController> _mapController = Completer();
+
+  late String _darkMapStyle;
+  late String _lightMapStyle;
 
   bool _lastFollowPointer = true;
 
   List<Trail> trails = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _subscribeLocation();
+    _loadMapStyles();
+    _setMapStyle();
+    _loadGpx();
+  }
+
+  Future _loadMapStyles() async {
+    _darkMapStyle  = await rootBundle.loadString('assets/map_styles/dark.json');
+    _lightMapStyle = await rootBundle.loadString('assets/map_styles/light.json');
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    setState(() {
+      _setMapStyle();
+    });
+  }
+
+  Future _setMapStyle() async {
+    final controller = await _mapController.future;
+    final theme = WidgetsBinding.instance.window.platformBrightness;
+    if (theme == Brightness.dark) {
+      controller.setMapStyle(_darkMapStyle);
+    } else {
+      controller.setMapStyle(_lightMapStyle);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   void _subscribeLocation() {
     _location.getLocation().then((l) {
@@ -48,15 +87,15 @@ class _ForestParkMapState extends State<ForestParkMap> {
           target: LatLng(l.latitude!, l.longitude!),
           zoom: 14.5
       );
-      if (_mapController != null) {
-        _mapController!.moveCamera(
+      _mapController.future.then((c) {
+        c.moveCamera(
             CameraUpdate.newCameraPosition(_lastCamera)
         );
-      }
+      });
     });
     _location.onLocationChanged.listen((l) {
       _lastLoc = l;
-      if (widget.followPointer && _mapController != null) {
+      if (widget.followPointer) {
         _animateCamera(LatLng(l.latitude!, l.longitude!));
       }
     });
@@ -77,33 +116,29 @@ class _ForestParkMapState extends State<ForestParkMap> {
   }
 
   void _animateCamera(LatLng target) {
-    _mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-            target: target,
-            zoom: _lastCamera.zoom,
-            bearing: _lastCamera.bearing,
-            tilt: _lastCamera.tilt
+    _mapController.future.then((c) {
+      c.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+              target: target,
+              zoom: _lastCamera.zoom,
+              bearing: _lastCamera.bearing,
+              tilt: _lastCamera.tilt
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     // enable edge to edge mode on android
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: WidgetsBinding.instance.window.platformBrightness == Brightness.light ? Brightness.dark : Brightness.light,
         systemNavigationBarColor: Colors.transparent
     ));
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-    if (_firstLoad) {
-      _firstLoad = false;
-      _subscribeLocation();
-      _loadGpx(context);
-    }
 
     // if the sticky location button was just clicked, move camera
     //TODO should probably be using some state management
@@ -138,26 +173,26 @@ class _ForestParkMapState extends State<ForestParkMap> {
     );
   }
 
-  void _onMapCreated(GoogleMapController controllerParam) {
-    _mapController = controllerParam;
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController.complete(controller);
     if (trails.isNotEmpty) {
       _buildPolyline();
     }
   }
 
-  Future _loadGpx(BuildContext context) async {
+  Future _loadGpx() async {
     // get file path of all gpx files in asset folder
-    final bundle = DefaultAssetBundle.of(context);
-    final manifestContent = await bundle.loadString('AssetManifest.json');
+    final manifestContent = await rootBundle.loadString('AssetManifest.json');
     List<String> pathPaths = json.decode(manifestContent).keys
+        .where((String key) => key.startsWith("assets/trails"))
         .where((String key) => key.contains('.gpx')).toList();
 
     // TODO proper trail class
     for (var path in pathPaths) {
       path = Uri.decodeFull(path);
       trails.add(Trail(
-          path.split("/")[1],
-          GpxReader().fromString(await bundle.loadString(path))
+          path.split("/")[2],
+          GpxReader().fromString(await rootBundle.loadString(path))
       ));
     }
 
