@@ -14,11 +14,20 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        var theme = ThemeData(
-          colorScheme: lightDynamic,
+        var theme = ThemeData.light().copyWith(
+          colorScheme: lightDynamic ?? ThemeData.light().colorScheme.copyWith(
+            background: Colors.grey.shade100,
+            onBackground: Colors.grey.shade800,
+          ),
           useMaterial3: true,
         );
-        var darkTheme = theme.copyWith(colorScheme: darkDynamic);
+        var darkTheme = ThemeData.dark().copyWith(
+          colorScheme: darkDynamic ?? ThemeData.dark().colorScheme.copyWith(
+            background: Colors.grey.shade900,
+            onBackground: Colors.grey.shade100,
+          ),
+          useMaterial3: true,
+        );
         return MaterialApp(
           title: 'Forest Park Reports',
           theme: theme,
