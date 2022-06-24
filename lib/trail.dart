@@ -48,11 +48,7 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
   final StateNotifierProviderRef ref;
   PolylineNotifier(this.ref) : super({}) {
     _loadBitmaps();
-    ref.watch(trailsProvider).when(
-      loading: () {},
-      error: (err, stack) {},
-      data: buildPolylines,
-    );
+    ref.watch(trailsProvider).whenData(buildPolylines);
   }
 
   final Completer<List<BitmapDescriptor>> bitmaps = Completer();
@@ -75,6 +71,7 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
     for (var trail in trails) {
       late final Polyline polyline;
       late final Polyline selectedPolyline;
+      late final Polyline highlightedPolyline;
       polyline = Polyline(
           polylineId: PolylineId(trail.name),
           points: trail.path,
@@ -85,6 +82,7 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
             state = {
               for (final pl in state)
                 if (pl.polylineId != polyline.polylineId) pl,
+              highlightedPolyline,
               selectedPolyline,
             };
             print("SELECTED ${trail.name}");
@@ -98,11 +96,18 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
           onTapParam: () {
             state = {
               for (final pl in state)
-                if (pl.polylineId != selectedPolyline.polylineId) pl,
+                if (pl.polylineId != selectedPolyline.polylineId && pl.polylineId != highlightedPolyline.polylineId) pl,
               polyline,
             };
             print("UNSELECTED ${trail.name}");
-          }
+          },
+      );
+      highlightedPolyline = Polyline(
+        polylineId: PolylineId("${trail.name}_highlight"),
+        points: trail.path,
+        color: Colors.green.withAlpha(80),
+        width: 10,
+        zIndex: 2,
       );
       polylines.add(polyline);
     }
