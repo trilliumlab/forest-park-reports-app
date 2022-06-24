@@ -1,13 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/trail.dart';
+import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:gpx/gpx.dart';
 import 'package:location/location.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
@@ -46,7 +43,6 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     _subscribeLocation();
     _loadMapStyles();
     _setMapStyle();
-    _loadGpx();
   }
 
   Future _loadMapStyles() async {
@@ -143,7 +139,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       },
       child: GoogleMap(
         polylines: parkTrails.polylines,
-        onMapCreated: _onMapCreated,
+        onMapCreated: _mapController.complete,
         initialCameraPosition: _lastCamera,
         mapType: MapType.normal,
         zoomControlsEnabled: false,
@@ -156,14 +152,6 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         },
       ),
     );
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController.complete(controller);
-  }
-
-  Future _loadGpx() async {
-
   }
 
 }

@@ -1,6 +1,4 @@
-
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -89,15 +87,6 @@ class TrailPolyline {
         consumeTapEvents: true,
         onTap: () {
           onSelect(true);
-          // state = state.copyWith(
-          //     selectedTrail: trail.name,
-          //     polylines: {
-          //       for (final pl in state.polylines)
-          //         if (pl.polylineId != polyline.polylineId) pl,
-          //       highlightedPolyline,
-          //       selectedPolyline,
-          //     }
-          // );
         }
     );
     selectedPolyline = polyline.copyWith(
@@ -107,14 +96,6 @@ class TrailPolyline {
       zIndexParam: 10,
       onTapParam: () {
         onSelect(false);
-        // state = state.copyWith(
-        //     selectedTrail: null,
-        //     polylines: {
-        //       for (final pl in state.polylines)
-        //         if (pl.polylineId != selectedPolyline.polylineId && pl.polylineId != highlightedPolyline.polylineId) pl,
-        //       polyline,
-        //     }
-        // );
       },
     );
     highlightedPolyline = Polyline(
@@ -163,7 +144,6 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
           endCap: bitmaps.last,
           onSelect: (selected) {
             if (selected) {
-              print("SELECTED ${trail.name}");
               state = state.copyWith(
                 selectedTrail: trail.name,
                 trailPolylines: {
@@ -175,7 +155,6 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
                 },
               );
             } else {
-              print("UNSELECTED ${trail.name}");
               state = state.copyWith(
                 selectedTrail: null,
                 trailPolylines: {
