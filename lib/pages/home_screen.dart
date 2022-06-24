@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: theme.colorScheme.background,
               onPressed: () {
                 setState(() {
-                  _stickyLocation = !_stickyLocation;
+                  _stickyLocation = true;
                 });
               },
               child: Icon(
