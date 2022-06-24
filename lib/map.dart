@@ -4,12 +4,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/trail.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:gpx/gpx.dart';
 import 'package:location/location.dart';
 
-class ForestParkMap extends StatefulWidget {
+class ForestParkMap extends ConsumerStatefulWidget {
   final bool followPointer;
   final ValueSetter<bool> onStickyUpdate;
   const ForestParkMap({
@@ -19,13 +20,10 @@ class ForestParkMap extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ForestParkMap> createState() => _ForestParkMapState();
+  ConsumerState<ForestParkMap> createState() => _ForestParkMapState();
 }
 
-class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserver {
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
-
+class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver {
   final _location = Location();
   LocationData? _lastLoc;
   CameraPosition _lastCamera = const CameraPosition(
@@ -76,6 +74,7 @@ class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserv
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _mapController.future.then((c) => c.dispose());
     super.dispose();
   }
 
@@ -101,20 +100,6 @@ class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserv
     });
   }
 
-  void _buildPolyline() {
-    setState(() {
-      for (final trail in trails) {
-        _polylines.add(Polyline(
-          polylineId: PolylineId(trail.name),
-          visible: true,
-          points: trail.path,
-          width: 3,
-          color: Color((Random().nextDouble() * 0xFFFFFF).toInt()).withOpacity(1.0),
-        ));
-      }
-    });
-  }
-
   void _animateCamera(LatLng target) {
     _mapController.future.then((c) {
       c.animateCamera(
@@ -132,6 +117,7 @@ class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserv
 
   @override
   Widget build(BuildContext context) {
+    Set<Polyline> polylines = ref.watch(trailsProvider);
     // enable edge to edge mode on android
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -156,8 +142,7 @@ class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserv
         widget.onStickyUpdate(false);
       },
       child: GoogleMap(
-        polylines: _polylines,
-        markers: _markers,
+        polylines: polylines,
         onMapCreated: _onMapCreated,
         initialCameraPosition: _lastCamera,
         mapType: MapType.normal,
@@ -175,30 +160,10 @@ class _ForestParkMapState extends State<ForestParkMap> with WidgetsBindingObserv
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController.complete(controller);
-    if (trails.isNotEmpty) {
-      _buildPolyline();
-    }
   }
 
   Future _loadGpx() async {
-    // get file path of all gpx files in asset folder
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    List<String> pathPaths = json.decode(manifestContent).keys
-        .where((String key) => key.startsWith("assets/trails"))
-        .where((String key) => key.contains('.gpx')).toList();
 
-    // TODO proper trail class
-    for (var path in pathPaths) {
-      path = Uri.decodeFull(path);
-      trails.add(Trail(
-          path.split("/")[2],
-          GpxReader().fromString(await rootBundle.loadString(path))
-      ));
-    }
-
-    if (_mapController != null) {
-      _buildPolyline();
-    }
   }
 
 }
