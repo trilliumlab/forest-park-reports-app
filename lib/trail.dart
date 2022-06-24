@@ -1,7 +1,7 @@
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,30 +25,47 @@ class Trail {
   }
 }
 
-final trailsProvider = FutureProvider<Set<Trail>>((ref) async {
+final rawTrailsProvider = FutureProvider<Map<String, Trail>>((ref) async {
   // get file path of all gpx files in asset folder
   final manifestContent = await rootBundle.loadString('AssetManifest.json');
-  List<String> pathPaths = json.decode(manifestContent).keys
+  final List<String> pathPaths = json.decode(manifestContent).keys
       .where((String key) => key.startsWith("assets/trails"))
       .where((String key) => key.contains('.gpx')).toList();
 
-  Set<Trail> trails = {};
+  final Map<String, Trail> trails = {};
   for (var path in pathPaths) {
     path = Uri.decodeFull(path);
-    trails.add(Trail(
-        path.split("/")[2],
-        GpxReader().fromString(await rootBundle.loadString(path))
+    var name = path.split("/")[2];
+    trails[name] = (Trail(
+        name, GpxReader().fromString(await rootBundle.loadString(path))
     ));
   }
 
   return trails;
 });
 
-class PolylineNotifier extends StateNotifier<Set<Polyline>> {
+class ParkTrails {
+  Map<String, Trail> trails;
+  String? selectedTrail;
+  Set<Polyline> polylines;
+  bool get isPopulated => !(trails.isEmpty || polylines.isEmpty);
+
+  ParkTrails({this.trails = const {}, this.selectedTrail, this.polylines = const {}});
+
+  ParkTrails copyWith({String? selectedTrail, Set<Polyline>? polylines}) {
+    return ParkTrails(
+      trails: trails,
+      selectedTrail: selectedTrail ?? this.selectedTrail,
+      polylines: polylines ?? this.polylines
+    );
+  }
+}
+
+class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   final StateNotifierProviderRef ref;
-  PolylineNotifier(this.ref) : super({}) {
+  ParkTrailsNotifier(this.ref) : super(ParkTrails()) {
     _loadBitmaps();
-    ref.watch(trailsProvider).whenData(buildPolylines);
+    ref.watch(rawTrailsProvider).whenData(buildPolylines);
   }
 
   final Completer<List<BitmapDescriptor>> bitmaps = Completer();
@@ -65,10 +82,10 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
     ]));
   }
 
-  Future buildPolylines(Set<Trail> trails) async {
+  Future buildPolylines(Map<String, Trail> trails) async {
     var bitmaps = await this.bitmaps.future;
     Set<Polyline> polylines = {};
-    for (var trail in trails) {
+    for (var trail in trails.values) {
       late final Polyline polyline;
       late final Polyline selectedPolyline;
       late final Polyline highlightedPolyline;
@@ -79,12 +96,15 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
           color: Colors.orange,
           consumeTapEvents: true,
           onTap: () {
-            state = {
-              for (final pl in state)
-                if (pl.polylineId != polyline.polylineId) pl,
-              highlightedPolyline,
-              selectedPolyline,
-            };
+            state = state.copyWith(
+              selectedTrail: trail.name,
+              polylines: {
+                for (final pl in state.polylines)
+                  if (pl.polylineId != polyline.polylineId) pl,
+                highlightedPolyline,
+                selectedPolyline,
+              }
+            );
             print("SELECTED ${trail.name}");
           }
       );
@@ -94,11 +114,14 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
           endCapParam: Cap.customCapFromBitmap(bitmaps.last),
           zIndexParam: 10,
           onTapParam: () {
-            state = {
-              for (final pl in state)
-                if (pl.polylineId != selectedPolyline.polylineId && pl.polylineId != highlightedPolyline.polylineId) pl,
-              polyline,
-            };
+            state = state.copyWith(
+              selectedTrail: null,
+              polylines: {
+                for (final pl in state.polylines)
+                  if (pl.polylineId != selectedPolyline.polylineId && pl.polylineId != highlightedPolyline.polylineId) pl,
+                polyline,
+              }
+            );
             print("UNSELECTED ${trail.name}");
           },
       );
@@ -111,10 +134,13 @@ class PolylineNotifier extends StateNotifier<Set<Polyline>> {
       );
       polylines.add(polyline);
     }
-    state = polylines;
+    state = ParkTrails(
+      trails: trails,
+      polylines: polylines
+    );
   }
 }
 
-final polylineProvider = StateNotifierProvider<PolylineNotifier, Set<Polyline>>((ref) {
-  return PolylineNotifier(ref);
+final parkTrailsProvider = StateNotifierProvider<ParkTrailsNotifier, ParkTrails>((ref) {
+  return ParkTrailsNotifier(ref);
 });

@@ -34,6 +34,7 @@ dependencies:
   google_maps_flutter: ^2.1.8
   location: ^4.4.0
   flutter_riverpod: ^2.0.0-dev.9
+  sliding_up_panel: ^2.0.0+1
   gpx:
     git: https://github.com/trilliumlab/dart-gpx.git
 
