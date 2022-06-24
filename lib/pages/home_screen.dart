@@ -12,11 +12,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool stickyLocation = true;
+  bool _stickyLocation = true;
+
+  final PanelController _controller = PanelController();
   final double _initFabHeight = 120.0;
   double _fabHeight = 0;
   double _panelHeightOpen = 0;
-  double _panelHeightClosed = 100;
+  final double _panelHeightClosed = 100;
 
   @override
   void initState() {
@@ -32,44 +34,65 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         alignment: Alignment.topCenter,
         children: [
-          SlidingUpPanel(
-            maxHeight: _panelHeightOpen,
-            minHeight: _panelHeightClosed,
-            parallaxEnabled: true,
-            parallaxOffset: 0.55,
-            body: ForestParkMap(
-              followPointer: stickyLocation,
-              onStickyUpdate: (val) {
-                setState(() {
-                  stickyLocation = val;
-                });
-              },
-            ),
-            panelBuilder: (sc) => _panel(sc),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(18.0),
-              topRight: Radius.circular(18.0),
-            ),
-            color: theme.colorScheme.background,
-            onPanelSlide: (double pos) => setState(() {
-              _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) +
-                  _initFabHeight;
-            }),
+          Consumer(
+            builder: (context, ref, child) {
+              // listen to updates from parkTrailsProvider. This builder
+              // will rebuild whenever a value changes (initial load, trail selected)
+              // we want to know when a trail has been selected so we can show the modal.
+              final parkTrails = ref.watch(parkTrailsProvider);
+              final selectedTail = parkTrails.trails[parkTrails.selectedTrail];
+              // if we have nothing selected, we should hide the modal,
+              // otherwise we need to make sure it's open
+              if (_controller.isAttached) {
+                if (selectedTail == null && _controller.isPanelShown) {
+                  _controller.hide();
+                } else if (selectedTail != null && !_controller.isPanelShown) {
+                  _controller.show();
+                }
+              }
+              return SlidingUpPanel(
+                maxHeight: _panelHeightOpen,
+                minHeight: _panelHeightClosed,
+                parallaxEnabled: true,
+                parallaxOffset: 0.58,
+                body: ForestParkMap(
+                  followPointer: _stickyLocation,
+                  onStickyUpdate: (val) {
+                    setState(() {
+                      _stickyLocation = val;
+                    });
+                  },
+                ),
+                controller: _controller,
+                panelBuilder: (sc) => selectedTail == null ? Container() : _panel(sc, selectedTail),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18.0),
+                  topRight: Radius.circular(18.0),
+                ),
+                color: theme.colorScheme.background,
+                onPanelSlide: (double pos) => setState(() {
+                  _fabHeight =
+                      pos * (_panelHeightOpen - _panelHeightClosed) +
+                          _initFabHeight;
+                }),
+              );
+            },
           ),
           // Floating Action Button
           Positioned(
             right: 20.0,
-            bottom: _fabHeight,
+            bottom: _controller.isAttached && _controller.isPanelShown
+                ? _fabHeight : _fabHeight-_panelHeightClosed,
             child: FloatingActionButton(
               backgroundColor: theme.colorScheme.background,
               onPressed: () {
                 setState(() {
-                  stickyLocation = !stickyLocation;
+                  _stickyLocation = !_stickyLocation;
                 });
               },
               child: Icon(
                   Icons.my_location_rounded,
-                  color: stickyLocation
+                  color: _stickyLocation
                       ? theme.colorScheme.primary
                       : theme.colorScheme.onBackground
               ),
@@ -80,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _panel(ScrollController sc) {
+  Widget _panel(ScrollController sc, Trail trail) {
     var theme = Theme.of(context);
     return MediaQuery.removePadding(
         context: context,
@@ -106,15 +129,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(
               height: 12.0,
             ),
-            Consumer(
-              builder: (context, ref, child) {
-                final parkTrails = ref.watch(parkTrailsProvider);
-                final selectedTail = parkTrails.trails[parkTrails.selectedTrail];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 26),
-                  child: Text(selectedTail?.name ?? "NOTHING SELECTED", style: theme.textTheme.titleLarge)
-                );
-              },
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 26),
+              child: Text(trail.name, style: theme.textTheme.titleLarge)
             ),
           ],
         ),
