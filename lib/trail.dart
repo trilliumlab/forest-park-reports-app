@@ -47,17 +47,86 @@ final rawTrailsProvider = FutureProvider<Map<String, Trail>>((ref) async {
 class ParkTrails {
   Map<String, Trail> trails;
   String? selectedTrail;
-  Set<Polyline> polylines;
+  Set<TrailPolyline> trailPolylines;
+  Set<Polyline> get polylines => trailPolylines.map((e) => e.polylines).expand((e) => e).toSet();
   bool get isPopulated => !(trails.isEmpty || polylines.isEmpty);
 
-  ParkTrails({this.trails = const {}, this.selectedTrail, this.polylines = const {}});
+  ParkTrails({this.trails = const {}, this.selectedTrail, this.trailPolylines = const {}});
 
-  ParkTrails copyWith({String? selectedTrail, Set<Polyline>? polylines}) {
+  ParkTrails copyWith({required String? selectedTrail, Set<TrailPolyline>? trailPolylines}) {
     return ParkTrails(
       trails: trails,
-      selectedTrail: selectedTrail ?? this.selectedTrail,
-      polylines: polylines ?? this.polylines
+      selectedTrail: selectedTrail,
+      trailPolylines: trailPolylines ?? this.trailPolylines
     );
+  }
+}
+
+class TrailPolyline {
+  Set<Polyline> get polylines => selected ? {selectedPolyline, highlightedPolyline} : {polyline};
+  final bool selected;
+  late final Polyline polyline;
+  late final Polyline selectedPolyline;
+  late final Polyline highlightedPolyline;
+  TrailPolyline._fromPolylines(
+      this.selected,
+      this.polyline,
+      this.selectedPolyline,
+      this.highlightedPolyline,
+  );
+  TrailPolyline({
+    required Trail trail,
+    required this.selected,
+    required BitmapDescriptor startCap,
+    required BitmapDescriptor endCap,
+    required ValueSetter<bool> onSelect,
+  }) {
+    polyline = Polyline(
+        polylineId: PolylineId(trail.name),
+        points: trail.path,
+        width: 2,
+        color: Colors.orange,
+        consumeTapEvents: true,
+        onTap: () {
+          onSelect(true);
+          // state = state.copyWith(
+          //     selectedTrail: trail.name,
+          //     polylines: {
+          //       for (final pl in state.polylines)
+          //         if (pl.polylineId != polyline.polylineId) pl,
+          //       highlightedPolyline,
+          //       selectedPolyline,
+          //     }
+          // );
+        }
+    );
+    selectedPolyline = polyline.copyWith(
+      colorParam: Colors.green,
+      startCapParam: Cap.customCapFromBitmap(startCap),
+      endCapParam: Cap.customCapFromBitmap(endCap),
+      zIndexParam: 10,
+      onTapParam: () {
+        onSelect(false);
+        // state = state.copyWith(
+        //     selectedTrail: null,
+        //     polylines: {
+        //       for (final pl in state.polylines)
+        //         if (pl.polylineId != selectedPolyline.polylineId && pl.polylineId != highlightedPolyline.polylineId) pl,
+        //       polyline,
+        //     }
+        // );
+      },
+    );
+    highlightedPolyline = Polyline(
+      polylineId: PolylineId("${trail.name}_highlight"),
+      points: trail.path,
+      color: Colors.green.withAlpha(80),
+      width: 10,
+      zIndex: 2,
+    );
+  }
+  TrailPolyline copyWith(bool? selected) {
+    return TrailPolyline._fromPolylines(selected ?? this.selected, polyline, selectedPolyline, highlightedPolyline);
   }
 }
 
@@ -84,59 +153,43 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
 
   Future buildPolylines(Map<String, Trail> trails) async {
     var bitmaps = await this.bitmaps.future;
-    Set<Polyline> polylines = {};
+    Set<TrailPolyline> trailPolylines = {};
     for (var trail in trails.values) {
-      late final Polyline polyline;
-      late final Polyline selectedPolyline;
-      late final Polyline highlightedPolyline;
-      polyline = Polyline(
-          polylineId: PolylineId(trail.name),
-          points: trail.path,
-          width: 2,
-          color: Colors.orange,
-          consumeTapEvents: true,
-          onTap: () {
-            state = state.copyWith(
-              selectedTrail: trail.name,
-              polylines: {
-                for (final pl in state.polylines)
-                  if (pl.polylineId != polyline.polylineId) pl,
-                highlightedPolyline,
-                selectedPolyline,
-              }
-            );
-            print("SELECTED ${trail.name}");
+      late TrailPolyline trailPolyline;
+      trailPolyline = TrailPolyline(
+          trail: trail,
+          selected: false,
+          startCap: bitmaps.first,
+          endCap: bitmaps.last,
+          onSelect: (selected) {
+            if (selected) {
+              print("SELECTED ${trail.name}");
+              state = state.copyWith(
+                selectedTrail: trail.name,
+                trailPolylines: {
+                  for (var tp in state.trailPolylines)
+                    if (tp.polyline.polylineId.value == trail.name)
+                      tp.copyWith(true)
+                    else
+                      tp.copyWith(false)
+                },
+              );
+            } else {
+              print("UNSELECTED ${trail.name}");
+              state = state.copyWith(
+                selectedTrail: null,
+                trailPolylines: {
+                  for (var tp in state.trailPolylines) tp.copyWith(false)
+                },
+              );
+            }
           }
       );
-      selectedPolyline = polyline.copyWith(
-          colorParam: Colors.green,
-          startCapParam: Cap.customCapFromBitmap(bitmaps.first),
-          endCapParam: Cap.customCapFromBitmap(bitmaps.last),
-          zIndexParam: 10,
-          onTapParam: () {
-            state = state.copyWith(
-              selectedTrail: null,
-              polylines: {
-                for (final pl in state.polylines)
-                  if (pl.polylineId != selectedPolyline.polylineId && pl.polylineId != highlightedPolyline.polylineId) pl,
-                polyline,
-              }
-            );
-            print("UNSELECTED ${trail.name}");
-          },
-      );
-      highlightedPolyline = Polyline(
-        polylineId: PolylineId("${trail.name}_highlight"),
-        points: trail.path,
-        color: Colors.green.withAlpha(80),
-        width: 10,
-        zIndex: 2,
-      );
-      polylines.add(polyline);
+      trailPolylines.add(trailPolyline);
     }
     state = ParkTrails(
-      trails: trails,
-      polylines: polylines
+        trails: trails,
+        trailPolylines: trailPolylines
     );
   }
 }
