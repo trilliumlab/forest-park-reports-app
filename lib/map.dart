@@ -117,7 +117,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
-    Set<Polyline> polylines = ref.watch(trailsProvider);
+    Set<Polyline> polylines = ref.watch(polylineProvider);
     // enable edge to edge mode on android
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,

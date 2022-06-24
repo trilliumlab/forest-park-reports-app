@@ -1,5 +1,7 @@
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,21 +25,39 @@ class Trail {
   }
 }
 
-class TrailsNotifier extends StateNotifier<Set<Polyline>> {
-  TrailsNotifier() : super({}) {
-    print("TRAILS NOTIFIER BEING CONSTRUCTED");
-    loadGpx();
+final trailsProvider = FutureProvider<Set<Trail>>((ref) async {
+  // get file path of all gpx files in asset folder
+  final manifestContent = await rootBundle.loadString('AssetManifest.json');
+  List<String> pathPaths = json.decode(manifestContent).keys
+      .where((String key) => key.startsWith("assets/trails"))
+      .where((String key) => key.contains('.gpx')).toList();
+
+  Set<Trail> trails = {};
+  for (var path in pathPaths) {
+    path = Uri.decodeFull(path);
+    trails.add(Trail(
+        path.split("/")[2],
+        GpxReader().fromString(await rootBundle.loadString(path))
+    ));
   }
 
-  Future loadGpx() async {
-    print("LOADING GPX");
-    // get file path of all gpx files in asset folder
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    List<String> pathPaths = json.decode(manifestContent).keys
-        .where((String key) => key.startsWith("assets/trails"))
-        .where((String key) => key.contains('.gpx')).toList();
+  return trails;
+});
 
-    var bitmaps = await Future.wait([
+class PolylineNotifier extends StateNotifier<Set<Polyline>> {
+  final StateNotifierProviderRef ref;
+  PolylineNotifier(this.ref) : super({}) {
+    _loadBitmaps();
+    ref.watch(trailsProvider).when(
+      loading: () {},
+      error: (err, stack) {},
+      data: buildPolylines,
+    );
+  }
+
+  final Completer<List<BitmapDescriptor>> bitmaps = Completer();
+  Future _loadBitmaps() async {
+    bitmaps.complete(await Future.wait([
       BitmapDescriptor.fromAssetImage(
           const ImageConfiguration(),
           'assets/markers/start.png'
@@ -46,16 +66,13 @@ class TrailsNotifier extends StateNotifier<Set<Polyline>> {
           const ImageConfiguration(),
           'assets/markers/end.png'
       )
-    ]);
+    ]));
+  }
 
+  Future buildPolylines(Set<Trail> trails) async {
+    var bitmaps = await this.bitmaps.future;
     Set<Polyline> polylines = {};
-
-    for (var path in pathPaths) {
-      path = Uri.decodeFull(path);
-      var trail = Trail(
-          path.split("/")[2],
-          GpxReader().fromString(await rootBundle.loadString(path))
-      );
+    for (var trail in trails) {
       late final Polyline polyline;
       late final Polyline selectedPolyline;
       polyline = Polyline(
@@ -93,6 +110,6 @@ class TrailsNotifier extends StateNotifier<Set<Polyline>> {
   }
 }
 
-final trailsProvider = StateNotifierProvider<TrailsNotifier, Set<Polyline>>((ref) {
-  return TrailsNotifier();
+final polylineProvider = StateNotifierProvider<PolylineNotifier, Set<Polyline>>((ref) {
+  return PolylineNotifier(ref);
 });
