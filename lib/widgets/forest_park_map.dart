@@ -150,6 +150,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         onCameraMove: (camera) {
           _lastCamera = camera;
         },
+        onTap: (loc) {
+          ref.read(parkTrailsProvider.notifier).deselectTrails();
+        },
       ),
     );
   }

@@ -115,7 +115,7 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   final StateNotifierProviderRef ref;
   ParkTrailsNotifier(this.ref) : super(ParkTrails()) {
     _loadBitmaps();
-    ref.watch(rawTrailsProvider).whenData(buildPolylines);
+    ref.watch(rawTrailsProvider).whenData(_buildPolylines);
   }
 
   final Completer<List<BitmapDescriptor>> bitmaps = Completer();
@@ -132,7 +132,7 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
     ]));
   }
 
-  Future buildPolylines(Map<String, Trail> trails) async {
+  Future _buildPolylines(Map<String, Trail> trails) async {
     var bitmaps = await this.bitmaps.future;
     Set<TrailPolyline> trailPolylines = {};
     for (var trail in trails.values) {
@@ -147,7 +147,7 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
               state = state.copyWith(
                 selectedTrail: trail.name,
                 trailPolylines: {
-                  for (var tp in state.trailPolylines)
+                  for (final tp in state.trailPolylines)
                     if (tp.polyline.polylineId.value == trail.name)
                       tp.copyWith(true)
                     else
@@ -158,7 +158,7 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
               state = state.copyWith(
                 selectedTrail: null,
                 trailPolylines: {
-                  for (var tp in state.trailPolylines) tp.copyWith(false)
+                  for (final tp in state.trailPolylines) tp.copyWith(false)
                 },
               );
             }
@@ -171,6 +171,16 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
         trailPolylines: trailPolylines
     );
   }
+
+  void deselectTrails() {
+    state = state.copyWith(
+      selectedTrail: null,
+      trailPolylines: {
+        for (final tp in state.trailPolylines) tp.copyWith(false)
+      },
+    );
+  }
+
 }
 
 final parkTrailsProvider = StateNotifierProvider<ParkTrailsNotifier, ParkTrails>((ref) {
