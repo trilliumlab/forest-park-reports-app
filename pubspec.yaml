@@ -36,6 +36,7 @@ dependencies:
   location: ^4.4.0
   flutter_riverpod: ^2.0.0-dev.9
   sliding_up_panel: ^2.0.0+1
+  flutter_platform_widgets: ^2.0.0
   gpx:
     git: https://github.com/trilliumlab/dart-gpx.git
 

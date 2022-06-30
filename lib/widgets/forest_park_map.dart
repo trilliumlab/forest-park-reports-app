@@ -23,24 +23,30 @@ class ForestParkMap extends ConsumerStatefulWidget {
 class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver {
   final _location = Location();
   LocationData? _lastLoc;
+  // TODO set initial camera position to be centered on ForestPark
   CameraPosition _lastCamera = const CameraPosition(
     target: LatLng(0, 0),
     zoom: 12,
   );
+  // we use a completer for the map controller so we can listen until
+  // the map is loaded and the controller is set
   final Completer<GoogleMapController> _mapController = Completer();
 
+  // TODO allow more map styles (custom styles?) + satellite
   late String _darkMapStyle;
   late String _lightMapStyle;
 
-  bool _lastFollowPointer = true;
-
-  List<Trail> trails = [];
+  // store last value of sticky location so we can know when it's changed
+  // (then sticky button has been pressed)
+  bool _lastStickyLocation = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // listen for location changes and update _location
     _subscribeLocation();
+    // load style jsons from assets
     _loadMapStyles();
     _setMapStyle();
   }
@@ -50,6 +56,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     _lightMapStyle = await rootBundle.loadString('assets/map_styles/light.json');
   }
 
+  // listen for brightness change so we can update map style
   @override
   void didChangePlatformBrightness() {
     setState(() {
@@ -75,6 +82,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
   }
 
   void _subscribeLocation() {
+    // runs on initial load, so update location and move camera without animation
     _location.getLocation().then((l) {
       _lastLoc = l;
       widget.onStickyUpdate(true);
@@ -88,6 +96,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         );
       });
     });
+    // sets up listener which runs whenever location changes
     _location.onLocationChanged.listen((l) {
       _lastLoc = l;
       if (widget.followPointer) {
@@ -96,6 +105,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     });
   }
 
+  // helper function to animate the camera to a target while retaining other camera info
   void _animateCamera(LatLng target) {
     _mapController.future.then((c) {
       c.animateCamera(
@@ -113,6 +123,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
+    // using ref.watch will allow the widget to be rebuilt everytime
+    // the provider is updated
     ParkTrails parkTrails = ref.watch(parkTrailsProvider);
     // enable edge to edge mode on android
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
@@ -123,16 +135,18 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     // if the sticky location button was just clicked, move camera
-    //TODO should probably be using some state management
-    if (widget.followPointer != _lastFollowPointer) {
+    if (widget.followPointer != _lastStickyLocation) {
       // the button was pressed
-      _lastFollowPointer = widget.followPointer;
+      _lastStickyLocation = widget.followPointer;
       if (widget.followPointer && _lastLoc != null) {
         // the button was pressed and it is now enabled
         _animateCamera(LatLng(_lastLoc!.latitude!, _lastLoc!.longitude!));
       }
     }
 
+    // we use a listener to be able to detect when the map has been clicked as
+    // the GoogleMap onCameraMove function does not differentiate moving
+    // from a gesture, and moving the camera programmatically (_animateCamera)
     return Listener(
       onPointerDown: (e) {
         widget.onStickyUpdate(false);
@@ -150,7 +164,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         onCameraMove: (camera) {
           _lastCamera = camera;
         },
+        // the polylines take priority for taps, so this will
+        // only be called when tapping outside a polyline
         onTap: (loc) {
+          // we're using ref.read on the *notifier* because we want to call a
+          // function on the notifier, not the provider, and we don't want
+          // listen for any value changes as calling a function on a notifier
+          // will update the provider and we already listen to the provider
           ref.read(parkTrailsProvider.notifier).deselectTrails();
         },
       ),

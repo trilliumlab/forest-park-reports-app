@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
@@ -12,8 +13,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // this stores whether camera follows the gps location. This can be disabled
+  // by panning the camera, which is updated through the onStickyUpdate callback.
+  // when not stickied, pressing the sticky button will animate the camera to
+  // the current gps location
+  // TODO use a controller
   bool _stickyLocation = true;
 
+  // parameters for the sliding modal/panel on the bottom
+  // TODO animate hiding/showing of panel
   final PanelController _controller = PanelController();
   final double _initFabHeight = 120.0;
   double _fabHeight = 0;
@@ -28,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // make the height of the panel when open 80% of the screen
     _panelHeightOpen = MediaQuery.of(context).size.height * .80;
     var theme = Theme.of(context);
     return Scaffold(
@@ -50,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _controller.show();
                 }
               }
+              var panelRadius = isMaterial(context) ? 18.0 : 10.0;
               return SlidingUpPanel(
                 maxHeight: _panelHeightOpen,
                 minHeight: _panelHeightClosed,
@@ -65,9 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 controller: _controller,
                 panelBuilder: (sc) => selectedTail == null ? Container() : _panel(sc, selectedTail),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18.0),
-                  topRight: Radius.circular(18.0),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(panelRadius),
+                  topRight: Radius.circular(panelRadius),
                 ),
                 color: theme.colorScheme.background,
                 onPanelSlide: (double pos) => setState(() {
@@ -78,7 +88,8 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          // Floating Action Button
+          // When panel is visible, position 20dp above the panel height (_fabHeight)
+          // when panel is hidden, set it to 20db from bottom
           Positioned(
             right: 20.0,
             bottom: _controller.isAttached && _controller.isPanelShown
@@ -103,32 +114,30 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // builds the panel content
   Widget _panel(ScrollController sc, Trail trail) {
     var theme = Theme.of(context);
     return MediaQuery.removePadding(
         context: context,
         removeTop: true,
+        // pass the scroll controller to the list view so that scrolling panel
+        // content doesn't scroll the panel except when at the very top of list
         child: ListView(
           controller: sc,
           children: [
-            const SizedBox(
-              height: 12.0,
+            // pill decoration
+            Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 10.0),
+                width: 26,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onBackground,
+                  borderRadius: const BorderRadius.all(Radius.circular(12.0))),
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 30,
-                  height: 5,
-                  decoration: BoxDecoration(
-                      color: theme.colorScheme.onBackground,
-                      borderRadius: const BorderRadius.all(Radius.circular(12.0))),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 12.0,
-            ),
+            // content should go here
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 26),
               child: Text(trail.name, style: theme.textTheme.titleLarge)
