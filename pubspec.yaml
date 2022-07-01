@@ -31,8 +31,8 @@ dependencies:
     sdk: flutter
   dynamic_color: ^1.4.0
   cupertino_icons: ^1.0.2
-  google_maps_flutter: ^2.1.8
-  google_maps_flutter_web: ^0.4.0
+  flutter_map: ^1.1.1
+  latlong2: ^0.8.1
   location: ^4.4.0
   flutter_riverpod: ^2.0.0-dev.9
   sliding_up_panel: ^2.0.0+1
