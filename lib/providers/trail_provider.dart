@@ -1,19 +1,27 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forest_park_reports/providers/http_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:gpx/gpx.dart';
 
 /// Represents a Trail in Forest Park
 class Trail {
   String name;
+  String uuid;
+  Track? track;
+  Trail(this.name, this.uuid, [this.track]);
+  Trail copyWith({String? name, String? uuid, Track? track}) {
+    return Trail(name ?? this.name, uuid ?? this.uuid, track ?? this.track);
+  }
+}
+
+/// Represents a GPX file (list of coordinates) in an easy to use way
+class Track {
   List<LatLng> path = [];
   List<double> elevation = [];
-  /// Creates a trail object from a GPX file
-  Trail(this.name, Gpx path) {
+  Track(Gpx path) {
     // loop through every track point and add the coordinates to the path array
     // we also construct a separate elevation array for, the elevation of one
     // coordinate has the same index as the coordinate
@@ -28,30 +36,6 @@ class Trail {
   }
 }
 
-// A provider that can be watched and will update once all the trails are
-// loaded can also be refreshed to reload the trail map from disk
-// see https://riverpod.dev/docs/providers/future_provider/
-final rawTrailsProvider = FutureProvider<Map<String, Trail>>((ref) async {
-  // get file path of all gpx files in asset folder
-  final manifestContent = await rootBundle.loadString('AssetManifest.json');
-  final List<String> pathPaths = json.decode(manifestContent).keys
-      .where((String key) => key.startsWith("assets/trails"))
-      .where((String key) => key.contains('.gpx')).toList();
-
-  // load the gpx files and create a map of trails with the trail name
-  // TODO this should be a uuid
-  final Map<String, Trail> trails = {};
-  for (var path in pathPaths) {
-    path = Uri.decodeFull(path);
-    var name = path.split("/")[2];
-    trails[name] = (Trail(
-        name, GpxReader().fromString(await rootBundle.loadString(path))
-    ));
-  }
-
-  return trails;
-});
-
 /// Holds a Map of Trails along with a set of polylines and the selected trail
 ///
 /// Polylines are used to render on top of the GoogleMap widget. When a trail
@@ -62,7 +46,7 @@ final rawTrailsProvider = FutureProvider<Map<String, Trail>>((ref) async {
 class ParkTrails {
   Map<String, Trail> trails;
   String? selectedTrail;
-  Set<TrailPolyline> trailPolylines;
+  Set<TrackPolyline> trailPolylines;
   /// Returns a list of Polylines from the TrailPolylines, adding the main
   /// Polyline for unselected Trails and the 2 selection Polylines
   /// for selected ones
@@ -73,7 +57,7 @@ class ParkTrails {
 
   // We need a copyWith function for everything being used in a StateNotifier
   // because riverpod StateNotifier state is immutable
-  ParkTrails copyWith({required String? selectedTrail, Set<TrailPolyline>? trailPolylines}) {
+  ParkTrails copyWith({required String? selectedTrail, Set<TrackPolyline>? trailPolylines}) {
     return ParkTrails(
       trails: trails,
       selectedTrail: selectedTrail,
@@ -83,7 +67,7 @@ class ParkTrails {
 }
 
 /// Holds information for drawing a Trail object in a GoogleMap widget
-class TrailPolyline {
+class TrackPolyline {
   /// Returns a list of all polylines that should be displayed
   Set<Polyline> get polylines => selected ? {selectedPolyline, highlightPolyline} : {polyline};
   final bool selected;
@@ -91,14 +75,15 @@ class TrailPolyline {
   late final Polyline selectedPolyline;
   late final Polyline highlightPolyline;
   // private constructor used to copy without recreating Polylines
-  TrailPolyline._fromPolylines(
+  TrackPolyline._fromPolylines(
       this.selected,
       this.polyline,
       this.selectedPolyline,
       this.highlightPolyline,
   );
-  TrailPolyline({
-    required Trail trail,
+  TrackPolyline({
+    required String id,
+    required Track track,
     required this.selected,
     required BitmapDescriptor startCap,
     required BitmapDescriptor endCap,
@@ -106,8 +91,8 @@ class TrailPolyline {
   }) {
     // this is the polyline that will be shown when not selected
     polyline = Polyline(
-        polylineId: PolylineId(trail.name),
-        points: trail.path,
+        polylineId: PolylineId(id),
+        points: track.path,
         width: 2,
         color: Colors.orange,
         consumeTapEvents: true,
@@ -128,15 +113,15 @@ class TrailPolyline {
       },
     );
     highlightPolyline = Polyline(
-      polylineId: PolylineId("${trail.name}_highlight"),
-      points: trail.path,
+      polylineId: PolylineId("${id}_highlight"),
+      points: track.path,
       color: Colors.green.withAlpha(80),
       width: 10,
       zIndex: 2,
     );
   }
-  TrailPolyline copyWith(bool? selected) {
-    return TrailPolyline._fromPolylines(selected ?? this.selected, polyline, selectedPolyline, highlightPolyline);
+  TrackPolyline copyWith(bool? selected) {
+    return TrackPolyline._fromPolylines(selected ?? this.selected, polyline, selectedPolyline, highlightPolyline);
   }
 }
 
@@ -147,7 +132,7 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
     _loadBitmaps();
     // watch the raw trail provider for updates. When the trails have been
     // loaded or refreshed it will call _buildPolylines.
-    ref.watch(rawTrailsProvider).whenData(_buildPolylines);
+    ref.listen(rawTrailsProvider, (_, Map<String, Trail> rawTrails) {_buildPolylines(rawTrails);});
   }
 
   // we load the assets into a Completer so we can listen to when the load
@@ -171,11 +156,12 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   Future _buildPolylines(Map<String, Trail> trails) async {
     // wait on completer
     var bitmaps = await this.bitmaps.future;
-    Set<TrailPolyline> trailPolylines = {};
-    for (var trail in trails.values) {
-      late TrailPolyline trailPolyline;
-      trailPolyline = TrailPolyline(
-          trail: trail,
+    Set<TrackPolyline> trailPolylines = {};
+    for (var trail in trails.values.where((t) => t.track != null)) {
+      late TrackPolyline trailPolyline;
+      trailPolyline = TrackPolyline(
+          id: trail.name,
+          track: trail.track!,
           selected: false,
           startCap: bitmaps.first,
           endCap: bitmaps.last,
