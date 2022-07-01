@@ -46,22 +46,22 @@ class Track {
 class ParkTrails {
   Map<String, Trail> trails;
   String? selectedTrail;
-  Set<TrackPolyline> trailPolylines;
+  Set<TrackPolyline> trackPolylines;
   /// Returns a list of Polylines from the TrailPolylines, adding the main
   /// Polyline for unselected Trails and the 2 selection Polylines
   /// for selected ones
-  Set<Polyline> get polylines => trailPolylines.map((e) => e.polylines).expand((e) => e).toSet();
+  Set<Polyline> get polylines => trackPolylines.map((e) => e.polylines).expand((e) => e).toSet();
   bool get isPopulated => !(trails.isEmpty || polylines.isEmpty);
 
-  ParkTrails({this.trails = const {}, this.selectedTrail, this.trailPolylines = const {}});
+  ParkTrails({this.trails = const {}, this.selectedTrail, this.trackPolylines = const {}});
 
   // We need a copyWith function for everything being used in a StateNotifier
   // because riverpod StateNotifier state is immutable
-  ParkTrails copyWith({required String? selectedTrail, Set<TrackPolyline>? trailPolylines}) {
+  ParkTrails copyWith({required String? selectedTrail, Set<TrackPolyline>? trackPolylines}) {
     return ParkTrails(
       trails: trails,
       selectedTrail: selectedTrail,
-      trailPolylines: trailPolylines ?? this.trailPolylines
+      trackPolylines: trackPolylines ?? this.trackPolylines
     );
   }
 }
@@ -85,8 +85,8 @@ class TrackPolyline {
     required String id,
     required Track track,
     required this.selected,
-    required BitmapDescriptor startCap,
-    required BitmapDescriptor endCap,
+    required BitmapDescriptor? startCap,
+    required BitmapDescriptor? endCap,
     required ValueSetter<bool> onSelect,
   }) {
     // this is the polyline that will be shown when not selected
@@ -105,8 +105,8 @@ class TrackPolyline {
     // zIndex above highlight polyline to show above
     selectedPolyline = polyline.copyWith(
       colorParam: Colors.green,
-      startCapParam: Cap.customCapFromBitmap(startCap),
-      endCapParam: Cap.customCapFromBitmap(endCap),
+      startCapParam: startCap != null ? Cap.customCapFromBitmap(startCap) : null,
+      endCapParam: endCap != null ? Cap.customCapFromBitmap(endCap) : null,
       zIndexParam: 10,
       onTapParam: () {
         onSelect(false);
@@ -125,55 +125,52 @@ class TrackPolyline {
   }
 }
 
+final bitmapsProvider = FutureProvider<List<BitmapDescriptor>>((ref) async {
+  return Future.wait([
+    BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(),
+        'assets/markers/start.png'
+    ),
+    BitmapDescriptor.fromAssetImage(
+        const ImageConfiguration(),
+        'assets/markers/end.png'
+    )
+  ]);
+});
+
 class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   // initial state is an empty ParkTrails
   ParkTrailsNotifier(StateNotifierProviderRef ref) : super(ParkTrails()) {
     // we need to load the asset files for the end caps
-    _loadBitmaps();
+    //TODO test endcaps on android
+    var bitmaps = ref.watch(bitmapsProvider);
     // watch the raw trail provider for updates. When the trails have been
     // loaded or refreshed it will call _buildPolylines.
-    ref.listen(rawTrailsProvider, (_, Map<String, Trail> rawTrails) {_buildPolylines(rawTrails);});
-  }
-
-  // we load the assets into a Completer so we can listen to when the load
-  // is done and update state then
-  final Completer<List<BitmapDescriptor>> bitmaps = Completer();
-  Future _loadBitmaps() async {
-    bitmaps.complete(await Future.wait([
-      BitmapDescriptor.fromAssetImage(
-          const ImageConfiguration(),
-          'assets/markers/start.png'
-      ),
-      BitmapDescriptor.fromAssetImage(
-          const ImageConfiguration(),
-          'assets/markers/end.png'
-      )
-    ]));
+    var remoteTrails = ref.watch(remoteTrailsProvider);
+    _buildPolylines(remoteTrails, bitmaps.valueOrNull);
   }
 
   // builds the TrailPolylines for each Trail and handles selection logic
   // plus updates ParkTrails state
-  Future _buildPolylines(Map<String, Trail> trails) async {
-    // wait on completer
-    var bitmaps = await this.bitmaps.future;
+  Future _buildPolylines(Map<String, Trail> trails, List<BitmapDescriptor>? bitmaps) async {
     Set<TrackPolyline> trailPolylines = {};
     for (var trail in trails.values.where((t) => t.track != null)) {
-      late TrackPolyline trailPolyline;
-      trailPolyline = TrackPolyline(
-          id: trail.name,
+      late TrackPolyline trackPolyline;
+      trackPolyline = TrackPolyline(
+          id: trail.uuid,
           track: trail.track!,
           selected: false,
-          startCap: bitmaps.first,
-          endCap: bitmaps.last,
+          startCap: bitmaps?.first,
+          endCap: bitmaps?.last,
           onSelect: (selected) {
             if (selected) {
               // when we've selected this trail, we should create a new copy
               // of the state with this TrailPolyline copied as selected
               state = state.copyWith(
-                selectedTrail: trail.name,
-                trailPolylines: {
-                  for (final tp in state.trailPolylines)
-                    if (tp.polyline.polylineId.value == trail.name)
+                selectedTrail: trail.uuid,
+                trackPolylines: {
+                  for (final tp in state.trackPolylines)
+                    if (tp.polyline.polylineId.value == trail.uuid)
                       tp.copyWith(true)
                     else
                       tp.copyWith(false)
@@ -184,19 +181,19 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
               // selectedTrail and update the TrailPolyline
               state = state.copyWith(
                 selectedTrail: null,
-                trailPolylines: {
-                  for (final tp in state.trailPolylines) tp.copyWith(false)
+                trackPolylines: {
+                  for (final tp in state.trackPolylines) tp.copyWith(false)
                 },
               );
             }
           }
       );
-      trailPolylines.add(trailPolyline);
+      trailPolylines.add(trackPolyline);
     }
     // initial state update
     state = ParkTrails(
         trails: trails,
-        trailPolylines: trailPolylines
+        trackPolylines: trailPolylines
     );
   }
 
@@ -204,8 +201,8 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   void deselectTrails() {
     state = state.copyWith(
       selectedTrail: null,
-      trailPolylines: {
-        for (final tp in state.trailPolylines) tp.copyWith(false)
+      trackPolylines: {
+        for (final tp in state.trackPolylines) tp.copyWith(false)
       },
     );
   }

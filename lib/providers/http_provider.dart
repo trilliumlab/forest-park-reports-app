@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
+import 'package:gpx/gpx.dart';
 import 'package:uuid/uuid.dart';
 
 class Api {
@@ -8,6 +9,7 @@ class Api {
   static BaseOptions options = BaseOptions(
     baseUrl: baseUrl
   );
+  static GpxReader gpxReader = GpxReader();
   Dio dio = Dio(options);
   Future<Map<String, Trail>> getTrails() async {
     final res = await dio.get("/trails/list");
@@ -16,49 +18,38 @@ class Api {
         val["uuid"]: Trail(val["name"], val["uuid"])
     };
   }
+  Future<Track> getTrack(String uuid) async {
+    final res = await dio.get("/trails/$uuid");
+    return Track(gpxReader.fromString(res.data));
+  }
 }
 
 final apiProvider = Provider<Api>((ref) => Api());
 
-// A provider that can be watched and will update once all the trails are
-// loaded can also be refreshed to reload the trail map from disk
-// see https://riverpod.dev/docs/providers/future_provider/
-// final rawTrailsProvider = FutureProvider<Map<String, Trail>>((ref) async {
-//   // get file path of all gpx files in asset folder
-//   final manifestContent = await rootB.loadString('AssetManifest.json');
-//   final List<String> pathPaths = json.decode(manifestContent).keys
-//       .where((String key) => key.startsWith("assets/trails"))
-//       .where((String key) => key.contains('.gpx')).toList();
-//
-//   // load the gpx files and create a map of trails with the trail name
-//   // TODO this should be a uuid
-//   final Map<String, Trail> trails = {};
-//   for (var path in pathPaths) {
-//     path = Uri.decodeFull(path);
-//     var name = path.split("/")[2];
-//     trails[name] = (Trail(
-//         name, GpxReader().fromString(await rootBundle.loadString(path))
-//     ));
-//   }
-//
-//   return trails;
-// });
-
-class RawTrailsNotifier extends StateNotifier<Map<String, Trail>> {
+// A provider that will load all the trail data from the server
+// and can be refreshed to fetch new data.
+class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
   StateNotifierProviderRef ref;
   late Api api;
-  RawTrailsNotifier(this.ref) : super({}) {
+  RemoteTrailsNotifier(this.ref) : super({}) {
     api = ref.watch(apiProvider);
-    _fetchList();
+    fetchTrails();
   }
-  Future _fetchList() async {
+  Future fetchTrails() async {
     state = await api.getTrails();
     for (final trail in state.values) {
-
+      final track = await api.getTrack(trail.uuid);
+      state = {
+        for (final oldTrail in state.values)
+          if (oldTrail.uuid == trail.uuid)
+            oldTrail.uuid: oldTrail.copyWith(track: track)
+          else
+            oldTrail.uuid: oldTrail
+      };
     }
   }
 }
 
-final rawTrailsProvider = StateNotifierProvider<RawTrailsNotifier, Map<String, Trail>>((ref) {
-  return RawTrailsNotifier(ref);
+final remoteTrailsProvider = StateNotifierProvider<RemoteTrailsNotifier, Map<String, Trail>>((ref) {
+  return RemoteTrailsNotifier(ref);
 });
