@@ -166,9 +166,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         options: MapOptions(
           center: LatLng(45.57416784067063, -122.76892379502566),
           zoom: 11.5,
-          enableMultiFingerGestureRace: true,
-          pinchZoomThreshold: 0.1,
-          rotationThreshold: 0.9,
+          //enableMultiFingerGestureRace: true,
+          // pinchZoomThreshold: 0.1,
+          // rotationThreshold: 0.9,
           plugins: [
             TappablePolylineMapPlugin()
           ],
@@ -195,12 +195,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 ref.read(parkTrailsProvider.notifier).deselectTrail(),
           )
         ],
-        nonRotatedChildren: [
-          AttributionWidget.defaultWidget(
-            source: 'OpenStreetMap contributors',
-            onSourceTapped: null,
-          ),
-        ],
+        //TODO attribution, this one looks off
+        // nonRotatedChildren: [
+        //   AttributionWidget.defaultWidget(
+        //     source: 'OpenStreetMap contributors',
+        //     onSourceTapped: null,
+        //   ),
+        // ],
       )
     );
   }

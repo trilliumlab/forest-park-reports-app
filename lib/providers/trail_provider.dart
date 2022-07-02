@@ -32,6 +32,7 @@ class Trail {
   int get hashCode => hashValues(name, uuid);
 }
 
+//TODO reduce polyline points client side
 /// Represents a GPX file (list of coordinates) in an easy to use way
 class Track {
   List<LatLng> path = [];

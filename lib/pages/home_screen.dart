@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,14 +50,12 @@ class _HomeScreenState extends State<HomeScreen> {
               // will rebuild whenever a value changes (initial load, trail selected)
               // we want to know when a trail has been selected so we can show the modal.
               final parkTrails = ref.watch(parkTrailsProvider);
-              // final selectedTrail = parkTrails.trails[parkTrails.selectedTrail];
-              final selectedTrail = Trail("Test", "Test");
               // if we have nothing selected, we should hide the modal,
               // otherwise we need to make sure it's open
               if (_panelController.isAttached) {
-                if (selectedTrail == null && _panelController.isPanelShown) {
+                if (parkTrails.selectedTrail == null && _panelController.isPanelShown) {
                   _panelController.hide();
-                } else if (selectedTrail != null && !_panelController.isPanelShown) {
+                } else if (parkTrails.selectedTrail != null && !_panelController.isPanelShown) {
                   _panelController.show();
                 }
               }
@@ -69,13 +68,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 snapPoint: 0.4,
                 body: ForestParkMap(),
                 controller: _panelController,
-                panelBuilder: (sc) => selectedTrail == null ? Container() : _panel(sc, selectedTrail),
+                panelBuilder: (sc) => parkTrails.selectedTrail == null
+                    ? Container() : _panel(sc, parkTrails.selectedTrail!),
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
                 onPanelSlide: (double pos) => setState(() {
-                  _fabHeight =
-                      pos * (_panelHeightOpen - _panelHeightClosed) +
-                          _initFabHeight;
+                  _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _initFabHeight;
                 }),
               );
             },
@@ -89,16 +87,43 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final stickyLocation = ref.watch(stickyLocationProvider);
-                return FloatingActionButton(
-                  backgroundColor: theme.colorScheme.background,
-                  onPressed: () {
-                    ref.read(stickyLocationProvider.notifier).update((state) => true);
-                  },
-                  child: Icon(
-                      Icons.my_location_rounded,
-                      color: stickyLocation
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onBackground
+                return PlatformWidgetBuilder(
+                    cupertino: (context, child, __) {
+                      var iosTheme = CupertinoTheme.of(context);
+                      return ClipRRect(
+                        borderRadius: const BorderRadius.all(Radius.circular(10)),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                          child: FloatingActionButton(
+                            backgroundColor: iosTheme.scaffoldBackgroundColor.withAlpha(200),
+                            splashColor: Colors.transparent,
+                            elevation: 0,
+                            hoverElevation: 0,
+                            onPressed: () {
+                              ref.read(stickyLocationProvider.notifier).update((state) => true);
+                            },
+                            shape: const RoundedRectangleBorder(),
+                            child: Icon(
+                                Icons.my_location_rounded,
+                                color: stickyLocation
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onBackground
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  material: (_, __, ___) => FloatingActionButton(
+                    backgroundColor: theme.colorScheme.background,
+                    onPressed: () {
+                      ref.read(stickyLocationProvider.notifier).update((state) => true);
+                    },
+                    child: Icon(
+                        Icons.my_location_rounded,
+                        color: stickyLocation
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onBackground
+                    ),
                   ),
                 );
               }
@@ -111,44 +136,94 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // builds the panel content
   Widget _panel(ScrollController sc, Trail trail) {
-    var theme = Theme.of(context);
+    final theme = Theme.of(context);
     return MediaQuery.removePadding(
         context: context,
         removeTop: true,
         // pass the scroll controller to the list view so that scrolling panel
         // content doesn't scroll the panel except when at the very top of list
-        child: ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 100.0, sigmaY: 100.0),
-            child: Container(
-              color: Colors.red.withAlpha(100),
-              child: ListView(
-                controller: sc,
-                children: [
-                  // pill decoration
-                  Align(
-                    alignment: Alignment.topCenter,
+        child: PlatformWidgetBuilder(
+          cupertino: (context, child, __) {
+            var iosTheme = CupertinoTheme.of(context);
+            var panelRadius = const BorderRadius.vertical(top: Radius.circular(10));
+            //TODO widgetize
+            return Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: panelRadius,
+                  boxShadow: const [
+                    OutlineBoxShadow(
+                      color: Colors.black45,
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: panelRadius,
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
                     child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 10.0),
-                      width: 26,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.onBackground,
-                        borderRadius: const BorderRadius.all(Radius.circular(12.0))),
+                      color: iosTheme.scaffoldBackgroundColor.withAlpha(200),
+                      child: child,
                     ),
                   ),
-                  // content should go here
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 26),
-                    child: Text(trail.name, style: theme.textTheme.titleLarge)
-                  ),
-                ],
+                ),
               ),
+            );
+          },
+          material: (_, child, __) => ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            child: Container(
+              color: theme.colorScheme.background,
+              child: child,
             ),
+          ),
+          child: ListView(
+            controller: sc,
+            children: [
+              // pill decoration
+              Align(
+                alignment: Alignment.topCenter,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 10.0),
+                  width: 26,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: theme.colorScheme.onBackground,
+                      borderRadius: const BorderRadius.all(Radius.circular(12.0))),
+                ),
+              ),
+              // content should go here
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 26),
+                  child: Text(trail.name, style: theme.textTheme.titleLarge)
+              ),
+            ],
           ),
         ),
     );
   }
+}
 
+class OutlineBoxShadow extends BoxShadow {
+  const OutlineBoxShadow({
+    Color color = const Color(0xFF000000),
+    Offset offset = Offset.zero,
+    double blurRadius = 0.0,
+  }) : super(color: color, offset: offset, blurRadius: blurRadius);
+
+  @override
+  Paint toPaint() {
+    final Paint result = Paint()
+      ..color = color
+      ..maskFilter = MaskFilter.blur(BlurStyle.outer, blurSigma);
+    assert(() {
+      if (debugDisableShadows) {
+        result.maskFilter = null;
+      }
+      return true;
+    }());
+    return result;
+  }
 }
