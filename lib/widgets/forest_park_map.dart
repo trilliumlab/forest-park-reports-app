@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
@@ -175,8 +177,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         layers: [
           TileLayerOptions(
-            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            subdomains: ['a', 'b', 'c'],
+            backgroundColor: const Color(0xff36475c),
+            tileProvider: FMTC.instance('forestParkStore').getTileProvider(),
+            urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
           ),
           TappablePolylineLayerOptions(
             // Will only render visible polylines, increasing performance
