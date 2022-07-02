@@ -40,8 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // make the height of the panel when open 80% of the screen
     _panelHeightOpen = MediaQuery.of(context).size.height * .80;
     final theme = Theme.of(context);
-    final fabPos = _panelController.isAttached && _panelController.isPanelShown
-        ? _fabHeight : _fabHeight-_panelHeightClosed;
     return Scaffold(
       body: Stack(
         alignment: Alignment.topCenter,
@@ -74,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // when panel is hidden, set it to 20db from bottom
           Positioned(
             right: 10.0,
-            bottom: isCupertino(context) ? fabPos - 18 : fabPos,
+            bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight,
             child: Consumer(
               builder: (context, ref, child) {
                 final stickyLocation = ref.watch(stickyLocationProvider);
