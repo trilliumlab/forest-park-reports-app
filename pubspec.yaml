@@ -31,7 +31,6 @@ dependencies:
     sdk: flutter
   dynamic_color: ^1.4.0
   cupertino_icons: ^1.0.2
-  flutter_map: ^1.1.1
   latlong2: ^0.8.1
   location: ^4.4.0
   flutter_riverpod: ^2.0.0-dev.9
@@ -39,6 +38,11 @@ dependencies:
   flutter_platform_widgets: ^2.0.0
   dio: ^4.0.6
   uuid: ^3.0.6
+  flutter_map: ^1.1.1
+  flutter_map_tappable_polyline:
+    git:
+      url: https://github.com/zeitspace/flutter_map_tappable_polyline.git
+      ref: flutter-map-1-fixes
   gpx:
     git: https://github.com/trilliumlab/dart-gpx.git
 

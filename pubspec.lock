@@ -97,6 +97,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.1.1"
+  flutter_map_tappable_polyline:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: flutter-map-1-fixes
+      resolved-ref: "1e86eccc0daf8dee3fbbac7b19c505beb69aeff5"
+      url: "https://github.com/zeitspace/flutter_map_tappable_polyline.git"
+    source: git
+    version: "3.1.0"
   flutter_platform_widgets:
     dependency: "direct main"
     description:
