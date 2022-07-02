@@ -30,7 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
   dynamic_color: ^1.4.0
-  cupertino_icons: ^1.0.2
+  cupertino_icons: ^1.0.5
   latlong2: ^0.8.1
   location: ^4.4.0
   flutter_riverpod: ^2.0.0-dev.9

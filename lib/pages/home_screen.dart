@@ -39,7 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     // make the height of the panel when open 80% of the screen
     _panelHeightOpen = MediaQuery.of(context).size.height * .80;
-    var theme = Theme.of(context);
+    final theme = Theme.of(context);
+    final fabPos = _panelController.isAttached && _panelController.isPanelShown
+        ? _fabHeight : _fabHeight-_panelHeightClosed;
     return Scaffold(
       body: Stack(
         alignment: Alignment.topCenter,
@@ -50,26 +52,16 @@ class _HomeScreenState extends State<HomeScreen> {
               // will rebuild whenever a value changes (initial load, trail selected)
               // we want to know when a trail has been selected so we can show the modal.
               final parkTrails = ref.watch(parkTrailsProvider);
-              // if we have nothing selected, we should hide the modal,
-              // otherwise we need to make sure it's open
-              if (_panelController.isAttached) {
-                if (parkTrails.selectedTrail == null && _panelController.isPanelShown) {
-                  _panelController.hide();
-                } else if (parkTrails.selectedTrail != null && !_panelController.isPanelShown) {
-                  _panelController.show();
-                }
-              }
-              var panelRadius = isMaterial(context) ? 18.0 : 10.0;
+              //TODO cupertino scrolling physics
               return SlidingUpPanel(
                 maxHeight: _panelHeightOpen,
                 minHeight: _panelHeightClosed,
                 parallaxEnabled: isMaterial(context),
                 parallaxOffset: 0.58,
                 snapPoint: 0.4,
-                body: ForestParkMap(),
+                body: const ForestParkMap(),
                 controller: _panelController,
-                panelBuilder: (sc) => parkTrails.selectedTrail == null
-                    ? Container() : _panel(sc, parkTrails.selectedTrail!),
+                panelBuilder: (sc) => _panel(sc, parkTrails.selectedTrail),
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
                 onPanelSlide: (double pos) => setState(() {
@@ -81,33 +73,32 @@ class _HomeScreenState extends State<HomeScreen> {
           // When panel is visible, position 20dp above the panel height (_fabHeight)
           // when panel is hidden, set it to 20db from bottom
           Positioned(
-            right: 20.0,
-            bottom: _panelController.isAttached && _panelController.isPanelShown
-                ? _fabHeight : _fabHeight-_panelHeightClosed,
+            right: 10.0,
+            bottom: isCupertino(context) ? fabPos - 18 : fabPos,
             child: Consumer(
               builder: (context, ref, child) {
                 final stickyLocation = ref.watch(stickyLocationProvider);
                 return PlatformWidgetBuilder(
                     cupertino: (context, child, __) {
-                      var iosTheme = CupertinoTheme.of(context);
                       return ClipRRect(
-                        borderRadius: const BorderRadius.all(Radius.circular(10)),
+                        borderRadius: const BorderRadius.all(Radius.circular(8)),
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                          child: FloatingActionButton(
-                            backgroundColor: iosTheme.scaffoldBackgroundColor.withAlpha(200),
-                            splashColor: Colors.transparent,
-                            elevation: 0,
-                            hoverElevation: 0,
-                            onPressed: () {
-                              ref.read(stickyLocationProvider.notifier).update((state) => true);
-                            },
-                            shape: const RoundedRectangleBorder(),
-                            child: Icon(
-                                Icons.my_location_rounded,
-                                color: stickyLocation
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onBackground
+                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                          child: SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              color: CupertinoDynamicColor.resolve(CupertinoColors.systemBackground, context).withAlpha(200),
+                              pressedOpacity: 0.9,
+                              child: Icon(
+                                // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                                  stickyLocation
+                                      ? CupertinoIcons.location_fill
+                                      : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                                  color: CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context)
+                              ),
+                              onPressed: () => ref.read(stickyLocationProvider.notifier).update((state) => true),
                             ),
                           ),
                         ),
@@ -129,13 +120,26 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             ),
           ),
+          // status bar blur
+          //TODO seriously widgets
+          Align(
+            alignment: Alignment.topCenter,
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  height: 50,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   // builds the panel content
-  Widget _panel(ScrollController sc, Trail trail) {
+  Widget _panel(ScrollController sc, Trail? trail) {
     final theme = Theme.of(context);
     return MediaQuery.removePadding(
         context: context,
@@ -144,8 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // content doesn't scroll the panel except when at the very top of list
         child: PlatformWidgetBuilder(
           cupertino: (context, child, __) {
-            var iosTheme = CupertinoTheme.of(context);
-            var panelRadius = const BorderRadius.vertical(top: Radius.circular(10));
+            var panelRadius = const BorderRadius.vertical(top: Radius.circular(8));
             //TODO widgetize
             return Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -164,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
                     child: Container(
-                      color: iosTheme.scaffoldBackgroundColor.withAlpha(200),
+                      color: CupertinoDynamicColor.resolve(CupertinoColors.systemBackground, context).withAlpha(200),
                       child: child,
                     ),
                   ),
@@ -183,27 +186,42 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: sc,
             children: [
               // pill decoration
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 10.0),
-                  width: 26,
-                  height: 4,
-                  decoration: BoxDecoration(
-                      color: theme.colorScheme.onBackground,
-                      borderRadius: const BorderRadius.all(Radius.circular(12.0))),
-                ),
-              ),
+              const PlatformPill(),
               // content should go here
               Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 26),
-                  child: Text(trail.name, style: theme.textTheme.titleLarge)
+                  child: Text("${trail?.name}", style: theme.textTheme.titleLarge)
               ),
             ],
           ),
         ),
     );
   }
+}
+
+class PlatformPill extends StatelessWidget {
+  const PlatformPill({Key? key}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final isIos = isCupertino(context);
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        margin: EdgeInsets.symmetric(
+          vertical: isIos ? 5 : 10
+        ),
+        width: isIos ? 35 : 26,
+        height: 5,
+        decoration: BoxDecoration(
+            color: isIos
+                ? CupertinoDynamicColor.resolve(CupertinoColors.systemGrey2, context)
+                : theme.colorScheme.onBackground,
+            borderRadius: const BorderRadius.all(Radius.circular(12.0))),
+      ),
+    );
+  }
+
 }
 
 class OutlineBoxShadow extends BoxShadow {
