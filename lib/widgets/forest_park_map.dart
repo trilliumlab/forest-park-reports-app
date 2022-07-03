@@ -49,6 +49,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // This is a workaround for a bug in flutter_map preventing the
     // TileLayerOptions reset stream from working. Instead we are rebuilding
     // every image in the application.
+    // This is probably causing some visual bugs and needs to be updated asap.
     PaintingBinding.instance.imageCache.clear();
   }
 
