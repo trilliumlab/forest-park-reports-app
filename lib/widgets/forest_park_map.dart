@@ -96,6 +96,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
           ),
         ),
+        LocationMarkerLayerWidget(
+          plugin: LocationMarkerPlugin(
+            centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,
+            centerOnLocationUpdate: centerOnLocation,
+          ),
+        ),
         TappablePolylineLayerWidget(
           options: TappablePolylineLayerOptions(
             // Will only render visible polylines, increasing performance
@@ -112,12 +118,6 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             },
             onMiss: (tapPosition) =>
                 ref.read(parkTrailsProvider.notifier).deselectTrail(),
-          ),
-        ),
-        LocationMarkerLayerWidget(
-          plugin: LocationMarkerPlugin(
-            centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,
-            centerOnLocationUpdate: centerOnLocation,
           ),
         ),
       ],

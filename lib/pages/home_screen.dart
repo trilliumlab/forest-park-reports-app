@@ -73,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           // When panel is visible, position 20dp above the panel height (_fabHeight)
           // when panel is hidden, set it to 20db from bottom
+          // TODO add shadow on android
           Positioned(
             right: 10.0,
             bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight,
