@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
@@ -18,7 +19,9 @@ class HomeScreen extends StatefulWidget {
 // this stores whether camera follows the gps location. This will be set to
 // false by panning the camera. when not stickied, pressing the sticky button
 // will animate the camera to the current gps location and set sticky to true
-final stickyLocationProvider = StateProvider<bool>((ref) => true);
+final centerOnLocationProvider = StateProvider<CenterOnLocationUpdate>(
+    (ref) => CenterOnLocationUpdate.always
+);
 
 class _HomeScreenState extends State<HomeScreen> {
   // parameters for the sliding modal/panel on the bottom
@@ -75,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight,
             child: Consumer(
               builder: (context, ref, child) {
-                final stickyLocation = ref.watch(stickyLocationProvider);
+                final centerOnLocation = ref.watch(centerOnLocationProvider);
                 return PlatformWidgetBuilder(
                     cupertino: (context, child, __) {
                       const fabRadius = BorderRadius.all(Radius.circular(8));
@@ -102,14 +105,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 pressedOpacity: 0.9,
                                 child: Icon(
                                   // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                                    stickyLocation
+                                    centerOnLocation == CenterOnLocationUpdate.always
                                         ? CupertinoIcons.location_fill
                                         : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
                                     color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
                                         ? CupertinoColors.systemGrey.highContrastColor
                                         : CupertinoColors.systemGrey.darkHighContrastColor
                                 ),
-                                onPressed: () => ref.read(stickyLocationProvider.notifier).update((state) => true),
+                                onPressed: () => ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.always),
                               ),
                             ),
                           ),
@@ -119,11 +122,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   material: (_, __, ___) => FloatingActionButton(
                     backgroundColor: theme.colorScheme.background,
                     onPressed: () {
-                      ref.read(stickyLocationProvider.notifier).update((state) => true);
+                      ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.always);
                     },
                     child: Icon(
                         Icons.my_location_rounded,
-                        color: stickyLocation
+                        color: centerOnLocation == CenterOnLocationUpdate.always
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onBackground
                     ),
