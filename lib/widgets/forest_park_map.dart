@@ -36,22 +36,16 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     _mapController = MapController();
     // listen for location changes and update _lastLoc
     _subscribeLocation();
-    // load style jsons from assets
-    _loadMapStyles();
   }
 
-  Future _loadMapStyles() async {
-    _darkMapStyle  = await rootBundle.loadString('assets/map_styles/dark.json');
-    _lightMapStyle = await rootBundle.loadString('assets/map_styles/light.json');
-    _setMapStyle();
-  }
-
-  // listen for brightness change so we can update map style
+  // listen for brightness change so we can refrash map tiles
   @override
   void didChangePlatformBrightness() {
-    setState(() {
-      _setMapStyle();
-    });
+    setState(() {});
+    // This is a workaround for a bug in flutter_map preventing the
+    // TileLayerOptions reset stream from working. Instead we are rebuilding
+    // every image in the application.
+    PaintingBinding.instance.imageCache.clear();
   }
 
   Future _setMapStyle() async {
@@ -112,13 +106,14 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
+    final lightMode = WidgetsBinding.instance.window.platformBrightness == Brightness.light;
     // using ref.watch will allow the widget to be rebuilt everytime
     // the provider is updated
     ParkTrails parkTrails = ref.watch(parkTrailsProvider);
     // enable edge to edge mode on android
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: WidgetsBinding.instance.window.platformBrightness == Brightness.light ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: lightMode ? Brightness.dark : Brightness.light,
         systemNavigationBarColor: Colors.transparent
     ));
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -132,12 +127,15 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     //     _animateCamera(LatLng(_lastLoc!.latitude!, _lastLoc!.longitude!));
     //   }
     // }
-    ref.listen(stickyLocationProvider, (a, b) => {});
+    ref.listen(stickyLocationProvider, (_, bool enabled) => {
+
+    });
 
     // we use a listener to be able to detect when the map has been clicked as
     // the GoogleMap onCameraMove function does not differentiate moving
     // from a gesture, and moving the camera programmatically (_animateCamera)
     return Listener(
+      // TODO probably onPointerMove
       onPointerDown: (e) {
         ref.read(stickyLocationProvider.notifier).update((state) => false);
       },
@@ -177,26 +175,31 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         layers: [
           TileLayerOptions(
-            backgroundColor: const Color(0xff36475c),
-            tileProvider: FMTC.instance('forestParkStore').getTileProvider(),
-            urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+            tileProvider: FMTC.instance('forestPark').getTileProvider(),
+            backgroundColor: lightMode
+                ? const Color(0xfff7f7f2)
+                : const Color(0xff36475c),
+            urlTemplate: lightMode
+                ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
+                : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
           ),
+          //TODO add markers
           TappablePolylineLayerOptions(
             // Will only render visible polylines, increasing performance
-              polylineCulling: true,
-              polylines: parkTrails.polylines,
-              onTap: (polylines, tapPosition) {
-                final tag = polylines.first.tag?.split("_").first;
-                if (tag == parkTrails.selectedTrail?.uuid) {
-                  ref.read(parkTrailsProvider.notifier).deselectTrail();
-                } else {
-                  ref.read(parkTrailsProvider.notifier)
-                      .selectTrail(parkTrails.trails[tag]!);
-                }
-              },
-              onMiss: (tapPosition) =>
-                ref.read(parkTrailsProvider.notifier).deselectTrail(),
-          )
+            polylineCulling: true,
+            polylines: parkTrails.polylines,
+            onTap: (polylines, tapPosition) {
+              final tag = polylines.first.tag?.split("_").first;
+              if (tag == parkTrails.selectedTrail?.uuid) {
+                ref.read(parkTrailsProvider.notifier).deselectTrail();
+              } else {
+                ref.read(parkTrailsProvider.notifier)
+                    .selectTrail(parkTrails.trails[tag]!);
+              }
+            },
+            onMiss: (tapPosition) =>
+              ref.read(parkTrailsProvider.notifier).deselectTrail(),
+          ),
         ],
         //TODO attribution, this one looks off
         // nonRotatedChildren: [

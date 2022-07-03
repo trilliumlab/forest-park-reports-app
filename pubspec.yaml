@@ -41,10 +41,12 @@ dependencies:
   flutter_dotenv: ^5.0.2
   flutter_map: ^1.1.1
   flutter_map_tile_caching: ^5.0.0-dev.2
+  # updates for flutter_map 1
   flutter_map_tappable_polyline:
     git:
       url: https://github.com/zeitspace/flutter_map_tappable_polyline.git
       ref: flutter-map-1-fixes
+  # fixes elevation not being read
   gpx:
     git: https://github.com/trilliumlab/dart-gpx.git
 
