@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus_windows
   dynamic_color
+  geolocator_windows
   permission_handler_windows
 )
 
