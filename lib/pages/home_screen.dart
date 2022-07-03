@@ -78,25 +78,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 final stickyLocation = ref.watch(stickyLocationProvider);
                 return PlatformWidgetBuilder(
                     cupertino: (context, child, __) {
-                      return ClipRRect(
-                        borderRadius: const BorderRadius.all(Radius.circular(8)),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                          child: SizedBox(
-                            width: 50,
-                            height: 50,
-                            child: CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              color: CupertinoDynamicColor.resolve(CupertinoColors.systemBackground, context).withAlpha(200),
-                              pressedOpacity: 0.9,
-                              child: Icon(
-                                // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                                  stickyLocation
-                                      ? CupertinoIcons.location_fill
-                                      : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                                  color: CupertinoDynamicColor.resolve(CupertinoColors.secondaryLabel, context)
+                      const fabRadius = BorderRadius.all(Radius.circular(8));
+                      return Container(
+                        decoration: const BoxDecoration(
+                          borderRadius: fabRadius,
+                          boxShadow: [
+                            OutlineBoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: fabRadius,
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                            child: SizedBox(
+                              width: 50,
+                              height: 50,
+                              child: CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
+                                pressedOpacity: 0.9,
+                                child: Icon(
+                                  // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                                    stickyLocation
+                                        ? CupertinoIcons.location_fill
+                                        : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                                    color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                                        ? CupertinoColors.systemGrey.highContrastColor
+                                        : CupertinoColors.systemGrey.darkHighContrastColor
+                                ),
+                                onPressed: () => ref.read(stickyLocationProvider.notifier).update((state) => true),
                               ),
-                              onPressed: () => ref.read(stickyLocationProvider.notifier).update((state) => true),
                             ),
                           ),
                         ),
@@ -119,18 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // status bar blur
-          //TODO seriously widgets
-          Align(
-            alignment: Alignment.topCenter,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  height: 50,
-                ),
-              ),
-            ),
-          ),
+          if (isCupertino(context))
+            const StatusBarBlur(),
         ],
       ),
     );
@@ -146,16 +150,16 @@ class _HomeScreenState extends State<HomeScreen> {
         // content doesn't scroll the panel except when at the very top of list
         child: PlatformWidgetBuilder(
           cupertino: (context, child, __) {
-            var panelRadius = const BorderRadius.vertical(top: Radius.circular(8));
+            const panelRadius = BorderRadius.vertical(top: Radius.circular(8));
             //TODO widgetize
             return Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   borderRadius: panelRadius,
-                  boxShadow: const [
+                  boxShadow: [
                     OutlineBoxShadow(
-                      color: Colors.black45,
+                      color: Colors.black26,
                       blurRadius: 4,
                     ),
                   ],
@@ -165,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
                     child: Container(
-                      color: CupertinoDynamicColor.resolve(CupertinoColors.systemBackground, context).withAlpha(200),
+                      color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
                       child: child,
                     ),
                   ),
@@ -193,6 +197,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+    );
+  }
+}
+
+class StatusBarBlur extends StatelessWidget {
+  const StatusBarBlur({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            height: 50,
+          ),
+        ),
+      ),
     );
   }
 }
