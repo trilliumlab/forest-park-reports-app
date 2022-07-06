@@ -2,10 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:gpx/gpx.dart';
-import 'package:uuid/uuid.dart';
 
 class Api {
-  static String baseUrl = "http://192.168.1.100:3000/api/v1/";
+  static String baseUrl = "http://192.168.1.169:3000/api/v1/";
   static BaseOptions options = BaseOptions(
     baseUrl: baseUrl
   );
