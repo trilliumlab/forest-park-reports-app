@@ -30,13 +30,24 @@ dependencies:
   flutter:
     sdk: flutter
   dynamic_color: ^1.4.0
-  cupertino_icons: ^1.0.2
-  google_maps_flutter: ^2.1.8
-  google_maps_flutter_web: ^0.4.0
+  cupertino_icons: ^1.0.5
+  latlong2: ^0.8.1
   location: ^4.4.0
   flutter_riverpod: ^2.0.0-dev.9
   sliding_up_panel: ^2.0.0+1
   flutter_platform_widgets: ^2.0.0
+  dio: ^4.0.6
+  uuid: ^3.0.6
+  flutter_dotenv: ^5.0.2
+  flutter_map: ^1.1.1
+  flutter_map_tile_caching: ^5.0.0-dev.2
+  flutter_map_location_marker: ^4.1.1
+  # updates for flutter_map 1
+  flutter_map_tappable_polyline:
+    git:
+      url: https://github.com/zeitspace/flutter_map_tappable_polyline.git
+      ref: flutter-map-1-fixes
+  # fixes elevation not being read
   gpx:
     git: https://github.com/trilliumlab/dart-gpx.git
 
@@ -58,6 +69,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/map_styles/
     - assets/markers/
     - assets/trails/
