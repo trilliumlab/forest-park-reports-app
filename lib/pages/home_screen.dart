@@ -80,58 +80,26 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final centerOnLocation = ref.watch(centerOnLocationProvider);
-                return PlatformWidgetBuilder(
-                    cupertino: (context, child, __) {
-                      const fabRadius = BorderRadius.all(Radius.circular(8));
-                      return Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: fabRadius,
-                          boxShadow: [
-                            OutlineBoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: fabRadius,
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                            child: SizedBox(
-                              width: 50,
-                              height: 50,
-                              child: CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
-                                pressedOpacity: 0.9,
-                                child: Icon(
-                                  // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                                    centerOnLocation == CenterOnLocationUpdate.always
-                                        ? CupertinoIcons.location_fill
-                                        : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                                    color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
-                                        ? CupertinoColors.systemGrey.highContrastColor
-                                        : CupertinoColors.systemGrey.darkHighContrastColor
-                                ),
-                                onPressed: () => ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.always),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  material: (_, __, ___) => FloatingActionButton(
-                    backgroundColor: theme.colorScheme.background,
-                    onPressed: () {
-                      ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.always);
-                    },
-                    child: Icon(
-                        Icons.my_location_rounded,
-                        color: centerOnLocation == CenterOnLocationUpdate.always
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onBackground
+                return PlatformFAB(
+                  onPressed: () => ref.read(centerOnLocationProvider.notifier)
+                      .update((state) => CenterOnLocationUpdate.always),
+                  child: PlatformWidget(
+                    cupertino: (_, __) => Icon(
+                      // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                      centerOnLocation == CenterOnLocationUpdate.always
+                          ? CupertinoIcons.location_fill
+                          : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                      color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                          ? CupertinoColors.systemGrey.highContrastColor
+                          : CupertinoColors.systemGrey.darkHighContrastColor
                     ),
-                  ),
+                    material: (_, __) => Icon(
+                      Icons.my_location_rounded,
+                      color: centerOnLocation == CenterOnLocationUpdate.always
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onBackground
+                    ),
+                  )
                 );
               }
             ),
@@ -219,6 +187,58 @@ class StatusBarBlur extends StatelessWidget {
             height: 50,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class PlatformFAB extends StatelessWidget {
+  final VoidCallback onPressed;
+  final Widget child;
+  const PlatformFAB({
+    Key? key,
+    required this.onPressed,
+    required this.child,
+  }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return PlatformWidget(
+      cupertino: (context, _) {
+        const fabRadius = BorderRadius.all(Radius.circular(8));
+        return Container(
+          decoration: const BoxDecoration(
+            borderRadius: fabRadius,
+            boxShadow: [
+              OutlineBoxShadow(
+                color: Colors.black26,
+                blurRadius: 4,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: fabRadius,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: SizedBox(
+                width: 50,
+                height: 50,
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
+                  pressedOpacity: 0.9,
+                  onPressed: onPressed,
+                  child: child
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      material: (_, __) => FloatingActionButton(
+        backgroundColor: theme.colorScheme.background,
+        onPressed: onPressed,
+        child: child,
       ),
     );
   }
