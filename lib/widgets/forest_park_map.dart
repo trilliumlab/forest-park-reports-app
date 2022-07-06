@@ -84,6 +84,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.never);
           }
         },
+        maxZoom: 22,
       ),
       children: [
         TileLayerWidget(
@@ -95,6 +96,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             urlTemplate: lightMode
                 ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
                 : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+            maxNativeZoom: 22,
+            maxZoom: 22,
           ),
         ),
         LocationMarkerLayerWidget(
