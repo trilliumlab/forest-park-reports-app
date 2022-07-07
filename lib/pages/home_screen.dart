@@ -7,6 +7,7 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -78,30 +79,58 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 10.0,
             bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight,
             child: Consumer(
-              builder: (context, ref, child) {
-                final centerOnLocation = ref.watch(centerOnLocationProvider);
-                return PlatformFAB(
-                  onPressed: () => ref.read(centerOnLocationProvider.notifier)
-                      .update((state) => CenterOnLocationUpdate.always),
-                  child: PlatformWidget(
-                    cupertino: (_, __) => Icon(
-                      // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                      centerOnLocation == CenterOnLocationUpdate.always
-                          ? CupertinoIcons.location_fill
-                          : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                      color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
-                          ? CupertinoColors.systemGrey.highContrastColor
-                          : CupertinoColors.systemGrey.darkHighContrastColor
-                    ),
-                    material: (_, __) => Icon(
-                      Icons.my_location_rounded,
-                      color: centerOnLocation == CenterOnLocationUpdate.always
-                          ? theme.colorScheme.primary
-                          : theme.colorScheme.onBackground
-                    ),
-                  )
-                );
-              }
+                builder: (context, ref, child) {
+                  return PlatformFAB(
+                      onPressed: () {
+                        final parkTrails = ref.read(parkTrailsProvider);
+                        var res = parkTrails.snapLocation(LatLng(45.554785, -122.749933));
+                        print("$res ${parkTrails.trails[res.loc.trail]}");
+                      },
+                      child: PlatformWidget(
+                        cupertino: (_, __) => Icon(
+                          // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                          CupertinoIcons.add,
+                          color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                              ? CupertinoColors.systemGrey.highContrastColor
+                              : CupertinoColors.systemGrey.darkHighContrastColor
+                        ),
+                        material: (_, __) => Icon(
+                          Icons.add,
+                          color: theme.colorScheme.onBackground,
+                        ),
+                      )
+                  );
+                }
+            ),
+          ),
+          Positioned(
+            right: 10.0,
+            bottom: (isCupertino(context) ? _fabHeight - 18 : _fabHeight) + 60,
+            child: Consumer(
+                builder: (context, ref, child) {
+                  final centerOnLocation = ref.watch(centerOnLocationProvider);
+                  return PlatformFAB(
+                      onPressed: () => ref.read(centerOnLocationProvider.notifier)
+                          .update((state) => CenterOnLocationUpdate.always),
+                      child: PlatformWidget(
+                        cupertino: (_, __) => Icon(
+                          // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                            centerOnLocation == CenterOnLocationUpdate.always
+                                ? CupertinoIcons.location_fill
+                                : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                            color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                                ? CupertinoColors.systemGrey.highContrastColor
+                                : CupertinoColors.systemGrey.darkHighContrastColor
+                        ),
+                        material: (_, __) => Icon(
+                            Icons.my_location_rounded,
+                            color: centerOnLocation == CenterOnLocationUpdate.always
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onBackground
+                        ),
+                      )
+                  );
+                }
             ),
           ),
           // status bar blur

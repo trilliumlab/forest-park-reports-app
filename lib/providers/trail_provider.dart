@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -30,6 +31,10 @@ class Trail {
 
   @override
   int get hashCode => hashValues(name, uuid);
+  @override
+  String toString() {
+    return "$name, uuid:$uuid, ${track?.path.length ?? 0} points";
+  }
 }
 
 //TODO reduce polyline points client side
@@ -92,6 +97,57 @@ class ParkTrails {
       selectedTrail: selectedTrail,
       trackPolylines: trackPolylines ?? this.trackPolylines
     );
+  }
+
+  // This function allows us to snap a location to the closest point on a path.
+  SnappedResult snapLocation(LatLng loc) {
+    // get all trails with populated tracks
+    final trailIter = trails.values.where((t) => t.track != null);
+    // this technically won't get an accurate distance as as much
+    // as i'd like the earth to be flat, it's not. However, this
+    // should be good enough to sort by distance, and it's fast.
+    double squareDist = _squareDist(loc, trailIter.first.track!.path.first);
+    Trail closest = trailIter.first;
+    int index = 0;
+    for (final trail in trailIter) {
+      final path = trail.track!.path;
+      for (int i=0; i<path.length; i++) {
+        final dist = _squareDist(loc, path[i]);
+        if (dist < squareDist) {
+          squareDist = dist;
+          closest = trail;
+          index = i;
+        }
+      }
+    }
+    final snappedLoc = SnappedLatLng(closest.uuid, index, closest.track!.path[index]);
+    final dist = const DistanceVincenty().as(LengthUnit.Meter, loc, snappedLoc);
+    return SnappedResult(snappedLoc, dist);
+  }
+  double _squareDist(LatLng p1, LatLng p2) {
+    return pow(p1.latitude-p2.latitude, 2) + pow(p1.longitude-p2.longitude, 2) as double;
+  }
+}
+
+class SnappedResult {
+  SnappedLatLng loc;
+  double distance;
+  SnappedResult(this.loc, this.distance);
+  @override
+  String toString() {
+    return "snapped $distance meters to $loc";
+  }
+}
+
+// A way of representing a LatLng pair that exists on a path. Stores
+// the path uuid, along with the index of the point, and a LatLng pair
+class SnappedLatLng extends LatLng {
+  String trail;
+  int index;
+  SnappedLatLng(this.trail, this.index, LatLng loc) : super(loc.latitude, loc.longitude);
+  @override
+  String toString() {
+    return "${super.toString()} trailUuid:$trail, index:$index";
   }
 }
 
