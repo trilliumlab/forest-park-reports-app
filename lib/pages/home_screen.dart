@@ -63,7 +63,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 snapPoint: 0.4,
                 body: const ForestParkMap(),
                 controller: _panelController,
-                panelBuilder: (sc) => _panel(sc, parkTrails.selectedTrail),
+                panelBuilder: (sc) => Panel(
+                  child: ListView(
+                    controller: sc,
+                    children: [
+                      // pill decoration
+                      const PlatformPill(),
+                      // content should go here
+                      Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 26),
+                          child: Text("${parkTrails.selectedTrail?.name}", style: theme.textTheme.titleLarge)
+                      ),
+                    ],
+                  ),
+                ),
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
                 onPanelSlide: (double pos) => setState(() {
@@ -74,7 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           // When panel is visible, position 20dp above the panel height (_fabHeight)
           // when panel is hidden, set it to 20db from bottom
-          // TODO add shadow on android
           Positioned(
             right: 10.0,
             bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight,
@@ -140,71 +152,64 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
 
-  // builds the panel content
-  Widget _panel(ScrollController sc, Trail? trail) {
+class Panel extends StatelessWidget {
+  final Widget child;
+  const Panel({
+    Key? key,
+    required this.child
+  }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return MediaQuery.removePadding(
-        context: context,
-        removeTop: true,
-        // pass the scroll controller to the list view so that scrolling panel
-        // content doesn't scroll the panel except when at the very top of list
-        child: PlatformWidgetBuilder(
-          cupertino: (context, child, __) {
-            const panelRadius = BorderRadius.vertical(top: Radius.circular(8));
-            //TODO widgetize
-            return Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Container(
-                decoration: const BoxDecoration(
-                  borderRadius: panelRadius,
-                  boxShadow: [
-                    OutlineBoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: panelRadius,
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                    child: Container(
-                      color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
-                      child: child,
-                    ),
+      context: context,
+      removeTop: true,
+      // pass the scroll controller to the list view so that scrolling panel
+      // content doesn't scroll the panel except when at the very top of list
+      child: PlatformWidget(
+        cupertino: (context, __) {
+          const panelRadius = BorderRadius.vertical(top: Radius.circular(8));
+          return Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Container(
+              decoration: const BoxDecoration(
+                borderRadius: panelRadius,
+                boxShadow: [
+                  OutlineBoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: panelRadius,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                  child: Container(
+                    color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
+                    child: child,
                   ),
                 ),
               ),
-            );
-          },
-          material: (_, child, __) => ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-            child: Container(
-              color: theme.colorScheme.background,
-              child: child,
             ),
-          ),
-          child: ListView(
-            controller: sc,
-            children: [
-              // pill decoration
-              const PlatformPill(),
-              // content should go here
-              Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 26),
-                  child: Text("${trail?.name}", style: theme.textTheme.titleLarge)
-              ),
-            ],
+          );
+        },
+        material: (_, __) => ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+          child: Container(
+            color: theme.colorScheme.background,
+            child: child,
           ),
         ),
+      ),
     );
   }
 }
 
 class StatusBarBlur extends StatelessWidget {
   const StatusBarBlur({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -221,6 +226,7 @@ class StatusBarBlur extends StatelessWidget {
   }
 }
 
+// TODO add shadow on android
 class PlatformFAB extends StatelessWidget {
   final VoidCallback onPressed;
   final Widget child;
