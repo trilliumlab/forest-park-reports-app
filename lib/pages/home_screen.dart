@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forest_park_reports/api/api.dart';
+import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -89,14 +91,15 @@ class _HomeScreenState extends State<HomeScreen> {
           // when panel is hidden, set it to 20db from bottom
           Positioned(
             right: 10.0,
-            bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight,
+            bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight - 8,
             child: Consumer(
                 builder: (context, ref, child) {
                   return PlatformFAB(
-                      onPressed: () {
+                      onPressed: () async {
                         final parkTrails = ref.read(parkTrailsProvider);
                         var res = parkTrails.snapLocation(LatLng(45.554785, -122.749933));
-                        print("$res ${parkTrails.trails[res.loc.trail]}");
+                        ref.read(apiProvider).postNewHazard(NewHazardRequest(Hazard.tree, res.location));
+                        print("$res ${parkTrails.trails[res.location.trail]}");
                       },
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
@@ -163,44 +166,39 @@ class Panel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final panelRadius = BorderRadius.vertical(top: Radius.circular(isCupertino(context) ? 8 : 18));
     return MediaQuery.removePadding(
       context: context,
       removeTop: true,
       // pass the scroll controller to the list view so that scrolling panel
       // content doesn't scroll the panel except when at the very top of list
-      child: PlatformWidget(
-        cupertino: (context, __) {
-          const panelRadius = BorderRadius.vertical(top: Radius.circular(8));
-          return Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius: panelRadius,
-                boxShadow: [
-                  OutlineBoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 4,
-                  ),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: panelRadius,
+            boxShadow: const [
+              OutlineBoxShadow(
+                color: Colors.black26,
+                blurRadius: 4,
               ),
-              child: ClipRRect(
-                borderRadius: panelRadius,
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                  child: Container(
-                    color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
-                    child: child,
-                  ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: panelRadius,
+            child: PlatformWidget(
+              cupertino: (context, _) => BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                child: Container(
+                  color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
+                  child: child,
                 ),
               ),
+              material: (_, __) => Container(
+                color: theme.colorScheme.background,
+                child: child,
+              )
             ),
-          );
-        },
-        material: (_, __) => ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
-          child: Container(
-            color: theme.colorScheme.background,
-            child: child,
           ),
         ),
       ),
@@ -226,7 +224,6 @@ class StatusBarBlur extends StatelessWidget {
   }
 }
 
-// TODO add shadow on android
 class PlatformFAB extends StatelessWidget {
   final VoidCallback onPressed;
   final Widget child;

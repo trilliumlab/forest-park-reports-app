@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/providers/http_provider.dart';
+import 'package:forest_park_reports/api/api.dart';
+import 'package:forest_park_reports/models/hazard.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -130,24 +130,12 @@ class ParkTrails {
 }
 
 class SnappedResult {
-  SnappedLatLng loc;
+  SnappedLatLng location;
   double distance;
-  SnappedResult(this.loc, this.distance);
+  SnappedResult(this.location, this.distance);
   @override
   String toString() {
-    return "snapped $distance meters to $loc";
-  }
-}
-
-// A way of representing a LatLng pair that exists on a path. Stores
-// the path uuid, along with the index of the point, and a LatLng pair
-class SnappedLatLng extends LatLng {
-  String trail;
-  int index;
-  SnappedLatLng(this.trail, this.index, LatLng loc) : super(loc.latitude, loc.longitude);
-  @override
-  String toString() {
-    return "${super.toString()} trailUuid:$trail, index:$index";
+    return "snapped $distance meters to $location";
   }
 }
 
@@ -211,6 +199,35 @@ class TrackPolyline {
 //     )
 //   ]);
 // });
+
+// A provider that will load all the trail data from the server
+// and can be refreshed to fetch new data.
+class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
+  StateNotifierProviderRef ref;
+  late Api api;
+  RemoteTrailsNotifier(this.ref) : super({}) {
+    api = ref.watch(apiProvider);
+    fetchTrails();
+  }
+  Future fetchTrails() async {
+    state = await api.getTrails();
+    for (final trail in state.values) {
+      final track = await api.getTrack(trail.uuid);
+      state = {
+        for (final oldTrail in state.values)
+          if (oldTrail.uuid == trail.uuid)
+            oldTrail.uuid: oldTrail.copyWith(track: track)
+          else
+            oldTrail.uuid: oldTrail
+      };
+    }
+  }
+}
+
+final remoteTrailsProvider = StateNotifierProvider<RemoteTrailsNotifier, Map<String, Trail>>((ref) {
+  return RemoteTrailsNotifier(ref);
+});
+
 
 class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   // initial state is an empty ParkTrails
