@@ -1,14 +1,39 @@
 import 'package:latlong2/latlong.dart';
 
+class Hazard extends NewHazardRequest {
+  String uuid;
+  DateTime time;
+
+  Hazard(this.uuid, this.time, super.hazard, super.location);
+
+  Hazard.fromJson(Map<String, dynamic> json)
+      : uuid = json['uuid'],
+        time = DateTime.parse(json['time']),
+        super.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'uuid': uuid,
+      'time': time.toIso8601String(),
+      ...super.toJson()
+    };
+  }
+}
+
 class NewHazardRequest {
-  Hazard hazard;
+  HazardType hazard;
   SnappedLatLng location;
 
   NewHazardRequest(this.hazard, this.location);
 
+  NewHazardRequest.fromJson(Map<String, dynamic> json)
+      : hazard = HazardType.values.byName(json['hazard']),
+        location = SnappedLatLng.fromJson(json['location']);
+
   Map<String, dynamic> toJson() {
     return {
-      'hazard': hazard.value,
+      'hazard': hazard.name,
       'location': location.toJson(),
     };
   }
@@ -21,6 +46,11 @@ class SnappedLatLng extends LatLng {
   int index;
 
   SnappedLatLng(this.trail, this.index, LatLng loc) : super(loc.latitude, loc.longitude);
+
+  SnappedLatLng.fromJson(Map<String, dynamic> json)
+      : trail = json['trail'],
+        index = json['index'],
+        super(json['lat'], json['long']);
 
   @override
   Map<String, dynamic> toJson() {
@@ -37,20 +67,8 @@ class SnappedLatLng extends LatLng {
   }
 }
 
-enum Hazard {
+enum HazardType {
   tree,
   flood,
   other
-}
-extension HazardValues on Hazard {
-  String get value {
-    switch (this) {
-      case Hazard.tree:
-        return "tree";
-      case Hazard.flood:
-        return "flood";
-      case Hazard.other:
-        return "other";
-    }
-  }
 }

@@ -98,7 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () async {
                         final parkTrails = ref.read(parkTrailsProvider);
                         var res = parkTrails.snapLocation(LatLng(45.554785, -122.749933));
-                        ref.read(apiProvider).postNewHazard(NewHazardRequest(Hazard.tree, res.location));
+                        var res2 = await ref.read(apiProvider).postNewHazard(NewHazardRequest(HazardType.tree, res.location));
+                        print(res2.time);
                         print("$res ${parkTrails.trails[res.location.trail]}");
                       },
                       child: PlatformWidget(

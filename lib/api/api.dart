@@ -22,8 +22,9 @@ class Api {
     final res = await dio.get("/trail/$uuid");
     return Track(gpxReader.fromString(res.data));
   }
-  Future postNewHazard(NewHazardRequest request) async {
+  Future<Hazard> postNewHazard(NewHazardRequest request) async {
     final res = await dio.post("/hazard/new", data: request.toJson());
+    return Hazard.fromJson(res.data);
   }
 }
 
