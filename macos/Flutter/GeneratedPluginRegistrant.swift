@@ -9,7 +9,7 @@ import connectivity_plus_macos
 import dynamic_color
 import flutter_local_notifications
 import geolocator_apple
-import location
+import location_macos
 import path_provider_macos
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {

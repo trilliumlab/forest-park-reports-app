@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
+import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
+import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
@@ -93,13 +96,18 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             backgroundColor: lightMode
                 ? const Color(0xfff7f7f2)
                 : const Color(0xff36475c),
-            urlTemplate: lightMode
-                ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
-                : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
-            maxNativeZoom: 22,
-            maxZoom: 22,
+            urlTemplate: true
+                ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                //? "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
+                : lightMode
+                    ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
+                    : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+            maxNativeZoom: 19,
+            maxZoom: 19,
           ),
         ),
+        // TODO render on top of everything (currently breaks tappable polyline)
+        // we'll probably need to handle taps ourselves, shouldn't be too bad
         LocationMarkerLayerWidget(
           plugin: LocationMarkerPlugin(
             centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,
@@ -124,6 +132,19 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 ref.read(parkTrailsProvider.notifier).deselectTrail(),
           ),
         ),
+        MarkerLayerWidget(
+          options: MarkerLayerOptions(
+            markers: ref.watch(remoteActiveHazardProvider).valueOrNull?.map((e) => Marker(
+              point: e.location,
+              builder: (_) => Icon(
+                Icons.warning_rounded,
+                color: isMaterial(context)
+                    ? Theme.of(context).errorColor
+                    : CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)
+              )
+            )).toList() ?? []
+          ),
+        )
       ],
       //TODO attribution, this one looks off
       // nonRotatedChildren: [

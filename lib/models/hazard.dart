@@ -3,12 +3,14 @@ import 'package:latlong2/latlong.dart';
 class Hazard extends NewHazardRequest {
   String uuid;
   DateTime time;
+  bool active;
 
-  Hazard(this.uuid, this.time, super.hazard, super.location);
+  Hazard(this.uuid, this.time, this.active, super.hazard, super.location);
 
   Hazard.fromJson(Map<String, dynamic> json)
       : uuid = json['uuid'],
         time = DateTime.parse(json['time']),
+        active = json['active'],
         super.fromJson(json);
 
   @override
@@ -18,6 +20,11 @@ class Hazard extends NewHazardRequest {
       'time': time.toIso8601String(),
       ...super.toJson()
     };
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
   }
 }
 
@@ -36,6 +43,11 @@ class NewHazardRequest {
       'hazard': hazard.name,
       'location': location.toJson(),
     };
+  }
+
+  @override
+  String toString() {
+    return toJson().toString();
   }
 }
 

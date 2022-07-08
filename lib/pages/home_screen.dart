@@ -7,9 +7,12 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/api/api.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
+import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -97,10 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   return PlatformFAB(
                       onPressed: () async {
                         final parkTrails = ref.read(parkTrailsProvider);
-                        var res = parkTrails.snapLocation(LatLng(45.554785, -122.749933));
-                        var res2 = await ref.read(apiProvider).postNewHazard(NewHazardRequest(HazardType.tree, res.location));
-                        print(res2.time);
-                        print("$res ${parkTrails.trails[res.location.trail]}");
+                        // TODO actually handle location errors
+                        final location = await getLocation();
+                        var res = parkTrails.snapLocation(location.latLng()!);
+                        ref.read(apiProvider).postNewHazard(NewHazardRequest(HazardType.other, res.location));
+                        ref.refresh(remoteActiveHazardProvider);
                       },
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(

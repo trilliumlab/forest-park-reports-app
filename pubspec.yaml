@@ -32,7 +32,7 @@ dependencies:
   dynamic_color: ^1.4.0
   cupertino_icons: ^1.0.5
   latlong2: ^0.8.1
-  location: ^4.4.0
+  location: ^5.0.0-dev.8
   flutter_riverpod: ^2.0.0-dev.9
   sliding_up_panel: ^2.0.0+1
   flutter_platform_widgets: ^2.0.0

@@ -99,6 +99,7 @@ class ParkTrails {
     );
   }
 
+  // TODO we might need higher resolution here than the closest point
   // This function allows us to snap a location to the closest point on a path.
   SnappedResult snapLocation(LatLng loc) {
     // get all trails with populated tracks
