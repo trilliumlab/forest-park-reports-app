@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -37,19 +38,33 @@ class Trail {
   }
 }
 
+const haversine = DistanceHaversine(roundResult: false);
 //TODO reduce polyline points client side
+//TODO process gpx files server side
 /// Represents a GPX file (list of coordinates) in an easy to use way
 class Track {
   List<LatLng> path = [];
   List<double> elevation = [];
+  List<double> distance = [0];
+  double maxElevation = 0;
+  double minElevation = double.infinity;
   Track(Gpx path) {
     // loop through every track point and add the coordinates to the path array
     // we also construct a separate elevation array for, the elevation of one
     // coordinate has the same index as the coordinate
     for (var track in path.trks) {
       for (var trackSegment in track.trksegs) {
-        for (var point in trackSegment.trkpts) {
+        for (int i=0; i<trackSegment.trkpts.length; i++) {
+          final point = trackSegment.trkpts[i];
           this.path.add(LatLng(point.lat!, point.lon!));
+          if (point.ele! > maxElevation) {maxElevation = point.ele!;}
+          if (point.ele! < minElevation) {minElevation = point.ele!;}
+          if (i>0) {
+            distance.add(
+                distance[i-1] + haversine
+                    .as(LengthUnit.Mile, this.path[i-1], this.path[i])
+            );
+          }
           elevation.add(point.ele!);
         }
       }

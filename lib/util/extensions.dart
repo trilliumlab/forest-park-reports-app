@@ -8,3 +8,8 @@ extension LocationDataLatLng on LocationData {
         : null;
   }
 }
+
+extension RemoveTrailingZeros on double {
+  String toStringRemoveTrailing(int fractionDigits) =>
+      toStringAsFixed(fractionDigits).toString().replaceFirst(RegExp(r'\.?0*$'), '');
+}

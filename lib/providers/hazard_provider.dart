@@ -12,5 +12,5 @@ final FutureProvider<List<Hazard>> remoteActiveHazardProvider = FutureProvider<L
   _refresh = Timer(const Duration(seconds: 30), () {
     ref.refresh(remoteActiveHazardProvider);
   });
-  return await ref.watch(apiProvider).getActiveHazards();
+  return await ref.read(apiProvider).getActiveHazards();
 });

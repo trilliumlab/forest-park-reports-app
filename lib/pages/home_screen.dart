@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -11,7 +12,6 @@ import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
@@ -34,8 +34,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // TODO animate hiding/showing of panel
   final PanelController _panelController = PanelController();
   final double _initFabHeight = 120.0;
+  final double _openPoint = 0.80;
+  final double _snapPoint = 0.40;
   double _fabHeight = 0;
+  double _widgetOpacity = 0;
   double _panelHeightOpen = 0;
+  double _panelHeightSnap = 0;
   final double _panelHeightClosed = 100;
 
   @override
@@ -47,7 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     // make the height of the panel when open 80% of the screen
-    _panelHeightOpen = MediaQuery.of(context).size.height * .80;
+    _panelHeightOpen = MediaQuery.of(context).size.height * _openPoint;
+    _panelHeightSnap = _panelHeightOpen * _snapPoint;
     final theme = Theme.of(context);
     return Scaffold(
       body: Stack(
@@ -65,26 +70,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 minHeight: _panelHeightClosed,
                 parallaxEnabled: isMaterial(context),
                 parallaxOffset: 0.58,
-                snapPoint: 0.4,
+                snapPoint: _snapPoint,
                 body: const ForestParkMap(),
                 controller: _panelController,
                 panelBuilder: (sc) => Panel(
-                  child: ListView(
+                  child: parkTrails.selectedTrail == null ? ListView(
                     controller: sc,
-                    children: [
+                    children: const [
                       // pill decoration
-                      const PlatformPill(),
-                      // content should go here
-                      Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 26),
-                          child: Text("${parkTrails.selectedTrail?.name}", style: theme.textTheme.titleLarge)
-                      ),
+                      PlatformPill()
                     ],
+                  ) : TrailInfoWidget(
+                    controller: sc,
+                    trail: parkTrails.selectedTrail!,
+                    snapWidget: Opacity(
+                      opacity: _widgetOpacity,
+                      child: TrailElevationGraph(
+                        trail: parkTrails.selectedTrail!,
+                        height: 200,
+                      ),
+                    ),
                   ),
                 ),
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
                 onPanelSlide: (double pos) => setState(() {
+                  _widgetOpacity = (pos/_snapPoint).clamp(0, 1);
                   _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _initFabHeight;
                 }),
               );
@@ -162,6 +173,113 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class TrailInfoWidget extends StatelessWidget {
+  final ScrollController controller;
+  final Trail trail;
+  final Widget snapWidget;
+  const TrailInfoWidget({
+    super.key,
+    required this.controller,
+    required this.trail,
+    required this.snapWidget,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ListView(
+      controller: controller,
+      children: [
+        const PlatformPill(),
+        // content should go here
+        Padding(
+          padding: const EdgeInsets.only(left: 24, right: 24, top: 8),
+          child: Text(
+            trail.name,
+            style: theme.textTheme.headline6,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          )
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+          child: snapWidget,
+        ),
+      ],
+    );
+  }
+}
+
+class TrailElevationGraph extends StatelessWidget {
+  final Trail trail;
+  final double height;
+  const TrailElevationGraph({
+    super.key,
+    required this.trail,
+    required this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final spots = trail.track!.elevation.asMap().entries.map((e) =>
+        FlSpot(trail.track!.distance[e.key], e.value)).toList();
+    final maxInterval = trail.track!.distance.last/5;
+    final interval = maxInterval-maxInterval/20;
+    return Container(
+      decoration: BoxDecoration(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
+      ),
+      height: height,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        child: LineChart(
+          LineChartData(
+              maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
+              minY: (trail.track!.minElevation/50).floor() * 50.0,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: spots,
+                  dotData: FlDotData(show: false),
+                )
+              ],
+              gridData: FlGridData(show: false),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                  topTitles: AxisTitles(),
+                  rightTitles: AxisTitles(),
+                  leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 65,
+                          getTitlesWidget: (yVal, meta) {
+                            return Text("${yVal.round().toString()} ft");
+                          },
+                          interval: 50
+                      )
+                  ),
+                  bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (xVal, meta) {
+                          final offInterval = (xVal % meta.appliedInterval);
+                          final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+                          return isRegInterval ? Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
+                          ) : Container();
+                        },
+                        interval: interval
+                      )
+                  )
+              )
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class Panel extends StatelessWidget {
   final Widget child;
   const Panel({
@@ -195,7 +313,7 @@ class Panel extends StatelessWidget {
               cupertino: (context, _) => BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
                 child: Container(
-                  color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
+                  color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
                   child: child,
                 ),
               ),
@@ -262,7 +380,7 @@ class PlatformFAB extends StatelessWidget {
                 height: 50,
                 child: CupertinoButton(
                   padding: EdgeInsets.zero,
-                  color: CupertinoDynamicColor.resolve(CupertinoColors.tertiarySystemBackground, context).withAlpha(200),
+                  color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
                   pressedOpacity: 0.9,
                   onPressed: onPressed,
                   child: child
