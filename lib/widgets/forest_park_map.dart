@@ -134,7 +134,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         MarkerLayerWidget(
           options: MarkerLayerOptions(
-            markers: ref.watch(remoteActiveHazardProvider).valueOrNull?.map((e) => Marker(
+            markers: ref.watch(activeHazardProvider).map((e) => Marker(
               point: e.location,
               builder: (_) => Icon(
                 Icons.warning_rounded,
@@ -142,7 +142,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                     ? Theme.of(context).errorColor
                     : CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)
               )
-            )).toList() ?? []
+            )).toList()
           ),
         )
       ],

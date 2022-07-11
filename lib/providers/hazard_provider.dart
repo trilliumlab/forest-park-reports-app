@@ -1,16 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/api/api.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/providers/dio_provider.dart';
 
-Timer? _refresh;
-// Contains all active hazards
-final FutureProvider<List<Hazard>> remoteActiveHazardProvider = FutureProvider<List<Hazard>>((ref) async {
-  // this is a really hacky way to auto refresh the hazards every 30 seconds
-  if (_refresh != null) {_refresh!.cancel();}
-  _refresh = Timer(const Duration(seconds: 30), () {
-    ref.refresh(remoteActiveHazardProvider);
-  });
-  return await ref.read(apiProvider).getActiveHazards();
-});
+class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
+  StateNotifierProviderRef ref;
+  ActiveHazardNotifier(this.ref) : super([]) {
+    refresh();
+    Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => refresh(),
+    );
+  }
+  Future refresh() async {
+    final res = await ref.read(dioProvider).get("/hazard/active");
+    state = [
+      for (final val in res.data)
+        Hazard.fromJson(val)
+    ];
+  }
+  Future create(NewHazardRequest request) async {
+    final res = await ref.read(dioProvider).post("/hazard/new", data: request.toJson());
+    state = [...state, Hazard.fromJson(res.data)];
+  }
+}
+
+final activeHazardProvider = StateNotifierProvider
+  <ActiveHazardNotifier, List<Hazard>>((ref) => ActiveHazardNotifier(ref));

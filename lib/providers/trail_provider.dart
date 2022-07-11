@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/api/api.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -220,15 +219,19 @@ class TrackPolyline {
 // and can be refreshed to fetch new data.
 class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
   StateNotifierProviderRef ref;
-  late Api api;
   RemoteTrailsNotifier(this.ref) : super({}) {
-    api = ref.watch(apiProvider);
     fetchTrails();
   }
+  static final GpxReader _gpxReader = GpxReader();
   Future fetchTrails() async {
-    state = await api.getTrails();
+    final res = await ref.read(dioProvider).get("/trail/list");
+    state = {
+      for (final val in res.data.values)
+        val["uuid"]: Trail(val["name"], val["uuid"])
+    };
     for (final trail in state.values) {
-      final track = await api.getTrack(trail.uuid);
+      final res = await ref.read(dioProvider).get("/trail/${trail.uuid}");
+      final track = Track(_gpxReader.fromString(res.data));
       state = {
         for (final oldTrail in state.values)
           if (oldTrail.uuid == trail.uuid)

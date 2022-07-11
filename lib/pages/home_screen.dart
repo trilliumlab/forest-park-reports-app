@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/api/api.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
@@ -114,8 +113,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         // TODO actually handle location errors
                         final location = await getLocation();
                         var res = parkTrails.snapLocation(location.latLng()!);
-                        ref.read(apiProvider).postNewHazard(NewHazardRequest(HazardType.other, res.location));
-                        ref.refresh(remoteActiveHazardProvider);
+                        ref.read(activeHazardProvider.notifier).create(
+                            NewHazardRequest(HazardType.other, res.location));
                       },
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
