@@ -3,6 +3,8 @@ PODS:
     - Flutter
   - battery_info (0.0.1):
     - Flutter
+  - camera_avfoundation (0.0.1):
+    - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
     - ReachabilitySwift
@@ -26,6 +28,7 @@ PODS:
 DEPENDENCIES:
   - background_fetch (from `.symlinks/plugins/background_fetch/ios`)
   - battery_info (from `.symlinks/plugins/battery_info/ios`)
+  - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - Flutter (from `Flutter`)
   - flutter_compass (from `.symlinks/plugins/flutter_compass/ios`)
@@ -45,6 +48,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/background_fetch/ios"
   battery_info:
     :path: ".symlinks/plugins/battery_info/ios"
+  camera_avfoundation:
+    :path: ".symlinks/plugins/camera_avfoundation/ios"
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   Flutter:
@@ -65,6 +70,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   background_fetch: 3795af8a49054dc526477cc2f60d2ed41de60587
   battery_info: 09f5c9ee65394f2291c8c6227bedff345b8a730c
+  camera_avfoundation: 07c77549ea54ad95d8581be86617c094a46280d9
   connectivity_plus: 413a8857dd5d9f1c399a39130850d02fe0feaf7e
   Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
   flutter_compass: cbbd285cea1584c7ac9c4e0c3e1f17cbea55e855

@@ -45,7 +45,9 @@
 	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Used to take photos of hazards</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Location data is needed to display the current location on a map</string>
+	<string>Used to display location on map</string>
 </dict>
 </plist>

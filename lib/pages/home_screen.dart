@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:ui';
 
+import 'package:camera/camera.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:forest_park_reports/providers/camera_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
@@ -13,7 +16,6 @@ import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
-import 'package:location/location.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -209,6 +211,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
       child: SizedBox(
         height: 500,
         child: Stack(
+          fit: StackFit.expand,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -221,14 +224,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 20),
-                  child: Text(
-                    "Hazard Type",
-                    style: CupertinoTheme.of(context).textTheme.textStyle,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
+                  padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
                   child: CupertinoSlidingSegmentedControl(
                     groupValue: _selectedHazard,
                     onValueChanged: (HazardType? value) => setState(() {
@@ -243,8 +239,14 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                     }
                   ),
                 ),
+                const Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 12, right: 12, top: 8),
+                    child: CameraWidget(),
+                  ),
+                ),
                 Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
+                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
                   child: CupertinoButton(
                     color: CupertinoTheme.of(context).primaryColor,
                     onPressed: _selectedHazard == null ? null : () {},
@@ -253,7 +255,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                       style: CupertinoTheme.of(context).textTheme.textStyle
                     ),
                   ),
-                )
+                ),
               ],
             ),
             Align(
@@ -281,7 +283,68 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
             ),
           ],
         ),
-      )
+      ),
+    );
+  }
+}
+
+class CameraWidget extends ConsumerStatefulWidget {
+  const CameraWidget({super.key});
+
+  @override
+  ConsumerState<ConsumerStatefulWidget> createState() => _CameraWidgetState();
+}
+
+class _CameraWidgetState extends ConsumerState<CameraWidget> {
+  final _initializeControllerCompleter = Completer();
+  late CameraController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future _initCamera() async {
+    final camera = await ref.read(cameraProvider.future);
+    _controller = CameraController(
+      camera,
+      // Define the resolution to use.
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+    await _controller.initialize();
+    _initializeControllerCompleter.complete();
+  }
+
+  @override
+  void dispose() {
+    // Dispose of the controller when the widget is disposed.
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(8)),
+      child: OverflowBox(
+        alignment: Alignment.center,
+        child: FittedBox(
+          fit: BoxFit.fitWidth,
+          child: SizedBox(
+            width: 100,
+            child: FutureBuilder<void>(
+              future: _initializeControllerCompleter.future,
+              builder: (context, snapshot) {
+                return snapshot.connectionState == ConnectionState.done
+                    ? CameraPreview(_controller)
+                    : const Center(child: CupertinoActivityIndicator());
+              },
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
