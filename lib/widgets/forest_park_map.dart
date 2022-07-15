@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,14 +7,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
+import 'package:flutter_map_marker_popup/src/popup_event.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
@@ -27,13 +30,16 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
   // TODO add satallite map style
   // TODO set initial camera position to be centered on ForestPark
   late final MapController _mapController;
+  late final PopupController _popupController;
   late StreamController<double?> _centerCurrentLocationStreamController;
+
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _mapController = MapController();
+    _popupController = PopupController();
     _centerCurrentLocationStreamController = StreamController<double?>();
   }
 
@@ -120,6 +126,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             polylineCulling: true,
             polylines: parkTrails.polylines,
             onTap: (polylines, tapPosition) {
+              _popupController.hideAllPopups();
               final tag = polylines.first.tag?.split("_").first;
               if (tag == parkTrails.selectedTrail?.uuid) {
                 ref.read(parkTrailsProvider.notifier).deselectTrail();
@@ -128,20 +135,37 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                     .selectTrail(parkTrails.trails[tag]!);
               }
             },
-            onMiss: (tapPosition) =>
-                ref.read(parkTrailsProvider.notifier).deselectTrail(),
+            onMiss: (tapPosition) {
+              _popupController.hideAllPopups();
+              ref.read(parkTrailsProvider.notifier).deselectTrail();
+            },
           ),
         ),
-        MarkerLayerWidget(
-          options: MarkerLayerOptions(
-            markers: ref.watch(activeHazardProvider).map((e) => Marker(
-              point: e.location,
+        PopupMarkerLayerWidget(
+          options: PopupMarkerLayerOptions(
+            markerRotateOrigin: const Offset(15, 15),
+            popupController: _popupController,
+            popupBuilder: (_, marker) {
+              if (marker is HazardMarker) {
+                return HazardInfoPopup(hazard: marker.hazard);
+              } else {
+                return Container();
+              }
+            },
+            onPopupEvent: (e, __) {
+              if (e is ShowPopupsOnlyFor) {
+                ref.read(parkTrailsProvider.notifier).deselectTrail();
+              }
+            },
+            popupAnimation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
+            markers: ref.watch(activeHazardProvider).map((e) => HazardMarker(
+              hazard: e,
               builder: (_) => Icon(
                 Icons.warning_rounded,
                 color: isMaterial(context)
                     ? Theme.of(context).errorColor
                     : CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)
-              )
+              ),
             )).toList()
           ),
         )
@@ -155,4 +179,52 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       // ],
     );
   }
+}
+
+class HazardInfoPopup extends StatelessWidget {
+  final Hazard hazard;
+  const HazardInfoPopup({super.key, required this.hazard});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const radius = BorderRadius.all(Radius.circular(8));
+    return Container(
+      decoration: const BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          OutlineBoxShadow(
+            color: Colors.black26,
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: PlatformWidgetBuilder(
+          cupertino: (context, child, _) => BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+            child: Container(
+              color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
+              child: child,
+            ),
+          ),
+          material: (_, child, __) => Container(
+            color: theme.colorScheme.background,
+            child: child,
+          ),
+          child: Container(
+            width: 200,
+            height: 100,
+          ),
+        ),
+      )
+    );
+  }
+
+}
+
+class HazardMarker extends Marker {
+  final Hazard hazard;
+  HazardMarker({required this.hazard, required super.builder}) : super(point: hazard.location);
 }

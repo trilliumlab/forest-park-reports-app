@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final double _openPoint = 0.80;
   final double _snapPoint = 0.40;
   double _fabHeight = 0;
-  double _widgetOpacity = 0;
+  double _snapWidgetOpacity = 0;
+  double _fullWidgetOpacity = 0;
   double _panelHeightOpen = 0;
   double _panelHeightSnap = 0;
   final double _panelHeightClosed = 100;
@@ -83,10 +86,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     controller: sc,
                     trail: parkTrails.selectedTrail!,
                     snapWidget: Opacity(
-                      opacity: _widgetOpacity,
+                      opacity: _snapWidgetOpacity,
                       child: TrailElevationGraph(
                         trail: parkTrails.selectedTrail!,
-                        height: 200,
+                        height: _panelHeightSnap*0.7,
+                      ),
+                    ),
+                    fullWidget: Opacity(
+                      opacity: _fullWidgetOpacity,
+                      child: TrailHazardsWidget(
+                        trail: parkTrails.selectedTrail!
                       ),
                     ),
                   ),
@@ -94,7 +103,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
                 onPanelSlide: (double pos) => setState(() {
-                  _widgetOpacity = (pos/_snapPoint).clamp(0, 1);
+                  _snapWidgetOpacity = (pos/_snapPoint).clamp(0, 1);
+                  _fullWidgetOpacity = ((pos-_snapPoint)/(1-_snapPoint)).clamp(0, 1);
                   _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _initFabHeight;
                 }),
               );
@@ -172,15 +182,81 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class TrailHazardsWidget extends ConsumerWidget {
+  final Trail trail;
+  const TrailHazardsWidget({super.key, required this.trail});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final activeHazards = ref.watch(activeHazardProvider)
+        .where((e) => e.location.trail == trail.uuid);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 12, bottom: 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              "Hazards",
+              style: theme.textTheme.subtitle1
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+            color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
+          ),
+          child: Column(
+            children: activeHazards.map((hazard) => HazardInfoWidget(
+              hazard: hazard,
+            )).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Tuesday, July 12th, 2022 at 11:53am
+class HazardInfoWidget extends StatelessWidget {
+  final Hazard hazard;
+  const HazardInfoWidget({super.key, required this.hazard});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    DateFormat _formatter = DateFormat('EEEE, MMMM dd y, hh:mm a');
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            hazard.hazard.displayName,
+            style: theme.textTheme.titleLarge,
+          ),
+          Text(_formatter.format(hazard.time.toLocal()))
+        ],
+      )
+    );
+  }
+
+}
+
 class TrailInfoWidget extends StatelessWidget {
   final ScrollController controller;
   final Trail trail;
   final Widget snapWidget;
+  final Widget fullWidget;
   const TrailInfoWidget({
     super.key,
     required this.controller,
     required this.trail,
     required this.snapWidget,
+    required this.fullWidget,
   });
 
   @override
@@ -192,7 +268,7 @@ class TrailInfoWidget extends StatelessWidget {
         const PlatformPill(),
         // content should go here
         Padding(
-          padding: const EdgeInsets.only(left: 24, right: 24, top: 8),
+          padding: const EdgeInsets.only(left: 14, right: 14, top: 4),
           child: Text(
             trail.name,
             style: theme.textTheme.headline6,
@@ -200,16 +276,24 @@ class TrailInfoWidget extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           )
         ),
+        // Padding(
+        //   padding: const EdgeInsets.only(left: 14, right: 14, top: 20),
+        //   child: snapWidget,
+        // ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
+          padding: const EdgeInsets.only(left: 14, right: 14, top: 8),
           child: snapWidget,
+        ),
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: fullWidget,
         ),
       ],
     );
   }
 }
 
-class TrailElevationGraph extends StatelessWidget {
+class TrailElevationGraph extends ConsumerWidget {
   final Trail trail;
   final double height;
   const TrailElevationGraph({
@@ -219,62 +303,91 @@ class TrailElevationGraph extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final spots = trail.track!.elevation.asMap().entries.map((e) =>
-        FlSpot(trail.track!.distance[e.key], e.value)).toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final activeHazards = ref.watch(activeHazardProvider)
+        .where((e) => e.location.trail == trail.uuid);
+    final Map<double, Hazard?> hazardsMap = {};
+    final List<FlSpot> spots = [];
+    for (final e in trail.track!.elevation.asMap().entries) {
+      final distance = trail.track!.distance[e.key];
+      spots.add(FlSpot(distance, e.value));
+      hazardsMap[distance] = activeHazards.firstWhereOrNull((h) => h.location.index == e.key);
+    }
     final maxInterval = trail.track!.distance.last/5;
     final interval = maxInterval-maxInterval/20;
-    return Container(
-      decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-          color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-      ),
-      height: height,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-        child: LineChart(
-          LineChartData(
-              maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
-              minY: (trail.track!.minElevation/50).floor() * 50.0,
-              lineBarsData: [
-                LineChartBarData(
-                  spots: spots,
-                  dotData: FlDotData(show: false),
-                )
-              ],
-              gridData: FlGridData(show: false),
-              borderData: FlBorderData(show: false),
-              titlesData: FlTitlesData(
-                  topTitles: AxisTitles(),
-                  rightTitles: AxisTitles(),
-                  leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 65,
-                          getTitlesWidget: (yVal, meta) {
-                            return Text("${yVal.round().toString()} ft");
-                          },
-                          interval: 50
-                      )
-                  ),
-                  bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (xVal, meta) {
-                          final offInterval = (xVal % meta.appliedInterval);
-                          final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
-                          return isRegInterval ? Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
-                          ) : Container();
-                        },
-                        interval: interval
-                      )
-                  )
-              )
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 12, bottom: 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+                "Elevation",
+                style: theme.textTheme.subtitle1
+            ),
           ),
         ),
-      ),
+        Container(
+          decoration: BoxDecoration(
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
+          ),
+          height: height,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+            child: LineChart(
+              LineChartData(
+                  maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
+                  minY: (trail.track!.minElevation/50).floor() * 50.0,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      dotData: FlDotData(
+                          checkToShowDot: (s, d) => hazardsMap[s.x] != null,
+                          getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+                            color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+                            radius: 5,
+                          )
+                      ),
+                    ),
+                  ],
+                  gridData: FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                      topTitles: AxisTitles(),
+                      rightTitles: AxisTitles(),
+                      leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 65,
+                              getTitlesWidget: (yVal, meta) {
+                                return Text("${yVal.round().toString()} ft");
+                              },
+                              interval: 50
+                          )
+                      ),
+                      bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (xVal, meta) {
+                                final offInterval = (xVal % meta.appliedInterval);
+                                final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+                                return isRegInterval ? Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
+                                ) : Container();
+                              },
+                              interval: interval
+                          )
+                      )
+                  )
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

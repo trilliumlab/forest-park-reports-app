@@ -42,6 +42,7 @@ dependencies:
   flutter_map: ^1.1.1
   flutter_map_tile_caching: ^5.0.0-dev.2
   flutter_map_location_marker: ^4.1.1
+  flutter_map_marker_popup: ^3.1.0+1
   # updates for flutter_map 1
   flutter_map_tappable_polyline:
     git:

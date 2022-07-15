@@ -84,3 +84,16 @@ enum HazardType {
   flood,
   other
 }
+
+extension HazardTypeDisplayName on HazardType {
+  String get displayName {
+    switch (this) {
+      case HazardType.tree:
+        return "Fallen Tree";
+      case HazardType.flood:
+        return "Flooded Trail";
+      case HazardType.other:
+        return "Other Hazard";
+    }
+  }
+}
