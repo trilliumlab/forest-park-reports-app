@@ -119,12 +119,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, ref, child) {
                   return PlatformFAB(
                       onPressed: () async {
-                        final parkTrails = ref.read(parkTrailsProvider);
-                        // TODO actually handle location errors
-                        final location = await getLocation();
-                        var res = parkTrails.snapLocation(location.latLng()!);
-                        ref.read(activeHazardProvider.notifier).create(
-                            NewHazardRequest(HazardType.other, res.location));
+                        // final parkTrails = ref.read(parkTrailsProvider);
+                        // // TODO actually handle location errors
+                        // final location = await getLocation();
+                        // var res = parkTrails.snapLocation(location.latLng()!);
+                        // ref.read(activeHazardProvider.notifier).create(
+                        //     NewHazardRequest(HazardType.other, res.location));
+                        showCupertinoModalPopup(
+                          context: context,
+                          builder: (context) {
+                            return Dismissible(
+                                direction: DismissDirection.down,
+                                key: const Key('key'),
+                                onDismissed: (_) => Navigator.of(context).pop(),
+                                child: const AddHazardModal()
+                            );
+                          },
+                        );
                       },
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
@@ -182,6 +193,99 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class AddHazardModal extends ConsumerStatefulWidget {
+  const AddHazardModal({super.key});
+
+  @override
+  ConsumerState<AddHazardModal> createState() => _AddHazardModalState();
+}
+
+class _AddHazardModalState extends ConsumerState<AddHazardModal> {
+  HazardType? _selectedHazard;
+
+  @override
+  Widget build(BuildContext context) {
+    return Panel(
+      child: SizedBox(
+        height: 500,
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 10),
+                  child: Text(
+                    "Report New Hazard",
+                    style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontSize: 28),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 20),
+                  child: Text(
+                    "Hazard Type",
+                    style: CupertinoTheme.of(context).textTheme.textStyle,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
+                  child: CupertinoSlidingSegmentedControl(
+                    groupValue: _selectedHazard,
+                    onValueChanged: (HazardType? value) => setState(() {
+                      _selectedHazard = value;
+                    }),
+                    children: {
+                      for (final type in HazardType.values)
+                        type: Text(
+                          type.name,
+                          style: CupertinoTheme.of(context).textTheme.textStyle
+                        )
+                    }
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
+                  child: CupertinoButton(
+                    color: CupertinoTheme.of(context).primaryColor,
+                    onPressed: _selectedHazard == null ? null : () {},
+                    child: Text(
+                      'Submit',
+                      style: CupertinoTheme.of(context).textTheme.textStyle
+                    ),
+                  ),
+                )
+              ],
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    borderRadius: const BorderRadius.all(Radius.circular(100)),
+                    color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemFill, context),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      )
+    );
+  }
+}
+
 class TrailHazardsWidget extends ConsumerWidget {
   final Trail trail;
   const TrailHazardsWidget({super.key, required this.trail});
@@ -221,6 +325,7 @@ class TrailHazardsWidget extends ConsumerWidget {
 }
 
 // Tuesday, July 12th, 2022 at 11:53am
+DateFormat _formatter = DateFormat('EEEE, MMMM dd y, hh:mm a');
 class HazardInfoWidget extends StatelessWidget {
   final Hazard hazard;
   const HazardInfoWidget({super.key, required this.hazard});
@@ -228,7 +333,6 @@ class HazardInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    DateFormat _formatter = DateFormat('EEEE, MMMM dd y, hh:mm a');
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(

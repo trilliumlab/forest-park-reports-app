@@ -82,7 +82,7 @@ class SnappedLatLng extends LatLng {
 enum HazardType {
   tree,
   flood,
-  other
+  other,
 }
 
 extension HazardTypeDisplayName on HazardType {

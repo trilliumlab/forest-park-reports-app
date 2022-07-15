@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -179,21 +180,21 @@ class TrackPolyline {
     polyline = TaggedPolyline(
       tag: trail.uuid,
       points: trail.track!.path,
-      strokeWidth: 2.0,
-      color: Colors.orange,
+      strokeWidth: 1.0,
+      color: CupertinoColors.activeOrange,
     );
     // these two are when selected
     selectedPolyline = TaggedPolyline(
       tag: "${trail.uuid}_selected",
       points: trail.track!.path,
-      strokeWidth: 2.0,
-      color: Colors.green,
+      strokeWidth: 1.0,
+      color: CupertinoColors.activeGreen,
     );
     highlightPolyline = TaggedPolyline(
       tag: "${trail.uuid}_highlight",
       points: trail.track!.path,
-      strokeWidth: 10.0,
-      color: Colors.green.withAlpha(80),
+      strokeWidth: 8.0,
+      color: CupertinoColors.activeGreen.withAlpha(80),
     );
   }
   TrackPolyline copyWith({bool? selected}) {
