@@ -213,13 +213,29 @@ class HazardInfoPopup extends StatelessWidget {
             color: theme.colorScheme.background,
             child: child,
           ),
-          child: Container(
-            width: 200,
-            height: 100,
-          ),
+          child: _image(),
         ),
       )
     );
+  }
+
+  Widget _image() {
+    const noImage = SizedBox(
+      width: 200,
+      height: 100,
+    );
+    if (hazard.image == null) {
+      return noImage;
+    }
+    return Consumer(builder: (context, ref, _) {
+      final image = ref.watch(hazardPhotoProvider(hazard.image!));
+      return image.whenOrNull(data: (data) {
+        return data == null ? noImage : SizedBox(
+          width: 200,
+          child: Image.memory(data)
+        );
+      }) ?? noImage;
+    });
   }
 
 }

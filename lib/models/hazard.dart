@@ -5,7 +5,7 @@ class Hazard extends NewHazardRequest {
   DateTime time;
   bool active;
 
-  Hazard(this.uuid, this.time, this.active, super.hazard, super.location);
+  Hazard(this.uuid, this.time, this.active, super.hazard, super.location, [super.image]);
 
   Hazard.fromJson(Map<String, dynamic> json)
       : uuid = json['uuid'],
@@ -31,17 +31,20 @@ class Hazard extends NewHazardRequest {
 class NewHazardRequest {
   HazardType hazard;
   SnappedLatLng location;
+  String? image;
 
-  NewHazardRequest(this.hazard, this.location);
+  NewHazardRequest(this.hazard, this.location, [this.image]);
 
   NewHazardRequest.fromJson(Map<String, dynamic> json)
       : hazard = HazardType.values.byName(json['hazard']),
-        location = SnappedLatLng.fromJson(json['location']);
+        location = SnappedLatLng.fromJson(json['location']),
+        image = json.containsKey('image') ? json['image'] : null;
 
   Map<String, dynamic> toJson() {
     return {
       'hazard': hazard.name,
       'location': location.toJson(),
+      'image': image,
     };
   }
 

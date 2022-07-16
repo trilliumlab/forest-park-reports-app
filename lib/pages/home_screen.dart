@@ -16,6 +16,7 @@ import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
+import 'package:location/location.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -204,6 +205,7 @@ class AddHazardModal extends ConsumerStatefulWidget {
 
 class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   HazardType? _selectedHazard;
+  final HazardCameraController _controller = HazardCameraController();
 
   @override
   Widget build(BuildContext context) {
@@ -239,17 +241,33 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                     }
                   ),
                 ),
-                const Expanded(
+                Expanded(
                   child: Padding(
-                    padding: EdgeInsets.only(left: 12, right: 12, top: 8),
-                    child: CameraWidget(),
+                    padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
+                    child: HazardCamera(
+                      controller: _controller,
+                    ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
                   child: CupertinoButton(
                     color: CupertinoTheme.of(context).primaryColor,
-                    onPressed: _selectedHazard == null ? null : () {},
+                    onPressed: _selectedHazard == null ? null : () async {
+                      final image = await _controller.takePicture();
+                      final activeHazardNotifier = ref.read(activeHazardProvider.notifier);
+                      final imageUuid = await activeHazardNotifier.uploadImage(image!);
+
+                      final parkTrails = ref.read(parkTrailsProvider);
+                      // TODO actually handle location errors
+                      final location = await getLocation();
+                      var snappedLoc = parkTrails.snapLocation(location.latLng()!);
+                      // TODO check snap distance
+
+                      await activeHazardNotifier.create(NewHazardRequest(
+                          _selectedHazard!, snappedLoc.location, imageUuid));
+                      Navigator.pop(context);
+                    },
                     child: Text(
                       'Submit',
                       style: CupertinoTheme.of(context).textTheme.textStyle
@@ -288,14 +306,22 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   }
 }
 
-class CameraWidget extends ConsumerStatefulWidget {
-  const CameraWidget({super.key});
-
-  @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _CameraWidgetState();
+class HazardCameraController {
+  Future<XFile?> takePicture() async {
+    return callback?.call();
+  }
+  Future<XFile> Function()? callback;
 }
 
-class _CameraWidgetState extends ConsumerState<CameraWidget> {
+class HazardCamera extends ConsumerStatefulWidget {
+  final HazardCameraController? controller;
+  const HazardCamera({super.key, this.controller});
+
+  @override
+  ConsumerState<ConsumerStatefulWidget> createState() => _HazardCameraState();
+}
+
+class _HazardCameraState extends ConsumerState<HazardCamera> {
   final _initializeControllerCompleter = Completer();
   late CameraController _controller;
 
@@ -312,8 +338,10 @@ class _CameraWidgetState extends ConsumerState<CameraWidget> {
       // Define the resolution to use.
       ResolutionPreset.medium,
       enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.bgra8888,
     );
     await _controller.initialize();
+    widget.controller?.callback = _controller.takePicture;
     _initializeControllerCompleter.complete();
   }
 
@@ -321,30 +349,30 @@ class _CameraWidgetState extends ConsumerState<CameraWidget> {
   void dispose() {
     // Dispose of the controller when the widget is disposed.
     _controller.dispose();
+    widget.controller?.callback = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(8)),
-      child: OverflowBox(
-        alignment: Alignment.center,
-        child: FittedBox(
-          fit: BoxFit.fitWidth,
-          child: SizedBox(
-            width: 100,
-            child: FutureBuilder<void>(
-              future: _initializeControllerCompleter.future,
-              builder: (context, snapshot) {
-                return snapshot.connectionState == ConnectionState.done
-                    ? CameraPreview(_controller)
-                    : const Center(child: CupertinoActivityIndicator());
-              },
+    return FutureBuilder<void>(
+      future: _initializeControllerCompleter.future,
+      builder: (context, snapshot) {
+        return snapshot.connectionState == ConnectionState.done
+            ? ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          child: OverflowBox(
+            alignment: Alignment.center,
+            child: FittedBox(
+              fit: BoxFit.fitWidth,
+              child: SizedBox(
+                width: 100,
+                child: CameraPreview(_controller),
+              ),
             ),
           ),
-        ),
-      ),
+        ) : const Center(child: CupertinoActivityIndicator());
+      },
     );
   }
 }
