@@ -84,6 +84,16 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       }
     });
 
+    final markers = ref.watch(activeHazardProvider).map((e) => HazardMarker(
+      hazard: e,
+      builder: (_) => Icon(
+          Icons.warning_rounded,
+          color: isMaterial(context)
+              ? Theme.of(context).errorColor
+              : CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)
+      ),
+    )).toList();
+
     return FlutterMap(
       options: MapOptions(
         center: LatLng(45.57416784067063, -122.76892379502566),
@@ -158,15 +168,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               }
             },
             popupAnimation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
-            markers: ref.watch(activeHazardProvider).map((e) => HazardMarker(
-              hazard: e,
-              builder: (_) => Icon(
-                Icons.warning_rounded,
-                color: isMaterial(context)
-                    ? Theme.of(context).errorColor
-                    : CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)
-              ),
-            )).toList()
+            markers: markers,
           ),
         )
       ],
@@ -213,31 +215,48 @@ class HazardInfoPopup extends StatelessWidget {
             color: theme.colorScheme.background,
             child: child,
           ),
-          child: _image(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Text(hazard.hazard.displayName),
+              ),
+              if (hazard.image != null)
+                Padding(
+                  padding: const EdgeInsets.all(0),
+                  child: ClipRRect(
+                    borderRadius: radius,
+                    child: SizedBox(
+                      width: 175,
+                      height: 200,
+                      child: HazardImage(hazard.image!)
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      )
+      ),
     );
   }
+}
 
-  Widget _image() {
-    const noImage = SizedBox(
-      width: 200,
-      height: 100,
+class HazardImage extends ConsumerWidget {
+  final String uuid;
+  const HazardImage(this.uuid, {Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final image = ref.watch(hazardPhotoProvider(uuid));
+    return image.hasValue
+        ? Image.memory(
+      image.value!,
+      fit: BoxFit.cover,
+    ) : const Center(
+        child: CupertinoActivityIndicator()
     );
-    if (hazard.image == null) {
-      return noImage;
-    }
-    return Consumer(builder: (context, ref, _) {
-      final image = ref.watch(hazardPhotoProvider(hazard.image!));
-      return image.whenOrNull(data: (data) {
-        return data == null ? noImage : SizedBox(
-          width: 200,
-          child: Image.memory(data)
-        );
-      }) ?? noImage;
-    });
   }
-
 }
 
 class HazardMarker extends Marker {

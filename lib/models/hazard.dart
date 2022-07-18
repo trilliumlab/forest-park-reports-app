@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 class Hazard extends NewHazardRequest {
@@ -88,7 +90,7 @@ enum HazardType {
   other,
 }
 
-extension HazardTypeDisplayName on HazardType {
+extension HazardTypeInfo on HazardType {
   String get displayName {
     switch (this) {
       case HazardType.tree:
@@ -97,6 +99,16 @@ extension HazardTypeDisplayName on HazardType {
         return "Flooded Trail";
       case HazardType.other:
         return "Other Hazard";
+    }
+  }
+  IconData get icon {
+    switch (this) {
+      case HazardType.tree:
+        return CupertinoIcons.tree;
+      case HazardType.flood:
+        return Icons.flood_rounded;
+      case HazardType.other:
+        return CupertinoIcons.question_diamond_fill;
     }
   }
 }

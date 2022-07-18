@@ -1,12 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
-import 'package:camera/camera.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:forest_park_reports/providers/camera_provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
@@ -204,8 +204,63 @@ class AddHazardModal extends ConsumerStatefulWidget {
 }
 
 class _AddHazardModalState extends ConsumerState<AddHazardModal> {
+  final _picker = ImagePicker();
   HazardType? _selectedHazard;
-  final HazardCameraController _controller = HazardCameraController();
+  XFile? _image;
+
+  void _close() {
+    Navigator.pop(context);
+  }
+
+  Future _submit() async {
+    final parkTrails = ref.read(parkTrailsProvider);
+    // TODO actually handle location errors
+    final location = await getLocation();
+    var snappedLoc = parkTrails.snapLocation(location.latLng()!);
+
+    print(location);
+
+    final continueCompleter = Completer<bool>();
+    if (snappedLoc.distance > 10+(location.accuracy ?? 15)) {
+      showPlatformDialog(context: context, builder: (context) => PlatformAlertDialog(
+        title: const Text('Too far from trail'),
+        content: const Text('Reports must be made on a marked Forest Park trail'),
+        actions: [
+          PlatformDialogAction(
+            onPressed: () {
+              Navigator.pop(context);
+              continueCompleter.complete(false);
+            },
+            child: PlatformText('OK')
+          ),
+          PlatformDialogAction(
+              onPressed: () {
+                Navigator.pop(context);
+                continueCompleter.complete(true);
+              },
+              child: PlatformText('Override')
+          ),
+        ],
+      ));
+    } else {
+      continueCompleter.complete(true);
+    }
+
+    if (!await continueCompleter.future) {
+      return;
+    }
+
+    final activeHazardNotifier = ref.read(activeHazardProvider.notifier);
+
+    String? imageUuid;
+    if (_image != null) {
+      imageUuid = await activeHazardNotifier.uploadImage(_image!);
+    }
+
+    await activeHazardNotifier.create(NewHazardRequest(
+        _selectedHazard!, snappedLoc.location, imageUuid));
+    _close();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,29 +299,59 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
-                    child: HazardCamera(
-                      controller: _controller,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(8)),
+                      child: PlatformTextButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () async {
+                          final image = await _picker.pickImage(source: ImageSource.camera);
+                          if (image != null) {
+                            setState(() => _image = image);
+                          }
+                        },
+                        cupertino: (context, __) => CupertinoTextButtonData(
+                          color: CupertinoDynamicColor.resolve(CupertinoColors.quaternarySystemFill, context),
+                        ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints.expand(),
+                          child: _image == null ? Icon(
+                            CupertinoIcons.camera,
+                            color: isCupertino(context) ? CupertinoTheme.of(context).primaryColor : Theme.of(context).primaryColor,
+                          ) : Image.file(
+                            File(_image!.path),
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      )
                     ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
-                  child: CupertinoButton(
+                  child: PlatformTextButton(
                     color: CupertinoTheme.of(context).primaryColor,
                     onPressed: _selectedHazard == null ? null : () async {
-                      final image = await _controller.takePicture();
-                      final activeHazardNotifier = ref.read(activeHazardProvider.notifier);
-                      final imageUuid = await activeHazardNotifier.uploadImage(image!);
-
-                      final parkTrails = ref.read(parkTrailsProvider);
-                      // TODO actually handle location errors
-                      final location = await getLocation();
-                      var snappedLoc = parkTrails.snapLocation(location.latLng()!);
-                      // TODO check snap distance
-
-                      await activeHazardNotifier.create(NewHazardRequest(
-                          _selectedHazard!, snappedLoc.location, imageUuid));
-                      Navigator.pop(context);
+                      if (_image == null) {
+                        showPlatformDialog(context: context, builder: (_) => PlatformAlertDialog(
+                          title: const Text('No photo selected'),
+                          content: const Text("Are you sure you'd like to submit this hazard without a photo?"),
+                          actions: [
+                            PlatformDialogAction(
+                              child: PlatformText('Cancel'),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            PlatformDialogAction(
+                              child: PlatformText('Yes'),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _submit();
+                              },
+                            ),
+                          ],
+                        ));
+                      } else {
+                        _submit();
+                      }
                     },
                     child: Text(
                       'Submit',
@@ -287,9 +372,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                     padding: EdgeInsets.zero,
                     borderRadius: const BorderRadius.all(Radius.circular(100)),
                     color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemFill, context),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: _close,
                     child: Icon(
                       Icons.close_rounded,
                       size: 20,
@@ -302,77 +385,6 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class HazardCameraController {
-  Future<XFile?> takePicture() async {
-    return callback?.call();
-  }
-  Future<XFile> Function()? callback;
-}
-
-class HazardCamera extends ConsumerStatefulWidget {
-  final HazardCameraController? controller;
-  const HazardCamera({super.key, this.controller});
-
-  @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _HazardCameraState();
-}
-
-class _HazardCameraState extends ConsumerState<HazardCamera> {
-  final _initializeControllerCompleter = Completer();
-  late CameraController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _initCamera();
-  }
-
-  Future _initCamera() async {
-    final camera = await ref.read(cameraProvider.future);
-    _controller = CameraController(
-      camera,
-      // Define the resolution to use.
-      ResolutionPreset.medium,
-      enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.bgra8888,
-    );
-    await _controller.initialize();
-    widget.controller?.callback = _controller.takePicture;
-    _initializeControllerCompleter.complete();
-  }
-
-  @override
-  void dispose() {
-    // Dispose of the controller when the widget is disposed.
-    _controller.dispose();
-    widget.controller?.callback = null;
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _initializeControllerCompleter.future,
-      builder: (context, snapshot) {
-        return snapshot.connectionState == ConnectionState.done
-            ? ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-          child: OverflowBox(
-            alignment: Alignment.center,
-            child: FittedBox(
-              fit: BoxFit.fitWidth,
-              child: SizedBox(
-                width: 100,
-                child: CameraPreview(_controller),
-              ),
-            ),
-          ),
-        ) : const Center(child: CupertinoActivityIndicator());
-      },
     );
   }
 }

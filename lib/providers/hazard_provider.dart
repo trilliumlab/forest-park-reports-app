@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:camera/camera.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
   StateNotifierProviderRef ref;
