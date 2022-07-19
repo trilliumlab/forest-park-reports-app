@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -59,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _panelHeightOpen = MediaQuery.of(context).size.height * _openPoint;
     _panelHeightSnap = _panelHeightOpen * _snapPoint;
     final theme = Theme.of(context);
+
     return Scaffold(
       body: Stack(
         alignment: Alignment.topCenter,
@@ -188,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // status bar blur
-          if (isCupertino(context))
+          if (isCupertino(context) || true)
             const StatusBarBlur(),
         ],
       ),

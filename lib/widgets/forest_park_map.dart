@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -32,7 +31,6 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
   late final MapController _mapController;
   late final PopupController _popupController;
   late StreamController<double?> _centerCurrentLocationStreamController;
-
 
   @override
   void initState() {
@@ -65,17 +63,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
   @override
   Widget build(BuildContext context) {
-    final lightMode = WidgetsBinding.instance.window.platformBrightness == Brightness.light;
     // using ref.watch will allow the widget to be rebuilt everytime
     // the provider is updated
     ParkTrails parkTrails = ref.watch(parkTrailsProvider);
-    // enable edge to edge mode on android
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: lightMode ? Brightness.dark : Brightness.light,
-        systemNavigationBarColor: Colors.transparent
-    ));
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     final centerOnLocation = ref.watch(centerOnLocationProvider);
     ref.listen(centerOnLocationProvider, (prev, next) {
@@ -224,7 +214,7 @@ class HazardInfoPopup extends StatelessWidget {
               ),
               if (hazard.image != null)
                 Padding(
-                  padding: const EdgeInsets.all(0),
+                  padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
                   child: ClipRRect(
                     borderRadius: radius,
                     child: SizedBox(
@@ -249,12 +239,33 @@ class HazardImage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final image = ref.watch(hazardPhotoProvider(uuid));
-    return image.hasValue
-        ? Image.memory(
-      image.value!,
-      fit: BoxFit.cover,
-    ) : const Center(
-        child: CupertinoActivityIndicator()
+    final progress = ref.watch(hazardPhotoProgressProvider(uuid)).progress;
+    // return image.hasValue
+    //     ? Image.memory(
+    //   image.value!,
+    //   fit: BoxFit.cover,
+    // ) : Center(
+    //   child:
+    // );
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Center(
+          child: PlatformWidget(
+            cupertino: (_, __) => CupertinoActivityIndicator.partiallyRevealed(
+              progress: progress,
+            ),
+            material: (_, __) => CircularProgressIndicator(
+              value: progress,
+            ),
+          ),
+        ),
+        if (image.hasValue)
+          Image.memory(
+            image.value!,
+            fit: BoxFit.cover,
+          ),
+      ],
     );
   }
 }

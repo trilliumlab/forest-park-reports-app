@@ -1,5 +1,7 @@
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
@@ -49,6 +51,14 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+
+    // enable edge to edge mode on android
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+    ));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
     return _providers(
       child: _themes(
         builder: (light, dark) => PlatformApp(
@@ -56,6 +66,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
             theme: light,
             darkTheme: dark,
             themeMode: ThemeMode.system
+          ),
+          cupertino: (_, __) => CupertinoAppData(
+            theme: CupertinoThemeData(brightness: _brightness)
           ),
           title: 'Forest Park Reports',
           home: const HomeScreen(),

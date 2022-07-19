@@ -39,10 +39,26 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
 final activeHazardProvider = StateNotifierProvider
   <ActiveHazardNotifier, List<Hazard>>((ref) => ActiveHazardNotifier(ref));
 
+class HazardPhotoProgress {
+  int received;
+  int total;
+  HazardPhotoProgress(this.received, this.total);
+  double get progress {
+    final p = received/total;
+    return p.isNaN ? 0.0 : p.clamp(0, 1);
+  }
+}
+
+final hazardPhotoProgressProvider = StateProvider.family<HazardPhotoProgress, String>((ref, uuid) {
+  return HazardPhotoProgress(0, 0);
+});
+
 final hazardPhotoProvider = FutureProvider.family<Uint8List?, String>((ref, uuid) async {
   final res = await ref.read(dioProvider).get<Uint8List>(
     "/hazard/image/$uuid",
-    options: Options(responseType: ResponseType.bytes)
+    options: Options(responseType: ResponseType.bytes),
+    onReceiveProgress: (received, total) =>
+        ref.read(hazardPhotoProgressProvider(uuid).notifier).state = HazardPhotoProgress(received, total),
   );
   return res.data;
 });
