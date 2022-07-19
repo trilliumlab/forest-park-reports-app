@@ -6,7 +6,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -61,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _panelHeightSnap = _panelHeightOpen * _snapPoint;
     final theme = Theme.of(context);
 
-    return Scaffold(
+    return PlatformScaffold(
       body: Stack(
         alignment: Alignment.topCenter,
         children: [
@@ -429,8 +428,6 @@ class TrailHazardsWidget extends ConsumerWidget {
   }
 }
 
-// Tuesday, July 12th, 2022 at 11:53am
-DateFormat _formatter = DateFormat('EEEE, MMMM dd y, hh:mm a');
 class HazardInfoWidget extends StatelessWidget {
   final Hazard hazard;
   const HazardInfoWidget({super.key, required this.hazard});
@@ -447,12 +444,11 @@ class HazardInfoWidget extends StatelessWidget {
             hazard.hazard.displayName,
             style: theme.textTheme.titleLarge,
           ),
-          Text(_formatter.format(hazard.time.toLocal()))
+          Text(hazard.timeString())
         ],
       )
     );
   }
-
 }
 
 class TrailInfoWidget extends StatelessWidget {
@@ -485,10 +481,6 @@ class TrailInfoWidget extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           )
         ),
-        // Padding(
-        //   padding: const EdgeInsets.only(left: 14, right: 14, top: 20),
-        //   child: snapWidget,
-        // ),
         Padding(
           padding: const EdgeInsets.only(left: 14, right: 14, top: 8),
           child: snapWidget,

@@ -1,11 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+// Tuesday, July 12th, 2022 at 11:53am
+// 11:53 AM July 12 2022
+DateFormat _formatter = DateFormat('hh:mm a MMMM dd y');
 class Hazard extends NewHazardRequest {
   String uuid;
   DateTime time;
   bool active;
+
+  String timeString() => _formatter.format(time);
 
   Hazard(this.uuid, this.time, this.active, super.hazard, super.location, [super.image]);
 

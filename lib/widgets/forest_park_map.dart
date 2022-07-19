@@ -207,10 +207,20 @@ class HazardInfoPopup extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.all(10),
-                child: Text(hazard.hazard.displayName),
+                padding: const EdgeInsets.only(left: 8, right: 8, top: 4),
+                child: Text(
+                  hazard.hazard.displayName,
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
+                child: Text(
+                  hazard.timeString(),
+                ),
               ),
               if (hazard.image != null)
                 Padding(
@@ -240,13 +250,7 @@ class HazardImage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final image = ref.watch(hazardPhotoProvider(uuid));
     final progress = ref.watch(hazardPhotoProgressProvider(uuid)).progress;
-    // return image.hasValue
-    //     ? Image.memory(
-    //   image.value!,
-    //   fit: BoxFit.cover,
-    // ) : Center(
-    //   child:
-    // );
+
     return Stack(
       fit: StackFit.expand,
       children: [
