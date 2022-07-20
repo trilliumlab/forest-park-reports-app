@@ -292,127 +292,170 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     _close();
   }
 
+  Future _onSubmit() async {
+    if (_image == null) {
+      showPlatformDialog(context: context, builder: (_) => PlatformAlertDialog(
+        title: const Text('No photo selected'),
+        content: const Text("Are you sure you'd like to submit this hazard without a photo?"),
+        actions: [
+          PlatformDialogAction(
+            child: PlatformText('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          PlatformDialogAction(
+            child: PlatformText('Yes'),
+            onPressed: () {
+              Navigator.pop(context);
+              _submit();
+            },
+          ),
+        ],
+      ));
+    } else {
+      _submit();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Panel(
-      child: SizedBox(
-        height: 500,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 10),
-                  child: Text(
-                    "Report New Hazard",
-                    style: CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontSize: 28),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
-                  child: CupertinoSlidingSegmentedControl(
-                    groupValue: _selectedHazard,
-                    onValueChanged: (HazardType? value) => setState(() {
-                      _selectedHazard = value;
-                    }),
-                    children: {
-                      for (final type in HazardType.values)
-                        type: Text(
-                          type.name,
-                          style: CupertinoTheme.of(context).textTheme.textStyle
-                        )
-                    }
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.all(Radius.circular(8)),
-                      child: PlatformTextButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () async {
-                          final image = await _picker.pickImage(source: ImageSource.camera);
-                          if (image != null) {
-                            setState(() => _image = image);
-                          }
-                        },
-                        cupertino: (context, __) => CupertinoTextButtonData(
-                          color: CupertinoDynamicColor.resolve(CupertinoColors.quaternarySystemFill, context),
-                        ),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints.expand(),
-                          child: _image == null ? Icon(
-                            CupertinoIcons.camera,
-                            color: isCupertino(context) ? CupertinoTheme.of(context).primaryColor : Theme.of(context).primaryColor,
-                          ) : Image.file(
-                            File(_image!.path),
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      )
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
-                  child: PlatformTextButton(
-                    color: CupertinoTheme.of(context).primaryColor,
-                    onPressed: _selectedHazard == null ? null : () async {
-                      if (_image == null) {
-                        showPlatformDialog(context: context, builder: (_) => PlatformAlertDialog(
-                          title: const Text('No photo selected'),
-                          content: const Text("Are you sure you'd like to submit this hazard without a photo?"),
-                          actions: [
-                            PlatformDialogAction(
-                              child: PlatformText('Cancel'),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            PlatformDialogAction(
-                              child: PlatformText('Yes'),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _submit();
-                              },
-                            ),
-                          ],
-                        ));
-                      } else {
-                        _submit();
-                      }
-                    },
+      child: PlatformWidgetBuilder(
+        cupertino: (_, child, __) => child,
+        material: (_, child, __) => Material(
+          color: Colors.transparent,
+          child: child,
+        ),
+        child: SizedBox(
+          height: 500,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16, top: 10),
                     child: Text(
-                      'Submit',
-                      style: CupertinoTheme.of(context).textTheme.textStyle
+                      "Report New Hazard",
+                      style: isCupertino(context)
+                          ? CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontSize: 28)
+                          : theme.textTheme.headline6!.copyWith(fontSize: 28),
                     ),
                   ),
-                ),
-              ],
-            ),
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CupertinoButton(
-                    padding: EdgeInsets.zero,
-                    borderRadius: const BorderRadius.all(Radius.circular(100)),
-                    color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemFill, context),
-                    onPressed: _close,
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                    child: PlatformWidget(
+                      cupertino: (context, _) => CupertinoSlidingSegmentedControl(
+                        groupValue: _selectedHazard,
+                        onValueChanged: (HazardType? value) => setState(() {
+                          _selectedHazard = value;
+                        }),
+                        children: {
+                          for (final type in HazardType.values)
+                            type: Text(
+                              type.name,
+                              style: isCupertino(context)
+                                  ? CupertinoTheme.of(context).textTheme.textStyle
+                                  : theme.textTheme.bodyLarge,
+                            ),
+                        }
+                      ),
+                      // TODO waiting on m3 support
+                      material: (context, _) => DropdownButton(
+                        onChanged: (HazardType? value) => setState(() {
+                          _selectedHazard = value;
+                        }),
+                        value: _selectedHazard,
+                        hint: Text('Hazard Type'),
+                        items: HazardType.values.map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type.name),
+                        )).toList(),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.all(Radius.circular(isCupertino(context) ? 8 : 18)),
+                        child: PlatformElevatedButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () async {
+                            final image = await _picker.pickImage(source: ImageSource.camera);
+                            if (image != null) {
+                              setState(() => _image = image);
+                            }
+                          },
+                          cupertino: (context, __) => CupertinoElevatedButtonData(
+                            color: CupertinoDynamicColor.resolve(CupertinoColors.quaternarySystemFill, context),
+                          ),
+                          material: (context, __) => MaterialElevatedButtonData(
+                            style: ButtonStyle(
+                              shape: MaterialStateProperty.all(
+                                const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18))
+                                )
+                              ),
+                              padding: MaterialStateProperty.all(EdgeInsets.zero),
+                            ),
+                          ),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints.expand(),
+                            child: _image == null ? Icon(
+                              CupertinoIcons.camera,
+                              color: isCupertino(context) ? CupertinoTheme.of(context).primaryColor : theme.colorScheme.primary,
+                            ) : Image.file(
+                              File(_image!.path),
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        )
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
+                    child: PlatformWidget(
+                      cupertino: (context, _) => CupertinoButton(
+                        onPressed: _selectedHazard == null ? null : _onSubmit,
+                        child: Text(
+                          'Submit',
+                          style: CupertinoTheme.of(context).textTheme.textStyle
+                        ),
+                      ),
+                      material: (context, _) => ElevatedButton(
+                        onPressed: _selectedHazard == null ? null : _onSubmit,
+                        child: const Text('Submit')
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      borderRadius: const BorderRadius.all(Radius.circular(100)),
+                      color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemFill, context),
+                      onPressed: _close,
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

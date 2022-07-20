@@ -173,12 +173,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               if (ref.read(panelPositionProvider).position == PanelPosition.open) {
                 ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
               } else {
-                if (ref.read(selectedHazardProvider).hazard != null) {
-                  ref.read(selectedHazardProvider.notifier).deselect();
-                } else {
-                  ref.read(parkTrailsProvider.notifier).deselectTrail();
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
-                }
+                ref.read(selectedHazardProvider.notifier).deselect();
+                ref.read(parkTrailsProvider.notifier).deselectTrail();
+                ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
               }
             },
           ),
