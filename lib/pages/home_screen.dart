@@ -6,8 +6,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,6 +66,35 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Consumer(
             builder: (context, ref, child) {
+              // listen to panel position state to control panel position
+              ref.listen<PanelPositionUpdate>(panelPositionProvider, (prev, next) {
+                if (next.move) {
+                  switch (next.position) {
+                    case PanelPosition.open:
+                      _panelController.open();
+                      break;
+                    case PanelPosition.closed:
+                      _panelController.close();
+                      break;
+                    case PanelPosition.snapped:
+                      _panelController.animatePanelToSnapPoint();
+                      break;
+                  }
+                }
+              });
+              // update panel position
+              var position = ref.read(panelPositionProvider).position;
+              if (_panelController.isAttached) {
+                if (_panelController.isPanelClosed) {
+                  position = PanelPosition.closed;
+                } else if (_panelController.isPanelOpen) {
+                  position = PanelPosition.open;
+                } else if ((_panelController.panelPosition-_snapPoint).abs()<0.0001 && !_panelController.isPanelAnimating) {
+                  position = PanelPosition.snapped;
+                }
+              }
+              Future.delayed(const Duration(milliseconds: 1), () =>
+                  ref.read(panelPositionProvider.notifier).update(position));
               // listen to updates from parkTrailsProvider. This builder
               // will rebuild whenever a value changes (initial load, trail selected)
               // we want to know when a trail has been selected so we can show the modal.
@@ -189,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // status bar blur
-          if (isCupertino(context) || true)
+          if (isCupertino(context))
             const StatusBarBlur(),
         ],
       ),
@@ -428,25 +457,48 @@ class TrailHazardsWidget extends ConsumerWidget {
   }
 }
 
-class HazardInfoWidget extends StatelessWidget {
+class HazardInfoWidget extends ConsumerWidget {
   final Hazard hazard;
   const HazardInfoWidget({super.key, required this.hazard});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return PlatformTextButton(
+      padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
+      onPressed: () {
+        ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
+        ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            hazard.hazard.displayName,
-            style: theme.textTheme.titleLarge,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                hazard.hazard.displayName,
+                style: theme.textTheme.titleLarge,
+              ),
+              Text(
+                hazard.timeString(),
+                style: theme.textTheme.subtitle1
+              )
+            ],
           ),
-          Text(hazard.timeString())
+          if (hazard.image != null)
+            SizedBox(
+              height: 80,
+              child: AspectRatio(
+                aspectRatio: 4/3,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: HazardImage(hazard.image!),
+                ),
+              )
+            )
         ],
-      )
+      ),
     );
   }
 }

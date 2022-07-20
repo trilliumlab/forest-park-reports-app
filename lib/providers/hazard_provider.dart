@@ -49,9 +49,8 @@ class HazardPhotoProgress {
   }
 }
 
-final hazardPhotoProgressProvider = StateProvider.family<HazardPhotoProgress, String>((ref, uuid) {
-  return HazardPhotoProgress(0, 0);
-});
+final hazardPhotoProgressProvider = StateProvider.family<HazardPhotoProgress, String>(
+        (ref, uuid) => HazardPhotoProgress(0, 0));
 
 final hazardPhotoProvider = FutureProvider.family<Uint8List?, String>((ref, uuid) async {
   final res = await ref.read(dioProvider).get<Uint8List>(
@@ -62,3 +61,26 @@ final hazardPhotoProvider = FutureProvider.family<Uint8List?, String>((ref, uuid
   );
   return res.data;
 });
+
+class SelectedHazard {
+  final bool moveCamera;
+  final Hazard? hazard;
+  SelectedHazard(this.moveCamera, [this.hazard]);
+}
+
+class SelectedHazardNotifier extends StateNotifier<SelectedHazard> {
+  SelectedHazardNotifier() : super(SelectedHazard(false));
+
+  void selectAndMove(Hazard hazard) {
+    state = SelectedHazard(true, hazard);
+  }
+  void select(Hazard hazard) {
+    state = SelectedHazard(false, hazard);
+  }
+  void deselect() {
+    state = SelectedHazard(false);
+  }
+}
+
+final selectedHazardProvider = StateNotifierProvider<SelectedHazardNotifier, SelectedHazard>
+  ((ref) => SelectedHazardNotifier());

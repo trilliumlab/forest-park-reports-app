@@ -7,13 +7,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
-import 'package:flutter_map_marker_popup/src/popup_event.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
+import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -74,17 +74,51 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       }
     });
 
-    final markers = ref.watch(activeHazardProvider).map((e) => HazardMarker(
-      hazard: e,
-      builder: (_) => Icon(
-          Icons.warning_rounded,
-          color: isMaterial(context)
-              ? Theme.of(context).errorColor
-              : CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)
-      ),
-    )).toList();
+    final markers = ref.watch(activeHazardProvider).map((hazard) {
+      late final HazardMarker marker;
+      marker = HazardMarker(
+        hazard: hazard,
+        builder: (_) =>
+          GestureDetector(
+            onTap: () {
+              if (hazard == ref.read(selectedHazardProvider).hazard) {
+                ref.read(selectedHazardProvider.notifier).deselect();
+                _popupController.hideAllPopups();
+              } else {
+                ref.read(selectedHazardProvider.notifier).select(hazard);
+                final parkTrails = ref.read(parkTrailsProvider);
+                final hazardTrail = parkTrails.trails[hazard.location.trail]!;
+                ref.read(parkTrailsProvider.notifier).selectTrail(hazardTrail);
+                _popupController.showPopupsOnlyFor([marker]);
+              }
+            },
+            child: Icon(
+              Icons.warning_rounded,
+              color: isMaterial(context)
+                  ? Theme
+                  .of(context)
+                  .errorColor
+                  : CupertinoDynamicColor.resolve(
+                  CupertinoColors.destructiveRed, context)
+            ),
+          ),
+      );
+      return marker;
+    }).toList();
+
+    ref.listen<SelectedHazard>(selectedHazardProvider, (prev, next) {
+      if (next.hazard == null) {
+        _popupController.hideAllPopups();
+      } else {
+        _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
+        if (next.moveCamera) {
+          _mapController.move(next.hazard!.location, _mapController.zoom);
+        }
+      }
+    });
 
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
         center: LatLng(45.57416784067063, -122.76892379502566),
         zoom: 11.5,
@@ -136,8 +170,16 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               }
             },
             onMiss: (tapPosition) {
-              _popupController.hideAllPopups();
-              ref.read(parkTrailsProvider.notifier).deselectTrail();
+              if (ref.read(panelPositionProvider).position == PanelPosition.open) {
+                ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+              } else {
+                if (ref.read(selectedHazardProvider).hazard != null) {
+                  ref.read(selectedHazardProvider.notifier).deselect();
+                } else {
+                  ref.read(parkTrailsProvider.notifier).deselectTrail();
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                }
+              }
             },
           ),
         ),
@@ -148,14 +190,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             popupBuilder: (_, marker) {
               if (marker is HazardMarker) {
                 return HazardInfoPopup(hazard: marker.hazard);
-              } else {
-                return Container();
               }
-            },
-            onPopupEvent: (e, __) {
-              if (e is ShowPopupsOnlyFor) {
-                ref.read(parkTrailsProvider.notifier).deselectTrail();
-              }
+              return Container();
             },
             popupAnimation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
             markers: markers,
@@ -205,36 +241,39 @@ class HazardInfoPopup extends StatelessWidget {
             color: theme.colorScheme.background,
             child: child,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8, top: 4),
-                child: Text(
-                  hazard.hazard.displayName,
-                  style: theme.textTheme.titleLarge,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
-                child: Text(
-                  hazard.timeString(),
-                ),
-              ),
-              if (hazard.image != null)
+          child: IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
-                  child: ClipRRect(
-                    borderRadius: radius,
-                    child: SizedBox(
-                      width: 175,
-                      height: 200,
-                      child: HazardImage(hazard.image!)
-                    ),
+                  padding: const EdgeInsets.only(left: 8, right: 8, top: 4),
+                  child: Text(
+                    hazard.hazard.displayName,
+                    style: theme.textTheme.titleLarge,
                   ),
                 ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
+                  child: Text(
+                    hazard.timeString(),
+                  ),
+                ),
+                if (hazard.image != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
+                    child: ClipRRect(
+                      borderRadius: radius,
+                      child: AspectRatio(
+                        aspectRatio: 3/4,
+                        child: SizedBox.shrink(
+                          child: HazardImage(hazard.image!),
+                        )
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
