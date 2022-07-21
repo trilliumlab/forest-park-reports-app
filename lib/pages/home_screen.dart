@@ -316,6 +316,13 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     }
   }
 
+  Future _cameraSelect() async {
+    final image = await _picker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+      setState(() => _image = image);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -367,7 +374,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                           _selectedHazard = value;
                         }),
                         value: _selectedHazard,
-                        hint: Text('Hazard Type'),
+                        hint: const Text('Hazard Type'),
                         items: HazardType.values.map((type) => DropdownMenuItem(
                           value: type,
                           child: Text(type.name),
@@ -380,18 +387,15 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                       padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
                       child: ClipRRect(
                         borderRadius: BorderRadius.all(Radius.circular(isCupertino(context) ? 8 : 18)),
-                        child: PlatformElevatedButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () async {
-                            final image = await _picker.pickImage(source: ImageSource.camera);
-                            if (image != null) {
-                              setState(() => _image = image);
-                            }
-                          },
-                          cupertino: (context, __) => CupertinoElevatedButtonData(
+                        child: PlatformWidgetBuilder(
+                          cupertino: (context, child, __) => CupertinoButton(
+                            padding: EdgeInsets.zero,
+                            onPressed: _cameraSelect,
                             color: CupertinoDynamicColor.resolve(CupertinoColors.quaternarySystemFill, context),
+                            child: child!,
                           ),
-                          material: (context, __) => MaterialElevatedButtonData(
+                          material: (context, child, __) => ElevatedButton(
+                            onPressed: _cameraSelect,
                             style: ButtonStyle(
                               shape: MaterialStateProperty.all(
                                 const RoundedRectangleBorder(
@@ -400,6 +404,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                               ),
                               padding: MaterialStateProperty.all(EdgeInsets.zero),
                             ),
+                            child: child,
                           ),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints.expand(),
@@ -419,6 +424,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                     padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
                     child: PlatformWidget(
                       cupertino: (context, _) => CupertinoButton(
+                        color: CupertinoTheme.of(context).primaryColor,
                         onPressed: _selectedHazard == null ? null : _onSubmit,
                         child: Text(
                           'Submit',
