@@ -699,6 +699,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0-dev.9"
+  simplify:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "62836e37a8cd975ec5d326d6cbec62126357d5a8"
+      url: "https://github.com/trilliumlab/simplify.git"
+    source: git
+    version: "1.0.1"
   sky_engine:
     dependency: transitive
     description: flutter

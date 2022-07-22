@@ -123,6 +123,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         center: LatLng(45.57416784067063, -122.76892379502566),
         zoom: 11.5,
         onPositionChanged: (MapPosition position, bool hasGesture) {
+          if (position.zoom != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) =>
+                ref.read(parkTrailsProvider.notifier).updateZoom(position.zoom!));
+          }
           if (hasGesture) {
             ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.never);
           }
@@ -138,8 +142,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             //     ? const Color(0xfff7f7f2)
             //     : const Color(0xff36475c),
             urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
-            //? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            //     lightMode
+            // urlTemplate: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}@2x",
+            // urlTemplate: true
             //         ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
             //         : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
             maxNativeZoom: 22,

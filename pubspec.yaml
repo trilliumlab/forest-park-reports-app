@@ -55,6 +55,9 @@ dependencies:
   # fixes elevation not being read
   gpx:
     git: https://github.com/trilliumlab/dart-gpx.git
+  # allow simplification of LatLng
+  simplify:
+    git: https://github.com/trilliumlab/simplify.git
 
 dev_dependencies:
   flutter_test:

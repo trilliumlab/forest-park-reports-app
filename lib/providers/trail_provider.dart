@@ -9,6 +9,7 @@ import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:simplify/simplify.dart';
 
 /// Represents a Trail in Forest Park
 class Trail {
@@ -80,14 +81,15 @@ class Track {
 /// highlight.
 /// The ParkTrails class holds the currently selected polyline
 class ParkTrails {
-  Map<String, Trail> trails;
-  Trail? selectedTrail;
-  List<TrackPolyline> trackPolylines;
+  final Map<String, Trail> trails;
+  final Trail? selectedTrail;
+  final List<TrackPolyline> trackPolylines;
+  final PolylineResolution resolution;
   /// Returns a list of Polylines from the TrailPolylines, adding the main
   /// Polyline for unselected Trails and the 2 selection Polylines
   /// for selected ones
   List<TaggedPolyline> get polylines => trackPolylines
-      .map((e) => e.polylines)
+      .map((e) => e.getPolylines(resolution))
       .expand((e) => e)
       .toList()..sort((a, b) {
         // sorts the list to have selected polylines at the top, with the
@@ -102,15 +104,16 @@ class ParkTrails {
   );
   bool get isPopulated => !(trails.isEmpty || polylines.isEmpty);
 
-  ParkTrails({this.trails = const {}, this.selectedTrail, this.trackPolylines = const []});
+  ParkTrails({this.trails = const {}, this.resolution = PolylineResolution.min, this.selectedTrail, this.trackPolylines = const []});
 
   // We need a copyWith function for everything being used in a StateNotifier
   // because riverpod StateNotifier state is immutable
-  ParkTrails copyWith({required Trail? selectedTrail, List<TrackPolyline>? trackPolylines}) {
+  ParkTrails copyWith({required Trail? selectedTrail, PolylineResolution? resolution, List<TrackPolyline>? trackPolylines}) {
     return ParkTrails(
       trails: trails,
+      resolution: resolution ?? this.resolution,
       selectedTrail: selectedTrail,
-      trackPolylines: trackPolylines ?? this.trackPolylines
+      trackPolylines: trackPolylines ?? this.trackPolylines,
     );
   }
 
@@ -155,50 +158,104 @@ class SnappedResult {
   }
 }
 
+class PolylineSet {
+  final TaggedPolyline polyline;
+  final TaggedPolyline selectedPolyline;
+  final TaggedPolyline highlightPolyline;
+  const PolylineSet({
+    required this.polyline,
+    required this.selectedPolyline,
+    required this.highlightPolyline,
+  });
+}
+
+enum PolylineResolution {
+  full,
+  ultra,
+  high,
+  medium,
+  low,
+  min;
+
+  double get tolerance {
+    switch (this) {
+      case PolylineResolution.full:
+        return 0;
+      case PolylineResolution.ultra:
+        return 0.00004;
+      case PolylineResolution.high:
+        return 0.0002;
+      case PolylineResolution.medium:
+        return 0.0004;
+      case PolylineResolution.low:
+        return 0.0006;
+      case PolylineResolution.min:
+        return 0.0008;
+    }
+  }
+  factory PolylineResolution.resolutionFromZoom(double zoom) {
+    if (zoom < 11) {
+      return PolylineResolution.min;
+    } else if (zoom < 12) {
+      return PolylineResolution.low;
+    } else if (zoom < 13) {
+      return PolylineResolution.medium;
+    } else if (zoom < 14.5) {
+      return PolylineResolution.high;
+    } else if (zoom < 16) {
+      return PolylineResolution.ultra;
+    } else {
+      return PolylineResolution.full;
+    }
+  }
+}
+
 /// Holds information for drawing a Trail object in a GoogleMap widget
 class TrackPolyline {
   final Trail trail;
   final bool selected;
-  late final TaggedPolyline polyline;
-  late final TaggedPolyline selectedPolyline;
-  late final TaggedPolyline highlightPolyline;
+  final Map<PolylineResolution, PolylineSet> polylineSet;
   /// Returns a list of all polylines that should be displayed
-  Set<TaggedPolyline> get polylines => selected ? {selectedPolyline, highlightPolyline} : {polyline};
+  Set<TaggedPolyline> getPolylines(PolylineResolution resolution) {
+    polylineSet.putIfAbsent(resolution, () {
+      final path = simplify(trail.track!.path, tolerance: resolution.tolerance);
+      return PolylineSet(
+        polyline: TaggedPolyline(
+          tag: trail.uuid,
+          points: path,
+          strokeWidth: 1.0,
+          color: CupertinoColors.activeOrange,
+        ),
+        selectedPolyline: TaggedPolyline(
+          tag: "${trail.uuid}_selected",
+          points: path,
+          strokeWidth: 1.0,
+          color: CupertinoColors.activeGreen,
+        ),
+        highlightPolyline: TaggedPolyline(
+          tag: "${trail.uuid}_highlight",
+          points: path,
+          strokeWidth: 8.0,
+          color: CupertinoColors.activeGreen.withAlpha(80),
+        ),
+      );
+    });
+    final set = polylineSet[resolution]!;
+    return selected ? {set.selectedPolyline, set.highlightPolyline} : {set.polyline};
+  }
   // private constructor used to copy without recreating Polylines
   TrackPolyline._fromPolylines(
       this.trail,
       this.selected,
-      this.polyline,
-      this.selectedPolyline,
-      this.highlightPolyline,
+      this.polylineSet,
   );
   TrackPolyline({
     required this.trail,
     required this.selected,
-  }) {
-    // this is the polyline that will be shown when not selected
-    polyline = TaggedPolyline(
-      tag: trail.uuid,
-      points: trail.track!.path,
-      strokeWidth: 1.0,
-      color: CupertinoColors.activeOrange,
-    );
-    // these two are when selected
-    selectedPolyline = TaggedPolyline(
-      tag: "${trail.uuid}_selected",
-      points: trail.track!.path,
-      strokeWidth: 1.0,
-      color: CupertinoColors.activeGreen,
-    );
-    highlightPolyline = TaggedPolyline(
-      tag: "${trail.uuid}_highlight",
-      points: trail.track!.path,
-      strokeWidth: 8.0,
-      color: CupertinoColors.activeGreen.withAlpha(80),
-    );
-  }
+  }) : polylineSet = {};
+
   TrackPolyline copyWith({bool? selected}) {
-    return TrackPolyline._fromPolylines(trail, selected ?? this.selected, polyline, selectedPolyline, highlightPolyline);
+    return TrackPolyline._fromPolylines(trail, selected ?? this.selected, polylineSet);
   }
 }
 
@@ -254,8 +311,7 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
   ParkTrailsNotifier(StateNotifierProviderRef ref) : super(ParkTrails()) {
     // watch the raw trail provider for updates. When the trails have been
     // loaded or refreshed it will call _buildPolylines.
-    var remoteTrails = ref.watch(remoteTrailsProvider);
-    _buildPolylines(remoteTrails);
+    ref.listen(remoteTrailsProvider, (_, Map<String, Trail> trails) => _buildPolylines(trails));
   }
 
   // builds the TrailPolylines for each Trail and handles selection logic
@@ -264,12 +320,16 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
     // initial state update
     state = ParkTrails(
       trails: trails,
+      resolution: state.resolution,
       trackPolylines: [
         for (var trail in trails.values.where((t) => t.track != null))
-          TrackPolyline(
-            trail: trail,
-            selected: false,
-          )
+          if (state.trackPolylines.any((tp) => tp.trail.uuid == trail.uuid))
+            state.trackPolylines.firstWhere((tp) => tp.trail.uuid == trail.uuid).copyWith()
+          else
+            TrackPolyline(
+              trail: trail,
+              selected: false,
+            ),
       ],
     );
   }
@@ -294,6 +354,15 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
           tp.copyWith(selected: tp.trail == selected)
       ],
     );
+    print(state.resolution);
+  }
+
+  void updateZoom(double zoom) {
+    final resolution = PolylineResolution.resolutionFromZoom(zoom);
+    if (resolution != state.resolution) {
+      print(resolution);
+      state = state.copyWith(selectedTrail: state.selectedTrail, resolution: resolution);
+    }
   }
 
 }

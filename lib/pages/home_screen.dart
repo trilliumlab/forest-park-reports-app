@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   position = PanelPosition.snapped;
                 }
               }
-              Future.delayed(const Duration(milliseconds: 1), () =>
+              WidgetsBinding.instance.addPostFrameCallback((_) =>
                   ref.read(panelPositionProvider.notifier).update(position));
               // listen to updates from parkTrailsProvider. This builder
               // will rebuild whenever a value changes (initial load, trail selected)

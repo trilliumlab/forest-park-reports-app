@@ -93,10 +93,8 @@ class SnappedLatLng extends LatLng {
 enum HazardType {
   tree,
   flood,
-  other,
-}
+  other;
 
-extension HazardTypeInfo on HazardType {
   String get displayName {
     switch (this) {
       case HazardType.tree:

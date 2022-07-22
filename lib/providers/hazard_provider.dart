@@ -27,7 +27,12 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
     FormData formData = FormData.fromMap({
       "file": await MultipartFile.fromFile(file.path)
     });
-    final res = await ref.read(dioProvider).post("/hazard/image", data: formData);
+    final res = await ref.read(dioProvider).post(
+      "/hazard/image",
+      data: formData,
+      onSendProgress: (sent, total) =>
+          ref.read(uploadPhotoProgressProvider.notifier).state = HazardPhotoProgress(sent, total),
+    );
     return res.data['uuid'];
   }
   Future create(NewHazardRequest request) async {
@@ -36,15 +41,18 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
   }
 }
 
+final uploadPhotoProgressProvider = StateProvider((ref) => HazardPhotoProgress(0, 0));
+
 final activeHazardProvider = StateNotifierProvider
   <ActiveHazardNotifier, List<Hazard>>((ref) => ActiveHazardNotifier(ref));
 
 class HazardPhotoProgress {
-  int received;
+  int transmitted;
   int total;
-  HazardPhotoProgress(this.received, this.total);
+  HazardPhotoProgress(this.transmitted, this.total);
+  bool get isComplete => transmitted == total;
   double get progress {
-    final p = received/total;
+    final p = transmitted/total;
     return p.isNaN ? 0.0 : p.clamp(0, 1);
   }
 }
