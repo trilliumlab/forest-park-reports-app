@@ -428,12 +428,12 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                         onPressed: _selectedHazard == null ? null : _onSubmit,
                         child: Text(
                           'Submit',
-                          style: CupertinoTheme.of(context).textTheme.textStyle
+                          style: CupertinoTheme.of(context).textTheme.textStyle,
                         ),
                       ),
                       material: (context, _) => ElevatedButton(
                         onPressed: _selectedHazard == null ? null : _onSubmit,
-                        child: const Text('Submit')
+                        child: const Text('Submit'),
                       ),
                     ),
                   ),
