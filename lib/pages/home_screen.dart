@@ -218,8 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // status bar blur
-          if (isCupertino(context))
-            const StatusBarBlur(),
+          // if (isCupertino(context))
+          //   const StatusBarBlur(),
         ],
       ),
     );

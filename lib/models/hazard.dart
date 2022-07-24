@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:platform_maps_flutter/platform_maps_flutter.dart';
 
 // Tuesday, July 12th, 2022 at 11:53am
 // 11:53 AM July 12 2022
@@ -75,7 +75,6 @@ class SnappedLatLng extends LatLng {
         index = json['index'],
         super(json['lat'], json['long']);
 
-  @override
   Map<String, dynamic> toJson() {
     return {
       'trail': trail,

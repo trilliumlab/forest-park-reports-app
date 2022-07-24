@@ -47,6 +47,9 @@ dependencies:
   flutter_map_tile_caching: ^5.0.0-dev.2
   flutter_map_location_marker: ^4.1.1
   flutter_map_marker_popup: ^3.1.0+1
+  # build on flutter 3
+  platform_maps_flutter:
+    git: https://github.com/NextFaze/platform_maps_flutter.git
   # updates for flutter_map 1
   flutter_map_tappable_polyline:
     git:
@@ -57,7 +60,9 @@ dependencies:
     git: https://github.com/trilliumlab/dart-gpx.git
   # allow simplification of LatLng
   simplify:
-    git: https://github.com/trilliumlab/simplify.git
+    git:
+      url: https://github.com/trilliumlab/simplify.git
+      ref: platform-maps
 
 dev_dependencies:
   flutter_test:
