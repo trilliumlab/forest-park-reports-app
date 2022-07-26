@@ -85,4 +85,3 @@ flutter:
     - .env
     - assets/map_styles/
     - assets/markers/
-    - assets/trails/

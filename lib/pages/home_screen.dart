@@ -7,6 +7,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
+import 'package:forest_park_reports/util/outline_box_shadow.dart';
+import 'package:forest_park_reports/widgets/hazard_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
@@ -834,28 +836,5 @@ class PlatformPill extends StatelessWidget {
             borderRadius: const BorderRadius.all(Radius.circular(12.0))),
       ),
     );
-  }
-
-}
-
-class OutlineBoxShadow extends BoxShadow {
-  const OutlineBoxShadow({
-    Color color = const Color(0xFF000000),
-    Offset offset = Offset.zero,
-    double blurRadius = 0.0,
-  }) : super(color: color, offset: offset, blurRadius: blurRadius);
-
-  @override
-  Paint toPaint() {
-    final Paint result = Paint()
-      ..color = color
-      ..maskFilter = MaskFilter.blur(BlurStyle.outer, blurSigma);
-    assert(() {
-      if (debugDisableShadows) {
-        result.maskFilter = null;
-      }
-      return true;
-    }());
-    return result;
   }
 }
