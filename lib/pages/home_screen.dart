@@ -1,25 +1,18 @@
-import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:collection/collection.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:forest_park_reports/widgets/add_hazard_modal.dart';
 import 'package:forest_park_reports/widgets/trail_info.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/models/hazard.dart';
-import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
-import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
+import 'package:location/location.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -155,17 +148,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, ref, child) {
                   return PlatformFAB(
                       onPressed: () async {
-                        showCupertinoModalPopup(
-                          context: context,
-                          builder: (context) {
-                            return Dismissible(
-                                direction: DismissDirection.down,
-                                key: const Key('key'),
-                                onDismissed: (_) => Navigator.of(context).pop(),
-                                child: const AddHazardModal()
-                            );
-                          },
-                        );
+                        if ((await ref.read(locationPermissionProvider.notifier).requirePermission(context)).authorized) {
+                          showCupertinoModalPopup(
+                            context: context,
+                            builder: (context) {
+                              return Dismissible(
+                                  direction: DismissDirection.down,
+                                  key: const Key('key'),
+                                  onDismissed: (_) => Navigator.of(context).pop(),
+                                  child: const AddHazardModal()
+                              );
+                            },
+                          );
+                        }
                       },
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
@@ -191,25 +186,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, ref, child) {
                   final centerOnLocation = ref.watch(centerOnLocationProvider);
                   return PlatformFAB(
-                      onPressed: () => ref.read(centerOnLocationProvider.notifier)
-                          .update((state) => CenterOnLocationUpdate.always),
-                      child: PlatformWidget(
-                        cupertino: (_, __) => Icon(
-                          // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                            centerOnLocation == CenterOnLocationUpdate.always
-                                ? CupertinoIcons.location_fill
-                                : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                            color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
-                                ? CupertinoColors.systemGrey.highContrastColor
-                                : CupertinoColors.systemGrey.darkHighContrastColor
-                        ),
-                        material: (_, __) => Icon(
-                            Icons.my_location_rounded,
-                            color: centerOnLocation == CenterOnLocationUpdate.always
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onBackground
-                        ),
-                      )
+                    onPressed: () async {
+                      if ((await ref.read(locationPermissionProvider.notifier).requirePermission(context)).authorized) {
+                        ref.read(centerOnLocationProvider.notifier)
+                            .update((state) => CenterOnLocationUpdate.always);
+                      }
+                    },
+                    child: PlatformWidget(
+                      cupertino: (_, __) => Icon(
+                        // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                        centerOnLocation == CenterOnLocationUpdate.always
+                            ? CupertinoIcons.location_fill
+                            : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                        color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                            ? CupertinoColors.systemGrey.highContrastColor
+                            : CupertinoColors.systemGrey.darkHighContrastColor
+                      ),
+                      material: (_, __) => Icon(
+                        Icons.my_location_rounded,
+                        color: centerOnLocation == CenterOnLocationUpdate.always
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onBackground
+                      ),
+                    ),
                   );
                 }
             ),

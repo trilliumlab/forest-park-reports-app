@@ -13,11 +13,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
+import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:location/location.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
@@ -66,7 +68,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
   Widget build(BuildContext context) {
     // using ref.watch will allow the widget to be rebuilt everytime
     // the provider is updated
-    ParkTrails parkTrails = ref.watch(parkTrailsProvider);
+    final parkTrails = ref.watch(parkTrailsProvider);
+    final permissionStatus = ref.watch(locationPermissionProvider);
 
     final centerOnLocation = ref.watch(centerOnLocationProvider);
     ref.listen(centerOnLocationProvider, (prev, next) {
@@ -153,12 +156,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
-        LocationMarkerLayerWidget(
-          plugin: LocationMarkerPlugin(
-            centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,
-            centerOnLocationUpdate: centerOnLocation,
+        if (permissionStatus?.authorized ?? false)
+          LocationMarkerLayerWidget(
+            plugin: LocationMarkerPlugin(
+              centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,
+              centerOnLocationUpdate: centerOnLocation,
+            ),
           ),
-        ),
         TappablePolylineLayerWidget(
           options: TappablePolylineLayerOptions(
             // Will only render visible polylines, increasing performance
