@@ -1,4 +1,6 @@
 PODS:
+  - "app_settings (3.0.0+1)":
+    - Flutter
   - battery_info (0.0.1):
     - Flutter
   - connectivity_plus (0.0.1):
@@ -26,6 +28,7 @@ PODS:
   - SwiftLocation/Core (5.1.0)
 
 DEPENDENCIES:
+  - app_settings (from `.symlinks/plugins/app_settings/ios`)
   - battery_info (from `.symlinks/plugins/battery_info/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - Flutter (from `Flutter`)
@@ -44,6 +47,8 @@ SPEC REPOS:
     - SwiftLocation
 
 EXTERNAL SOURCES:
+  app_settings:
+    :path: ".symlinks/plugins/app_settings/ios"
   battery_info:
     :path: ".symlinks/plugins/battery_info/ios"
   connectivity_plus:
@@ -68,6 +73,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
 
 SPEC CHECKSUMS:
+  app_settings: d103828c9f5d515c4df9ee754dabd443f7cedcf3
   battery_info: 09f5c9ee65394f2291c8c6227bedff345b8a730c
   connectivity_plus: 413a8857dd5d9f1c399a39130850d02fe0feaf7e
   Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a

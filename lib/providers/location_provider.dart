@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,7 +31,7 @@ class LocationPermissionProviderNotifier extends StateNotifier<PermissionStatus?
 
   Future<PermissionStatus> checkPermission({bool requestPrecise = true}) async {
     var status = await getPermissionStatus();
-    if (!status.authorized && (requestPrecise || status != PermissionStatus.restricted)) {
+    if (!Platform.isIOS && !status.authorized && (requestPrecise || status != PermissionStatus.restricted)) {
       state = await requestPermission();
     } else {
       state = status;

@@ -48,6 +48,6 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Used to take photos of hazards</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Used to display location on map</string>
+	<string>Used to display location on map and make hazard reports</string>
 </dict>
 </plist>
