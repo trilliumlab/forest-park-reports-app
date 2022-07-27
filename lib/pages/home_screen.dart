@@ -611,10 +611,15 @@ class TrailElevationGraph extends ConsumerWidget {
         .where((e) => e.location.trail == trail.uuid);
     final Map<double, Hazard?> hazardsMap = {};
     final List<FlSpot> spots = [];
+    final filterInterval = (trail.track!.elevation.length/100).round();
+    print(filterInterval);
     for (final e in trail.track!.elevation.asMap().entries) {
-      final distance = trail.track!.distance[e.key];
-      spots.add(FlSpot(distance, e.value));
-      hazardsMap[distance] = activeHazards.firstWhereOrNull((h) => h.location.index == e.key);
+      if (e.key % filterInterval == 0) {
+        final distance = trail.track!.distance[e.key];
+        spots.add(FlSpot(distance, e.value));
+        hazardsMap[distance] =
+            activeHazards.firstWhereOrNull((h) => h.location.index == e.key);
+      }
     }
     final maxInterval = trail.track!.distance.last/5;
     final interval = maxInterval-maxInterval/20;
@@ -646,6 +651,7 @@ class TrailElevationGraph extends ConsumerWidget {
                   lineBarsData: [
                     LineChartBarData(
                       spots: spots,
+                      isCurved: false,
                       dotData: FlDotData(
                           checkToShowDot: (s, d) => hazardsMap[s.x] != null,
                           getDotPainter: (a, b, c, d) => FlDotCirclePainter(
