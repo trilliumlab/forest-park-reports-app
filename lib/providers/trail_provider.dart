@@ -3,10 +3,12 @@ import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
+import 'package:forest_park_reports/util/extensions.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:simplify/simplify.dart';
@@ -89,8 +91,7 @@ class ParkTrails {
   /// Polyline for unselected Trails and the 2 selection Polylines
   /// for selected ones
   List<TaggedPolyline> get polylines => trackPolylines
-      .map((e) => e.getPolylines(resolution))
-      .expand((e) => e)
+      .map((e) => e.getPolyline(resolution))
       .toList()..sort((a, b) {
         // sorts the list to have selected polylines at the top, with the
         // selected line first and the highlight second. We do this by
@@ -98,10 +99,14 @@ class ParkTrails {
         // difference in values to determine the sort order
         final at = a.tag?.split("_");
         final bt = b.tag?.split("_");
-        return (at?.length != 2 ? 0 : at?[1] == "selected" ? 2 : at?[1] == "highlight" ? 1 : 0) -
-            (bt?.length != 2 ? 0 : bt?[1] == "selected" ? 2 : bt?[1] == "highlight" ? 1 : 0);
+        return (at?.length != 2 ? 0 : at?[1] == "selected" ? 1 : 0) -
+            (bt?.length != 2 ? 0 : bt?[1] == "selected" ? 1 : 0);
       }
   );
+  List<Marker> get markers => trackPolylines
+      .map((e) => e.getMarkers(resolution))
+      .expand((e) => e)
+      .toList();
   bool get isPopulated => !(trails.isEmpty || polylines.isEmpty);
 
   ParkTrails({this.trails = const {}, this.resolution = PolylineResolution.min, this.selectedTrail, this.trackPolylines = const []});
@@ -161,11 +166,18 @@ class SnappedResult {
 class PolylineSet {
   final TaggedPolyline polyline;
   final TaggedPolyline selectedPolyline;
-  final TaggedPolyline highlightPolyline;
   const PolylineSet({
     required this.polyline,
     required this.selectedPolyline,
-    required this.highlightPolyline,
+  });
+}
+
+class MarkerSet {
+  final Marker startMarker;
+  final Marker endMarker;
+  const MarkerSet({
+    required this.startMarker,
+    required this.endMarker,
   });
 }
 
@@ -216,7 +228,7 @@ class TrackPolyline {
   final bool selected;
   final Map<PolylineResolution, PolylineSet> polylineSet;
   /// Returns a list of all polylines that should be displayed
-  Set<TaggedPolyline> getPolylines(PolylineResolution resolution) {
+  TaggedPolyline getPolyline(PolylineResolution resolution) {
     polylineSet.putIfAbsent(resolution, () {
       final path = simplify(trail.track!.path, tolerance: resolution.tolerance);
       return PolylineSet(
@@ -230,32 +242,60 @@ class TrackPolyline {
           tag: "${trail.uuid}_selected",
           points: path,
           strokeWidth: 1.0,
+          borderColor: CupertinoColors.activeGreen.withAlpha(80),
+          borderStrokeWidth: 8.0,
           color: CupertinoColors.activeGreen,
-        ),
-        highlightPolyline: TaggedPolyline(
-          tag: "${trail.uuid}_highlight",
-          points: path,
-          strokeWidth: 8.0,
-          color: CupertinoColors.activeGreen.withAlpha(80),
-        ),
+        )
       );
     });
     final set = polylineSet[resolution]!;
-    return selected ? {set.selectedPolyline, set.highlightPolyline} : {set.polyline};
+    return selected ? set.selectedPolyline : set.polyline;
+  }
+  final Map<PolylineResolution, MarkerSet> markerSet;
+  Set<Marker> getMarkers(PolylineResolution resolution) {
+    markerSet.putIfAbsent(resolution, () {
+      final path = simplify(trail.track!.path, tolerance: resolution.tolerance);
+      final prevPoint = path[path.length-2];
+      final bearing = path.last.bearingTo(prevPoint);
+      return MarkerSet(
+        startMarker: Marker(
+          point: path.first,
+          builder: (_) => const Icon(
+            Icons.circle,
+            color: Colors.green,
+            size: 12.0,
+          ),
+        ),
+        endMarker: Marker(
+          point: path.last,
+          builder: (_) => RotationTransition(
+            turns: AlwaysStoppedAnimation(bearing/(2*pi)),
+            child: const Icon(
+              Icons.square,
+              color: Colors.red,
+              size: 12.0,
+            ),
+          ),
+        ),
+      );
+    });
+    final set = markerSet[resolution]!;
+    return selected ? {set.startMarker, set.endMarker} : {};
   }
   // private constructor used to copy without recreating Polylines
   TrackPolyline._fromPolylines(
       this.trail,
       this.selected,
       this.polylineSet,
+      this.markerSet,
   );
   TrackPolyline({
     required this.trail,
     required this.selected,
-  }) : polylineSet = {};
+  }) : polylineSet = {}, markerSet = {};
 
   TrackPolyline copyWith({bool? selected}) {
-    return TrackPolyline._fromPolylines(trail, selected ?? this.selected, polylineSet);
+    return TrackPolyline._fromPolylines(trail, selected ?? this.selected, polylineSet, markerSet);
   }
 }
 
@@ -354,13 +394,11 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
           tp.copyWith(selected: tp.trail == selected)
       ],
     );
-    print(state.resolution);
   }
 
   void updateZoom(double zoom) {
     final resolution = PolylineResolution.resolutionFromZoom(zoom);
     if (resolution != state.resolution) {
-      print(resolution);
       state = state.copyWith(selectedTrail: state.selectedTrail, resolution: resolution);
     }
   }

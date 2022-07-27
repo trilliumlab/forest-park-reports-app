@@ -185,6 +185,11 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             },
           ),
         ),
+        MarkerLayerWidget(
+          options: MarkerLayerOptions(
+            markers: parkTrails.markers,
+          ),
+        ),
         PopupMarkerLayerWidget(
           options: PopupMarkerLayerOptions(
             markerRotateOrigin: const Offset(15, 15),
