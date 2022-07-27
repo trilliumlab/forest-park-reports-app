@@ -15,6 +15,7 @@ import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
+import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
