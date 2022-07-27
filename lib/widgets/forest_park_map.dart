@@ -156,7 +156,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
-        if (permissionStatus?.authorized ?? false)
+        if (permissionStatus?.authorized ?? false || permissionStatus == PermissionStatus.restricted)
           LocationMarkerLayerWidget(
             plugin: LocationMarkerPlugin(
               centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,

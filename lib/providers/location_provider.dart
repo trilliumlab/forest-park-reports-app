@@ -27,30 +27,12 @@ class LocationPermissionProviderNotifier extends StateNotifier<PermissionStatus?
     checkPermission();
   }
 
-  Future checkPermission() async {
+  Future<PermissionStatus> checkPermission({bool requestPrecise = true}) async {
     var status = await getPermissionStatus();
-    if (!status.authorized) {
+    if (!status.authorized && (requestPrecise || status != PermissionStatus.restricted)) {
       state = await requestPermission();
-    }
-  }
-
-  _showMissingPermissionDialog(BuildContext context, String message) {
-    showPlatformDialog(
-      context: context,
-      builder: (_) => PlatformAlertDialog(
-        title: const Text('Missing Location Permissions'),
-        content: Text(message),
-      ),
-    );
-  }
-
-  Future<PermissionStatus> requirePermission(BuildContext context) async {
-    await checkPermission();
-    if (state == PermissionStatus.denied) {
-      _showMissingPermissionDialog(context, 'Need location permission');
-    }
-    if (state == PermissionStatus.restricted) {
-      _showMissingPermissionDialog(context, 'Need precise location permission');
+    } else {
+      state = status;
     }
     return state!;
   }

@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
@@ -47,6 +48,29 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fabHeight = _initFabHeight;
+  }
+
+  _showMissingPermissionDialog(BuildContext context, String message) {
+    showPlatformDialog(
+      context: context,
+      builder: (context) => PlatformAlertDialog(
+        title: const Text('Location Permission Required'),
+        content: Text(message),
+        actions: [
+          PlatformDialogAction(
+            child: PlatformText("Cancel"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          PlatformDialogAction(
+            child: PlatformText("Go To Settings"),
+            onPressed: () {
+              AppSettings.openAppSettings();
+              Navigator.pop(context);
+            },
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -148,7 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, ref, child) {
                   return PlatformFAB(
                       onPressed: () async {
-                        if ((await ref.read(locationPermissionProvider.notifier).requirePermission(context)).authorized) {
+                        final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
+                        if (status.authorized) {
                           showCupertinoModalPopup(
                             context: context,
                             builder: (context) {
@@ -160,6 +185,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           );
+                        }
+                        if (!mounted) return;
+                        if (status == PermissionStatus.denied) {
+                          _showMissingPermissionDialog(context, 'Location permission is required to report hazards');
+                        }
+                        if (status == PermissionStatus.restricted) {
+                          _showMissingPermissionDialog(context, 'Precise location permission is required to make sure hazard reports are accurate');
                         }
                       },
                       child: PlatformWidget(
@@ -187,9 +219,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   final centerOnLocation = ref.watch(centerOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
-                      if ((await ref.read(locationPermissionProvider.notifier).requirePermission(context)).authorized) {
+                      final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
+                      if (status.authorized) {
                         ref.read(centerOnLocationProvider.notifier)
                             .update((state) => CenterOnLocationUpdate.always);
+                      }
+                      if (!mounted) return;
+                      if (status == PermissionStatus.denied) {
+                        _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
+                      }
+                      if (status == PermissionStatus.restricted) {
+                        _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
                       }
                     },
                     child: PlatformWidget(
