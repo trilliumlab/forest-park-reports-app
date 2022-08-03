@@ -250,7 +250,7 @@ packages:
       name: flutter_map
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.1.1"
+    version: "2.2.0"
   flutter_map_location_marker:
     dependency: "direct main"
     description:
@@ -261,12 +261,10 @@ packages:
   flutter_map_marker_popup:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "6a55085fd95920fedae500b6614249a742f3af5e"
-      url: "https://github.com/Harishwarrior/flutter_map_marker_popup.git"
-    source: git
-    version: "3.1.0+1"
+      name: flutter_map_marker_popup
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.2.0"
   flutter_map_tappable_polyline:
     dependency: "direct main"
     description:
@@ -282,7 +280,7 @@ packages:
       name: flutter_map_tile_caching
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.0.0-dev.5"
+    version: "5.0.0"
   flutter_platform_widgets:
     dependency: "direct main"
     description:
