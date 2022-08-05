@@ -220,16 +220,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   return PlatformFAB(
                     onPressed: () async {
                       final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
-                      if (status.authorized) {
-                        ref.read(centerOnLocationProvider.notifier)
-                            .update((state) => CenterOnLocationUpdate.always);
-                      }
                       if (!mounted) return;
-                      if (status == PermissionStatus.denied) {
-                        _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
-                      }
-                      if (status == PermissionStatus.restricted) {
-                        _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
+                      switch(status) {
+                        case PermissionStatus.authorizedAlways:
+                        case PermissionStatus.authorizedWhenInUse:
+                          ref.read(centerOnLocationProvider.notifier)
+                              .update((state) => CenterOnLocationUpdate.always);
+                          break;
+                        case PermissionStatus.notDetermined:
+                          await requestPermission();
+                          break;
+                        case PermissionStatus.restricted:
+                          _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
+                          break;
+                        case PermissionStatus.denied:
+                          _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
+                          break;
                       }
                     },
                     child: PlatformWidget(
