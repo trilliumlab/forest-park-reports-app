@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
   StateNotifierProviderRef ref;
@@ -24,8 +26,13 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
     ];
   }
   Future<String?> uploadImage(XFile file, {void Function(int, int)? onSendProgress}) async {
+    final image = await FlutterImageCompress.compressWithFile(
+      file.path,
+      keepExif: true,
+      quality: 80
+    );
     FormData formData = FormData.fromMap({
-      "file": MultipartFile(file.openRead(), await file.length())
+      "file": MultipartFile.fromBytes(image!),
     });
     final res = await ref.read(dioProvider).post(
       "/hazard/image",

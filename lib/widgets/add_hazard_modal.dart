@@ -271,7 +271,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
               Align(
                 alignment: Alignment.topCenter,
                 child: LinearProgressIndicator(
-                  value: _uploadProgress,
+                  value: _uploadProgress > 0.95 ? null : _uploadProgress,
                   backgroundColor: Colors.transparent,
                 ),
               ),
