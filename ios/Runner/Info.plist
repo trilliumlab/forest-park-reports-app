@@ -47,7 +47,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Used to take photos of hazards</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>hazard</key>
+		<string>Precise location is used to accurately report trail hazards</string>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Used to display location on map and make hazard reports</string>
+	<string>Used to display location on map</string>
 </dict>
 </plist>

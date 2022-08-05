@@ -7,17 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:location/location.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load();
   FlutterMapTileCaching.initialise(await RootDirectory.temporaryCache);
   await FMTC.instance('forestPark').manage.createAsync();
-  // TODO we need to request location permission on first run
-  await setLocationSettings(
-    accuracy: LocationAccuracy.high
-  );
   runApp(const App());
 }
 

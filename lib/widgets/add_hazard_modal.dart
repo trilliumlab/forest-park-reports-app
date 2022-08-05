@@ -11,6 +11,8 @@ import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
+import 'package:forest_park_reports/util/permissions_dialog.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddHazardModal extends ConsumerStatefulWidget {
@@ -36,7 +38,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     var snappedLoc = parkTrails.snapLocation(location.latLng()!);
 
     final continueCompleter = Completer<bool>();
-    if (snappedLoc.distance > 10+(location.accuracy ?? 15)) {
+    if (snappedLoc.distance > 10+(location.accuracy)) {
       showPlatformDialog(context: context, builder: (context) => PlatformAlertDialog(
         title: const Text('Too far from trail'),
         content: const Text('Reports must be made on a marked Forest Park trail'),
@@ -78,26 +80,36 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   }
 
   Future _onSubmit() async {
-    if (_image == null) {
-      showPlatformDialog(context: context, builder: (_) => PlatformAlertDialog(
-        title: const Text('No photo selected'),
-        content: const Text("Are you sure you'd like to submit this hazard without a photo?"),
-        actions: [
-          PlatformDialogAction(
-            child: PlatformText('Cancel'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          PlatformDialogAction(
-            child: PlatformText('Yes'),
-            onPressed: () {
-              Navigator.pop(context);
-              _submit();
-            },
-          ),
-        ],
-      ));
+    final status = await ref.read(locationPermissionProvider.notifier).checkPermission(requestPrecise: true);
+    if (!mounted) return;
+    if (status.accuracy == LocationAccuracyStatus.precise) {
+      if (_image == null) {
+        showPlatformDialog(context: context, builder: (_) => PlatformAlertDialog(
+          title: const Text('No photo selected'),
+          content: const Text("Are you sure you'd like to submit this hazard without a photo?"),
+          actions: [
+            PlatformDialogAction(
+              child: PlatformText('Cancel'),
+              onPressed: () => Navigator.pop(context),
+            ),
+            PlatformDialogAction(
+              child: PlatformText('Yes'),
+              onPressed: () {
+                Navigator.pop(context);
+                _submit();
+              },
+            ),
+          ],
+        ));
+      } else {
+        _submit();
+      }
     } else {
-      _submit();
+      showMissingPermissionDialog(
+          context,
+          'Precise Location Required',
+          'Precise location permission is required to report trail hazards'
+      );
     }
   }
 

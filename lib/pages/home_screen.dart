@@ -1,11 +1,12 @@
 import 'dart:ui';
 
-import 'package:app_settings/app_settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
+import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
+import 'package:forest_park_reports/util/permissions_dialog.dart';
 import 'package:forest_park_reports/widgets/add_hazard_modal.dart';
 import 'package:forest_park_reports/widgets/trail_info.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -13,7 +14,6 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
-import 'package:location/location.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -48,29 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fabHeight = _initFabHeight;
-  }
-
-  _showMissingPermissionDialog(BuildContext context, String message) {
-    showPlatformDialog(
-      context: context,
-      builder: (context) => PlatformAlertDialog(
-        title: const Text('Location Permission Required'),
-        content: Text(message),
-        actions: [
-          PlatformDialogAction(
-            child: PlatformText("Cancel"),
-            onPressed: () => Navigator.pop(context),
-          ),
-          PlatformDialogAction(
-            child: PlatformText("Go To Settings"),
-            onPressed: () {
-              AppSettings.openAppSettings();
-              Navigator.pop(context);
-            },
-          )
-        ],
-      ),
-    );
   }
 
   @override
@@ -172,31 +149,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (context, ref, child) {
                   return PlatformFAB(
                       onPressed: () async {
-                        final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
-                        if (!mounted) return;
-                        switch(status) {
-                          case PermissionStatus.authorizedAlways:
-                          case PermissionStatus.authorizedWhenInUse:
-                            showCupertinoModalPopup(
-                              context: context,
-                              builder: (context) {
-                                return Dismissible(
-                                    direction: DismissDirection.down,
-                                    key: const Key('key'),
-                                    onDismissed: (_) => Navigator.of(context).pop(),
-                                    child: const AddHazardModal()
-                                );
-                              },
+                        showCupertinoModalPopup(
+                          context: context,
+                          builder: (context) {
+                            return Dismissible(
+                                direction: DismissDirection.down,
+                                key: const Key('key'),
+                                onDismissed: (_) => Navigator.of(context).pop(),
+                                child: const AddHazardModal()
                             );
-                            break;
-                          case PermissionStatus.restricted:
-                            _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
-                            break;
-                          case PermissionStatus.denied:
-                            _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
-                            break;
-                          default:
-                        }
+                          },
+                        );
                       },
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
@@ -225,19 +188,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () async {
                       final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
                       if (!mounted) return;
-                      switch(status) {
-                        case PermissionStatus.authorizedAlways:
-                        case PermissionStatus.authorizedWhenInUse:
-                          ref.read(centerOnLocationProvider.notifier)
-                              .update((state) => CenterOnLocationUpdate.always);
-                          break;
-                        case PermissionStatus.restricted:
-                          _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
-                          break;
-                        case PermissionStatus.denied:
-                          _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
-                          break;
-                        default:
+                      if (status.permission.authorized) {
+                        ref.read(centerOnLocationProvider.notifier)
+                            .update((state) => CenterOnLocationUpdate.always);
+                      } else {
+                        showMissingPermissionDialog(
+                            context,
+                            'Location Required',
+                            'Location permission is required to jump to current location'
+                        );
                       }
                     },
                     child: PlatformWidget(

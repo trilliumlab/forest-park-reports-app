@@ -16,10 +16,10 @@ import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
+import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:location/location.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
@@ -69,7 +69,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // using ref.watch will allow the widget to be rebuilt everytime
     // the provider is updated
     final parkTrails = ref.watch(parkTrailsProvider);
-    final permissionStatus = ref.watch(locationPermissionProvider);
+    final locationStatus = ref.watch(locationPermissionProvider);
 
     final centerOnLocation = ref.watch(centerOnLocationProvider);
     ref.listen(centerOnLocationProvider, (prev, next) {
@@ -156,7 +156,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
-        if (permissionStatus?.authorized ?? false || permissionStatus == PermissionStatus.restricted)
+        if (locationStatus.permission.authorized)
           LocationMarkerLayerWidget(
             plugin: LocationMarkerPlugin(
               centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,

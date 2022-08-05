@@ -1,14 +1,11 @@
 import 'dart:math';
 
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
 
-extension LocationDataLatLng on LocationData {
-  LatLng? latLng() {
-    return (latitude != null && longitude != null)
-        ? LatLng(latitude!, longitude!)
-        : null;
-  }
+extension LocationDataLatLng on Position {
+  LatLng? latLng() =>
+      LatLng(latitude, longitude);
 }
 
 extension LatLngBearing on LatLng {
@@ -22,6 +19,12 @@ extension LatLngBearing on LatLng {
 
     return atan2(y, x);
   }
+}
+
+extension Authorized on LocationPermission {
+  bool get authorized =>
+      this == LocationPermission.always
+          || this == LocationPermission.whileInUse;
 }
 
 extension RemoveTrailingZeros on double {
