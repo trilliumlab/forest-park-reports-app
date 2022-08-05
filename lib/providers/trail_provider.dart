@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
@@ -41,6 +44,14 @@ class Trail {
   }
 }
 
+class ColorStop {
+  int index;
+  Color color;
+  ColorStop(this.index, this.color);
+  @override
+  String toString() => '{index: $index, color: $color}';
+}
+
 const haversine = DistanceHaversine(roundResult: false);
 //TODO reduce polyline points client side
 //TODO process gpx files server side
@@ -48,29 +59,80 @@ const haversine = DistanceHaversine(roundResult: false);
 class Track {
   List<LatLng> path = [];
   List<double> elevation = [];
+  List<ColorStop> colors = [];
   List<double> distance = [0];
   double maxElevation = 0;
   double minElevation = double.infinity;
-  Track(Gpx path) {
-    // loop through every track point and add the coordinates to the path array
-    // we also construct a separate elevation array for, the elevation of one
-    // coordinate has the same index as the coordinate
-    for (var track in path.trks) {
-      for (var trackSegment in track.trksegs) {
-        for (int i=0; i<trackSegment.trkpts.length; i++) {
-          final point = trackSegment.trkpts[i];
-          this.path.add(LatLng(point.lat!, point.lon!));
-          if (point.ele! > maxElevation) {maxElevation = point.ele!;}
-          if (point.ele! < minElevation) {minElevation = point.ele!;}
-          if (i>0) {
-            distance.add(
-                distance[i-1] + haversine
-                    .as(LengthUnit.Mile, this.path[i-1], this.path[i])
-            );
-          }
-          elevation.add(point.ele!);
-        }
+  // tracks the elevation positive delta
+  double totalIncline = 0;
+  // tracks the elevation negative delta
+  double totalDecline = 0;
+
+  // constructs a track from binary encoded track
+  Track.decode(Uint8List buffer) {
+    final data = buffer.buffer.asByteData();
+    // keep track of read position
+    var pos = 0;
+
+    // decode trail name
+    final nameLength = data.getUint16(pos, Endian.little);
+    pos += 2;
+    final name = String.fromCharCodes(buffer.getRange(pos, pos+=nameLength));
+
+    // decode colors
+    final colorLength = data.getUint16(pos, Endian.little);
+    pos += 2;
+    final colorEnd = pos + colorLength;
+    while (pos < colorEnd) {
+      final index = data.getUint16(pos, Endian.little);
+      pos += 2;
+      final r = data.getUint8(pos++);
+      final g = data.getUint8(pos++);
+      final b = data.getUint8(pos++);
+      colors.add(ColorStop(index, Color.fromARGB(255, r, g, b)));
+    }
+
+    // decode path data
+    final pathLength = data.getUint16(pos, Endian.little);
+    pos += 2;
+    final pathEnd = pos + pathLength;
+    while (pos < pathEnd) {
+      // read latlong
+      final latitude = data.getFloat32(pos, Endian.little);
+      pos += 4;
+      final longitude = data.getFloat32(pos, Endian.little);
+      pos += 4;
+      final point = LatLng(latitude, longitude);
+      // calculate distance and add to array
+      if (path.isNotEmpty) {
+        distance.add(
+            distance.last + haversine
+                .as(LengthUnit.Mile, path.last, point)
+        );
       }
+      // add latlong to path
+      path.add(point);
+
+      // read elevation
+      final double elevation;
+      if (this.elevation.isEmpty) {
+        elevation = data.getFloat32(pos, Endian.little);
+        pos += 4;
+      } else {
+        elevation = this.elevation.last + data.getInt8(pos++);
+      }
+      // calculate max and min elevation + delta
+      final delta = elevation - (this.elevation.lastOrNull ?? elevation);
+      if (delta >= 0) {
+        totalIncline += delta;
+        if (elevation > maxElevation) {maxElevation = elevation;}
+      }
+      if (delta <= 0) {
+        totalDecline -= delta;
+        if (elevation < minElevation) {minElevation = elevation;}
+      }
+      // add elevation
+      this.elevation.add(elevation);
     }
   }
 }
@@ -328,8 +390,13 @@ class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
         val["uuid"]: Trail(val["name"], val["uuid"])
     };
     for (final trail in state.values) {
-      final res = await ref.read(dioProvider).get("/trail/${trail.uuid}");
-      final track = Track(_gpxReader.fromString(res.data));
+      final res = await ref.read(dioProvider).get(
+          "/trail/${trail.uuid}",
+          options: Options(
+              responseType: ResponseType.bytes
+          ),
+      );
+      final track = Track.decode(res.data);
       state = {
         for (final oldTrail in state.values)
           if (oldTrail.uuid == trail.uuid)
