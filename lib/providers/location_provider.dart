@@ -29,6 +29,8 @@ class LocationStatus {
     this.permission = LocationPermission.unableToDetermine,
     this.accuracy = LocationAccuracyStatus.unknown
   ]);
+  @override
+  String toString() => '{permission: $permission, accuracy: $accuracy}';
 }
 
 class LocationPermissionProviderNotifier extends StateNotifier<LocationStatus> {

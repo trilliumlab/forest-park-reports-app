@@ -26,12 +26,15 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   final _picker = ImagePicker();
   HazardType? _selectedHazard;
   XFile? _image;
+  bool _inProgress = false;
+  double _uploadProgress = 0;
 
   void _close() {
     Navigator.pop(context);
   }
 
   Future _submit() async {
+    setState(() => _inProgress = true);
     final parkTrails = ref.read(parkTrailsProvider);
     // TODO actually handle location errors
     final location = (await ref.read(locationProvider.notifier).getLocation())!;
@@ -64,6 +67,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     }
 
     if (!await continueCompleter.future) {
+      setState(() => _inProgress = false);
       return;
     }
 
@@ -71,7 +75,12 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
 
     String? imageUuid;
     if (_image != null) {
-      imageUuid = await activeHazardNotifier.uploadImage(_image!);
+      imageUuid = await activeHazardNotifier.uploadImage(
+        _image!,
+        onSendProgress: (sent, total) => setState(() {
+          _uploadProgress = sent/total;
+        }),
+      );
     }
 
     await activeHazardNotifier.create(NewHazardRequest(
@@ -222,7 +231,9 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                     child: PlatformWidget(
                       cupertino: (context, _) => CupertinoButton(
                         color: CupertinoTheme.of(context).primaryColor,
-                        onPressed: _selectedHazard == null ? null : _onSubmit,
+                        onPressed: _selectedHazard == null || _inProgress
+                            ? null
+                            : _onSubmit,
                         child: Text(
                           'Submit',
                           style: CupertinoTheme.of(context).textTheme.textStyle,
@@ -257,6 +268,13 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                   ),
                 ),
               ),
+              Align(
+                alignment: Alignment.topCenter,
+                child: LinearProgressIndicator(
+                  value: _uploadProgress,
+                  backgroundColor: Colors.transparent,
+                ),
+              ),
             ],
           ),
         ),
@@ -264,3 +282,5 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     );
   }
 }
+
+

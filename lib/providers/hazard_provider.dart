@@ -23,15 +23,19 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
         Hazard.fromJson(val)
     ];
   }
-  Future<String?> uploadImage(XFile file) async {
+  Future<String?> uploadImage(XFile file, {void Function(int, int)? onSendProgress}) async {
     FormData formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(file.path)
+      "file": MultipartFile(file.openRead(), await file.length())
     });
     final res = await ref.read(dioProvider).post(
       "/hazard/image",
       data: formData,
-      onSendProgress: (sent, total) =>
-          ref.read(uploadPhotoProgressProvider.notifier).state = HazardPhotoProgress(sent, total),
+      options: Options(
+        headers: {
+          'Accept-Ranged': 'bytes'
+        },
+      ),
+      onSendProgress: onSendProgress
     );
     return res.data['uuid'];
   }
@@ -40,8 +44,6 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
     state = [...state, Hazard.fromJson(res.data)];
   }
 }
-
-final uploadPhotoProgressProvider = StateProvider((ref) => HazardPhotoProgress(0, 0));
 
 final activeHazardProvider = StateNotifierProvider
   <ActiveHazardNotifier, List<Hazard>>((ref) => ActiveHazardNotifier(ref));
