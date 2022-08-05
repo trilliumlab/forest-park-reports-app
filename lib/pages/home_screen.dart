@@ -173,25 +173,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   return PlatformFAB(
                       onPressed: () async {
                         final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
-                        if (status.authorized) {
-                          showCupertinoModalPopup(
-                            context: context,
-                            builder: (context) {
-                              return Dismissible(
-                                  direction: DismissDirection.down,
-                                  key: const Key('key'),
-                                  onDismissed: (_) => Navigator.of(context).pop(),
-                                  child: const AddHazardModal()
-                              );
-                            },
-                          );
-                        }
                         if (!mounted) return;
-                        if (status == PermissionStatus.denied) {
-                          _showMissingPermissionDialog(context, 'Location permission is required to report hazards');
-                        }
-                        if (status == PermissionStatus.restricted) {
-                          _showMissingPermissionDialog(context, 'Precise location permission is required to make sure hazard reports are accurate');
+                        switch(status) {
+                          case PermissionStatus.authorizedAlways:
+                          case PermissionStatus.authorizedWhenInUse:
+                            showCupertinoModalPopup(
+                              context: context,
+                              builder: (context) {
+                                return Dismissible(
+                                    direction: DismissDirection.down,
+                                    key: const Key('key'),
+                                    onDismissed: (_) => Navigator.of(context).pop(),
+                                    child: const AddHazardModal()
+                                );
+                              },
+                            );
+                            break;
+                          case PermissionStatus.restricted:
+                            _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
+                            break;
+                          case PermissionStatus.denied:
+                            _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
+                            break;
+                          default:
                         }
                       },
                       child: PlatformWidget(
@@ -227,15 +231,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           ref.read(centerOnLocationProvider.notifier)
                               .update((state) => CenterOnLocationUpdate.always);
                           break;
-                        case PermissionStatus.notDetermined:
-                          await requestPermission();
-                          break;
                         case PermissionStatus.restricted:
                           _showMissingPermissionDialog(context, 'Precise location permission is required to jump to current location');
                           break;
                         case PermissionStatus.denied:
                           _showMissingPermissionDialog(context, 'Location permission is required to jump to current location');
                           break;
+                        default:
                       }
                     },
                     child: PlatformWidget(
