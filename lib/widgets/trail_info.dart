@@ -19,8 +19,8 @@ class TrailHazardsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final activeHazards = ref.watch(activeHazardProvider)
-        .where((e) => e.location.trail == trail.uuid);
+    final activeHazards = ref.watch(activeHazardProvider.select((hazards) =>
+        hazards.where((e) => e.location.trail == trail.uuid)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -98,13 +98,13 @@ class HazardInfoWidget extends ConsumerWidget {
 
 class TrailInfoWidget extends StatelessWidget {
   final ScrollController controller;
-  final Trail trail;
+  final String title;
   final Widget snapWidget;
   final Widget fullWidget;
   const TrailInfoWidget({
     super.key,
     required this.controller,
-    required this.trail,
+    required this.title,
     required this.snapWidget,
     required this.fullWidget,
   });
@@ -120,7 +120,7 @@ class TrailInfoWidget extends StatelessWidget {
         Padding(
             padding: const EdgeInsets.only(left: 14, right: 14, top: 4),
             child: Text(
-              trail.name,
+              title,
               style: theme.textTheme.headline6,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

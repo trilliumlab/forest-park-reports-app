@@ -85,14 +85,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         builder: (_) =>
           GestureDetector(
             onTap: () {
+              ref.read(parkTrailsProvider.notifier).deselectTrail();
               if (hazard == ref.read(selectedHazardProvider).hazard) {
                 ref.read(selectedHazardProvider.notifier).deselect();
                 _popupController.hideAllPopups();
               } else {
                 ref.read(selectedHazardProvider.notifier).select(hazard);
-                final parkTrails = ref.read(parkTrailsProvider);
-                final hazardTrail = parkTrails.trails[hazard.location.trail]!;
-                ref.read(parkTrailsProvider.notifier).selectTrail(hazardTrail);
                 _popupController.showPopupsOnlyFor([marker]);
               }
             },
@@ -169,7 +167,11 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             polylineCulling: true,
             polylines: parkTrails.polylines,
             onTap: (polylines, tapPosition) {
+              // deselect hazards
               _popupController.hideAllPopups();
+              ref.read(selectedHazardProvider.notifier).deselect();
+
+              // select polyline
               final tag = polylines.first.tag?.split("_").first;
               if (tag == parkTrails.selectedTrail?.uuid) {
                 ref.read(parkTrailsProvider.notifier).deselectTrail();

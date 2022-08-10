@@ -2,11 +2,13 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:forest_park_reports/util/permissions_dialog.dart';
+import 'package:forest_park_reports/util/statusbar_blur.dart';
 import 'package:forest_park_reports/widgets/add_hazard_modal.dart';
 import 'package:forest_park_reports/widgets/trail_info.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -105,30 +107,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 snapPoint: _snapPoint,
                 body: const ForestParkMap(),
                 controller: _panelController,
-                panelBuilder: (sc) => Panel(
-                  child: parkTrails.selectedTrail == null ? ListView(
-                    controller: sc,
-                    children: const [
-                      // pill decoration
-                      PlatformPill()
-                    ],
-                  ) : TrailInfoWidget(
-                    controller: sc,
-                    trail: parkTrails.selectedTrail!,
-                    snapWidget: Opacity(
-                      opacity: _snapWidgetOpacity,
-                      child: TrailElevationGraph(
-                        trail: parkTrails.selectedTrail!,
-                        height: _panelHeightSnap*0.7,
-                      ),
-                    ),
-                    fullWidget: Opacity(
-                      opacity: _fullWidgetOpacity,
-                      child: TrailHazardsWidget(
-                        trail: parkTrails.selectedTrail!
-                      ),
-                    ),
-                  ),
+                panelBuilder: (sc) => PanelPage(
+                  scrollController: sc,
+                  snapWidgetOpacity: _snapWidgetOpacity,
+                  fullWidgetOpacity: _fullWidgetOpacity,
+                  panelSnapHeight: _panelHeightSnap,
                 ),
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
@@ -229,6 +212,64 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+class PanelPage extends ConsumerWidget {
+  final ScrollController scrollController;
+  final double snapWidgetOpacity;
+  final double fullWidgetOpacity;
+  final double panelSnapHeight;
+  const PanelPage({
+    super.key,
+    required this.scrollController,
+    required this.snapWidgetOpacity,
+    required this.fullWidgetOpacity,
+    required this.panelSnapHeight,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedTrail = ref.watch(parkTrailsProvider.select((p) => p.selectedTrail));
+    final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
+    final hazardTrail = ref.read(parkTrailsProvider).trails[selectedHazard?.location.trail];
+    return Panel(
+      // panel for when a hazard is selected
+      child: selectedHazard != null ? TrailInfoWidget(
+        controller: scrollController,
+        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
+        snapWidget: Container(),
+        fullWidget: Container(),
+      ):
+
+      // panel for when a trail is selected
+      selectedTrail != null ? TrailInfoWidget(
+        controller: scrollController,
+        title: selectedTrail.name,
+        snapWidget: Opacity(
+          opacity: snapWidgetOpacity,
+          child: TrailElevationGraph(
+            trail: selectedTrail,
+            height: panelSnapHeight*0.7,
+          ),
+        ),
+        fullWidget: Opacity(
+          opacity: fullWidgetOpacity,
+          child: TrailHazardsWidget(
+              trail: selectedTrail
+          ),
+        ),
+      ):
+
+      // panel for when nothing is selected
+      ListView(
+        controller: scrollController,
+        children: const [
+          // pill decoration
+          PlatformPill(),
+        ],
+      ),
+    );
+  }
+}
+
 class Panel extends StatelessWidget {
   final Widget child;
   const Panel({
@@ -271,24 +312,6 @@ class Panel extends StatelessWidget {
                 child: child,
               )
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class StatusBarBlur extends StatelessWidget {
-  const StatusBarBlur({Key? key}) : super(key: key);
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            height: 50,
           ),
         ),
       ),
