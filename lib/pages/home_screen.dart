@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -32,31 +33,47 @@ final centerOnLocationProvider = StateProvider<CenterOnLocationUpdate>(
     (ref) => CenterOnLocationUpdate.never
 );
 
+class ScreenPanelController extends PanelController {
+  // utility functions
+  bool get isPanelSnapped => (panelPosition-snapPoint).abs()<0.0001 && !isPanelAnimating;
+  double get safePanelPosition => isAttached ? panelPosition : 0;
+
+  double get snapWidgetOpacity => (panelPosition/snapPoint).clamp(0, 1);
+  double get fullWidgetOpacity => ((panelPosition-snapPoint)/(1-snapPoint)).clamp(0, 1);
+
+  // bounding stuff
+  double snapPoint;
+  double panelClosedHeight;
+  ScreenPanelController({
+    required this.snapPoint,
+    required this.panelClosedHeight,
+  });
+
+  double panelOpenHeight = 0;
+
+  double get panelSnapHeight => ((panelOpenHeight-panelClosedHeight) * snapPoint) + panelClosedHeight;
+  double get panelHeight => safePanelPosition * (panelOpenHeight - panelClosedHeight) + panelClosedHeight;
+
+}
+
 class _HomeScreenState extends State<HomeScreen> {
   // parameters for the sliding modal/panel on the bottom
   // TODO animate hiding/showing of panel
-  final PanelController _panelController = PanelController();
-  final double _initFabHeight = 120.0;
-  final double _openPoint = 0.80;
-  final double _snapPoint = 0.40;
-  double _fabHeight = 0;
-  double _snapWidgetOpacity = 0;
-  double _fullWidgetOpacity = 0;
-  double _panelHeightOpen = 0;
-  double _panelHeightSnap = 0;
-  final double _panelHeightClosed = 100;
+  late final _panelController = ScreenPanelController(
+    snapPoint: 0.40,
+    panelClosedHeight: 100,
+  );
 
   @override
   void initState() {
     super.initState();
-    _fabHeight = _initFabHeight;
+    // _panelHeight = _initFabHeight;
   }
 
   @override
   Widget build(BuildContext context) {
     // make the height of the panel when open 80% of the screen
-    _panelHeightOpen = MediaQuery.of(context).size.height * _openPoint;
-    _panelHeightSnap = _panelHeightOpen * _snapPoint;
+    _panelController.panelOpenHeight = MediaQuery.of(context).size.height * 0.80;
     final theme = Theme.of(context);
 
     return PlatformScaffold(
@@ -88,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   position = PanelPosition.closed;
                 } else if (_panelController.isPanelOpen) {
                   position = PanelPosition.open;
-                } else if ((_panelController.panelPosition-_snapPoint).abs()<0.0001 && !_panelController.isPanelAnimating) {
+                } else if (_panelController.isPanelSnapped) {
                   position = PanelPosition.snapped;
                 }
               }
@@ -100,25 +117,23 @@ class _HomeScreenState extends State<HomeScreen> {
               final parkTrails = ref.watch(parkTrailsProvider);
               //TODO cupertino scrolling physics
               return SlidingUpPanel(
-                maxHeight: _panelHeightOpen,
-                minHeight: _panelHeightClosed,
+                maxHeight: _panelController.panelOpenHeight,
+                minHeight: _panelController.panelClosedHeight,
                 parallaxEnabled: isMaterial(context),
                 parallaxOffset: 0.58,
-                snapPoint: _snapPoint,
+                snapPoint: _panelController.snapPoint,
                 body: const ForestParkMap(),
                 controller: _panelController,
                 panelBuilder: (sc) => PanelPage(
                   scrollController: sc,
-                  snapWidgetOpacity: _snapWidgetOpacity,
-                  fullWidgetOpacity: _fullWidgetOpacity,
-                  panelSnapHeight: _panelHeightSnap,
+                  panelController: _panelController,
                 ),
                 // don't render panel sheet so we can add custom blur
                 renderPanelSheet: false,
                 onPanelSlide: (double pos) => setState(() {
-                  _snapWidgetOpacity = (pos/_snapPoint).clamp(0, 1);
-                  _fullWidgetOpacity = ((pos-_snapPoint)/(1-_snapPoint)).clamp(0, 1);
-                  _fabHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _initFabHeight;
+                  // _snapWidgetOpacity = (pos/_snapPoint).clamp(0, 1);
+                  // _fullWidgetOpacity = ((pos-_snapPoint)/(1-_snapPoint)).clamp(0, 1);
+                  // _panelHeight = pos * (_panelHeightOpen - _panelHeightClosed) + _panelHeightClosed;
                 }),
               );
             },
@@ -127,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // when panel is hidden, set it to 20db from bottom
           Positioned(
             right: 10.0,
-            bottom: isCupertino(context) ? _fabHeight - 18 : _fabHeight - 8,
+            bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight - 8) + 20,
             child: Consumer(
                 builder: (context, ref, child) {
                   return PlatformFAB(
@@ -163,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Positioned(
             right: 10.0,
-            bottom: (isCupertino(context) ? _fabHeight - 18 : _fabHeight) + 60,
+            bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
                   final centerOnLocation = ref.watch(centerOnLocationProvider);
@@ -214,15 +229,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class PanelPage extends ConsumerWidget {
   final ScrollController scrollController;
-  final double snapWidgetOpacity;
-  final double fullWidgetOpacity;
-  final double panelSnapHeight;
+  final ScreenPanelController panelController;
   const PanelPage({
     super.key,
     required this.scrollController,
-    required this.snapWidgetOpacity,
-    required this.fullWidgetOpacity,
-    required this.panelSnapHeight,
+    required this.panelController
   });
 
   @override
@@ -230,41 +241,144 @@ class PanelPage extends ConsumerWidget {
     final selectedTrail = ref.watch(parkTrailsProvider.select((p) => p.selectedTrail));
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
     final hazardTrail = ref.read(parkTrailsProvider).trails[selectedHazard?.location.trail];
+
     return Panel(
       // panel for when a hazard is selected
       child: selectedHazard != null ? TrailInfoWidget(
-        controller: scrollController,
+        scrollController: scrollController,
+        panelController: panelController,
         title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
-        snapWidget: Container(),
-        fullWidget: Container(),
+        bottomWidget: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 20, right: 10),
+                child: PlatformTextButton(
+                    color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+                    onPressed: () {},
+                    padding: EdgeInsets.zero,
+                    child: const Text("Delete")
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 10, right: 20),
+                child: PlatformTextButton(
+                  color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context),
+                  onPressed: () {},
+                  padding: EdgeInsets.zero,
+                  child: const Text("Confirm")
+                ),
+              ),
+            ),
+          ],
+        ),
+        children: [
+          // for (int i=0; i<50; i++)
+          //   Padding(
+          //       padding: EdgeInsets.all(4),
+          //       child: Container(
+          //           color: Colors.grey,
+          //           child: Padding(
+          //             padding: EdgeInsets.all(10),
+          //             child: Text("hello"),
+          //           )
+          //       )
+          //   )
+        ],
       ):
+
+      // TrailInfoWidget(
+      //   // controller: scrollController,
+      //   title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
+      //   children: [
+      //     Padding(
+      //       padding: const EdgeInsets.only(top: 8),
+      //       child: Opacity(
+      //         opacity: panelController.snapWidgetOpacity,
+      //         child: SizedBox(
+      //           height: max(panelController.panelHeight,
+      //             panelController.panelSnapHeight,
+      //           ) - snapPadding,
+      //           child: Column(
+      //             mainAxisAlignment: MainAxisAlignment.end,
+      //             children: [
+      //               Expanded(
+      //                 child: ListView(
+      //                   controller: scrollController,
+      //                   children: [
+      //                     for (int i=0; i<50; i++)
+      //                       Padding(
+      //                           padding: EdgeInsets.all(4),
+      //                           child: Container(
+      //                               color: Colors.grey,
+      //                               child: Padding(
+      //                                 padding: EdgeInsets.all(10),
+      //                                 child: Text("hello"),
+      //                               )
+      //                           )
+      //                       )
+      //                   ],
+      //                 ),
+      //               ),
+      //               Row(
+      //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //                 children: [
+      //                   PlatformTextButton(
+      //                       color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+      //                       onPressed: () {},
+      //                       child: const Text("Delete")
+      //                   ),
+      //                   PlatformTextButton(
+      //                       color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context),
+      //                       onPressed: () {},
+      //                       child: const Text("Confirm")
+      //                   )
+      //                 ],
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+      // )
 
       // panel for when a trail is selected
       selectedTrail != null ? TrailInfoWidget(
-        controller: scrollController,
+        scrollController: scrollController,
+        panelController: panelController,
         title: selectedTrail.name,
-        snapWidget: Opacity(
-          opacity: snapWidgetOpacity,
-          child: TrailElevationGraph(
-            trail: selectedTrail,
-            height: panelSnapHeight*0.7,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 14, right: 14, top: 8),
+            child: Opacity(
+              opacity: panelController.snapWidgetOpacity,
+              child: TrailElevationGraph(
+                trail: selectedTrail,
+                height: panelController.panelSnapHeight*0.6,
+              ),
+            ),
           ),
-        ),
-        fullWidget: Opacity(
-          opacity: fullWidgetOpacity,
-          child: TrailHazardsWidget(
-              trail: selectedTrail
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Opacity(
+              opacity: panelController.fullWidgetOpacity,
+              child: TrailHazardsWidget(
+                trail: selectedTrail
+              ),
+            ),
           ),
-        ),
+        ],
       ):
 
       // panel for when nothing is selected
-      ListView(
-        controller: scrollController,
-        children: const [
-          // pill decoration
-          PlatformPill(),
-        ],
+      TrailInfoWidget(
+        scrollController: scrollController,
+        panelController: panelController,
+        children: const []
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
@@ -96,47 +98,100 @@ class HazardInfoWidget extends ConsumerWidget {
   }
 }
 
-class TrailInfoWidget extends StatelessWidget {
-  final ScrollController controller;
-  final String title;
-  final Widget snapWidget;
-  final Widget fullWidget;
+class TrailInfoWidget extends StatefulWidget {
+  final ScrollController scrollController;
+  final ScreenPanelController panelController;
+  final List<Widget> children;
+  final String? title;
+  final Widget? bottomWidget;
   const TrailInfoWidget({
     super.key,
-    required this.controller,
-    required this.title,
-    required this.snapWidget,
-    required this.fullWidget,
+    required this.scrollController,
+    required this.panelController,
+    required this.children,
+    this.bottomWidget,
+    this.title,
   });
 
   @override
+  State<TrailInfoWidget> createState() => _TrailInfoWidgetState();
+}
+
+class _TrailInfoWidgetState extends State<TrailInfoWidget> {
+
+  final _bwKey = GlobalKey();
+
+  Size _textSize = Size.zero;
+
+  @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback(getTextHeight);
+
     final theme = Theme.of(context);
-    return ListView(
-      controller: controller,
+    final width = MediaQuery.of(context).size.width;
+
+    return Stack(
       children: [
-        const PlatformPill(),
-        // content should go here
-        Padding(
-            padding: const EdgeInsets.only(left: 14, right: 14, top: 4),
-            child: Text(
-              title,
-              style: theme.textTheme.headline6,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            )
+        CustomScrollView(
+          controller: widget.scrollController,
+          slivers: [
+            // const SliverPadding(padding: EdgeInsets.only(top: 56)),
+            SliverList(
+              delegate: SliverChildListDelegate([
+                SizedBox(height: _textSize.height + 4),
+                ...widget.children
+              ]),
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: 14, right: 14, top: 8),
-          child: snapWidget,
+        const Align(
+          alignment: Alignment.topCenter,
+          child: PlatformPill(),
         ),
-        Padding(
-          padding: const EdgeInsets.all(14),
-          child: fullWidget,
-        ),
+        if (widget.title != null)
+          Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              key: _bwKey,
+              padding: const EdgeInsets.only(left: 14, right: 14, top: 16),
+              child: Text(
+                widget.title!,
+                style: theme.textTheme.headline6,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        if (widget.bottomWidget != null)
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom
+                + (widget.panelController.panelOpenHeight-
+                    max(
+                        widget.panelController.panelHeight,
+                        widget.panelController.panelSnapHeight
+                    )
+                ),
+            child: SizedBox(
+              width: width,
+              child: widget.bottomWidget!,
+            ),
+          ),
       ],
     );
   }
+
+  void getTextHeight(_) {
+    BuildContext? context = _bwKey.currentContext;
+    if (context == null) return;
+
+    final newSize = context.size;
+    if (newSize != _textSize && newSize != null) {
+      setState(() {
+        _textSize = newSize;
+      });
+    }
+  }
+
 }
 
 class TrailElevationGraph extends ConsumerWidget {
