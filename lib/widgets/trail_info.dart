@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -65,6 +66,15 @@ class HazardInfoWidget extends ConsumerWidget {
         ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
         ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
       },
+      material: (_, __) => MaterialTextButtonData(
+        style: ButtonStyle(
+          shape: MaterialStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -98,6 +108,54 @@ class HazardInfoWidget extends ConsumerWidget {
   }
 }
 
+class TitleHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String? title;
+  TitleHeaderDelegate(this.title);
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final theme = Theme.of(context);
+    return Stack(
+      children: [
+        if (title != null)
+          ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Container(
+                color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
+                width: MediaQuery.of(context).size.width,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 14, right: 14, top: 16, bottom: 6),
+                  child: Text(
+                    title!,
+                    style: theme.textTheme.headline6,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const Align(
+          alignment: Alignment.topCenter,
+          child: PlatformPill(),
+        ),
+      ],
+    );
+  }
+
+  @override
+  double get maxExtent => 50;
+
+  @override
+  double get minExtent => 50;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
+  }
+}
+
 class TrailInfoWidget extends StatefulWidget {
   final ScrollController scrollController;
   final ScreenPanelController panelController;
@@ -118,80 +176,103 @@ class TrailInfoWidget extends StatefulWidget {
 }
 
 class _TrailInfoWidgetState extends State<TrailInfoWidget> {
-
-  final _bwKey = GlobalKey();
-
-  Size _textSize = Size.zero;
-
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback(getTextHeight);
-
-    final theme = Theme.of(context);
-    final width = MediaQuery.of(context).size.width;
-
-    return Stack(
-      children: [
-        CustomScrollView(
-          controller: widget.scrollController,
-          slivers: [
-            // const SliverPadding(padding: EdgeInsets.only(top: 56)),
-            SliverList(
-              delegate: SliverChildListDelegate([
-                SizedBox(height: _textSize.height + 4),
-                ...widget.children
-              ]),
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        height: max(widget.panelController.panelSnapHeight, widget.panelController.panelHeight)-MediaQueryData.fromWindow(window).padding.bottom,
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: CustomScrollView(
+                    controller: widget.scrollController,
+                    slivers: [
+                      SliverPersistentHeader(
+                        pinned: true,
+                        floating: true,
+                        delegate: TitleHeaderDelegate(widget.title),
+                      ),
+                      SliverList(
+                        delegate: SliverChildListDelegate([
+                          ...widget.children,
+                        ]),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (widget.bottomWidget != null)
+              ClipRect(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: widget.bottomWidget!,
+                  ),
+                ),
+              ),
+            SizedBox(
+              height: MediaQueryData.fromWindow(window).padding.bottom,
             ),
           ],
         ),
-        const Align(
-          alignment: Alignment.topCenter,
-          child: PlatformPill(),
-        ),
-        if (widget.title != null)
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              key: _bwKey,
-              padding: const EdgeInsets.only(left: 14, right: 14, top: 16),
-              child: Text(
-                widget.title!,
-                style: theme.textTheme.headline6,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        if (widget.bottomWidget != null)
-          Positioned(
-            bottom: MediaQuery.of(context).padding.bottom
-                + (widget.panelController.panelOpenHeight-
-                    max(
-                        widget.panelController.panelHeight,
-                        widget.panelController.panelSnapHeight
-                    )
-                ),
-            child: SizedBox(
-              width: width,
-              child: widget.bottomWidget!,
-            ),
-          ),
-      ],
+      ),
     );
+        // if (widget.title != null)
+        //   Align(
+        //     alignment: Alignment.topLeft,
+        //     child: ClipRect(
+        //       child: BackdropFilter(
+        //         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        //         child: Container(
+        //           color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
+        //           width: MediaQuery.of(context).size.width,
+        //           child: Padding(
+        //             key: _textKey,
+        //             padding: const EdgeInsets.only(left: 14, right: 14, top: 16, bottom: 6),
+        //             child: Text(
+        //               widget.title!,
+        //               style: theme.textTheme.headline6,
+        //               maxLines: 2,
+        //               overflow: TextOverflow.ellipsis,
+        //             ),
+        //           ),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
+        // if (widget.bottomWidget != null)
+        //   Positioned(
+        //     bottom: (
+        //         widget.panelController.panelOpenHeight-
+        //             max(
+        //                 widget.panelController.panelHeight,
+        //                 widget.panelController.panelSnapHeight
+        //             )
+        //     ),
+        //     child: ClipRect(
+        //       child: BackdropFilter(
+        //         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        //         child: Container(
+        //           color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
+        //           child: Padding(
+        //             padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom, top: 4),
+        //             child: SizedBox(
+        //               width: width,
+        //               child: widget.bottomWidget!,
+        //             ),
+        //           ),
+        //         ),
+        //       ),
+        //     ),
+        //   ),
   }
-
-  void getTextHeight(_) {
-    BuildContext? context = _bwKey.currentContext;
-    if (context == null) return;
-
-    final newSize = context.size;
-    if (newSize != _textSize && newSize != null) {
-      setState(() {
-        _textSize = newSize;
-      });
-    }
-  }
-
 }
 
 class TrailElevationGraph extends ConsumerWidget {

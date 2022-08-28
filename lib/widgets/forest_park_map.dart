@@ -87,9 +87,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             onTap: () {
               ref.read(parkTrailsProvider.notifier).deselectTrail();
               if (hazard == ref.read(selectedHazardProvider).hazard) {
+                ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
                 ref.read(selectedHazardProvider.notifier).deselect();
                 _popupController.hideAllPopups();
               } else {
+                if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                }
                 ref.read(selectedHazardProvider.notifier).select(hazard);
                 _popupController.showPopupsOnlyFor([marker]);
               }
@@ -174,10 +178,19 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               // select polyline
               final tag = polylines.first.tag?.split("_").first;
               if (tag == parkTrails.selectedTrail?.uuid) {
-                ref.read(parkTrailsProvider.notifier).deselectTrail();
+                if (ref.read(panelPositionProvider).position == PanelPosition.open) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                } else {
+                  ref.read(selectedHazardProvider.notifier).deselect();
+                  ref.read(parkTrailsProvider.notifier).deselectTrail();
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                }
               } else {
                 ref.read(parkTrailsProvider.notifier)
                     .selectTrail(parkTrails.trails[tag]!);
+                if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                }
               }
             },
             onMiss: (tapPosition) {

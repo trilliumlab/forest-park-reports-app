@@ -51,6 +51,7 @@ class ScreenPanelController extends PanelController {
 
   double panelOpenHeight = 0;
 
+  double get pastSnapPosition => ((panelPosition-snapPoint)/(1-snapPoint)).clamp(0, 1);
   double get panelSnapHeight => ((panelOpenHeight-panelClosedHeight) * snapPoint) + panelClosedHeight;
   double get panelHeight => safePanelPosition * (panelOpenHeight - panelClosedHeight) + panelClosedHeight;
 
@@ -227,17 +228,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class PanelPage extends ConsumerWidget {
+class PanelPage extends ConsumerStatefulWidget {
   final ScrollController scrollController;
   final ScreenPanelController panelController;
   const PanelPage({
     super.key,
     required this.scrollController,
-    required this.panelController
+    required this.panelController,
   });
+  @override
+  ConsumerState<PanelPage> createState() => _PanelPageState();
+}
+
+class _PanelPageState extends ConsumerState<PanelPage> {
+  Size _textSize = Size.zero;
+  Size _bwSize = Size.zero;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final selectedTrail = ref.watch(parkTrailsProvider.select((p) => p.selectedTrail));
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
     final hazardTrail = ref.read(parkTrailsProvider).trails[selectedHazard?.location.trail];
@@ -245,8 +253,8 @@ class PanelPage extends ConsumerWidget {
     return Panel(
       // panel for when a hazard is selected
       child: selectedHazard != null ? TrailInfoWidget(
-        scrollController: scrollController,
-        panelController: panelController,
+        scrollController: widget.scrollController,
+        panelController: widget.panelController,
         title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
         bottomWidget: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -276,96 +284,43 @@ class PanelPage extends ConsumerWidget {
           ],
         ),
         children: [
-          // for (int i=0; i<50; i++)
-          //   Padding(
-          //       padding: EdgeInsets.all(4),
-          //       child: Container(
-          //           color: Colors.grey,
-          //           child: Padding(
-          //             padding: EdgeInsets.all(10),
-          //             child: Text("hello"),
-          //           )
-          //       )
-          //   )
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Opacity(
+              opacity: widget.panelController.snapWidgetOpacity,
+              child: SizedBox(
+                height: widget.panelController.panelSnapHeight * 0.7
+                  + (widget.panelController.panelOpenHeight-widget.panelController.panelSnapHeight)*widget.panelController.pastSnapPosition * 0.6,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: HazardImage(selectedHazard.image!),
+                ),
+              ),
+            ),
+          ),
         ],
       ):
 
-      // TrailInfoWidget(
-      //   // controller: scrollController,
-      //   title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
-      //   children: [
-      //     Padding(
-      //       padding: const EdgeInsets.only(top: 8),
-      //       child: Opacity(
-      //         opacity: panelController.snapWidgetOpacity,
-      //         child: SizedBox(
-      //           height: max(panelController.panelHeight,
-      //             panelController.panelSnapHeight,
-      //           ) - snapPadding,
-      //           child: Column(
-      //             mainAxisAlignment: MainAxisAlignment.end,
-      //             children: [
-      //               Expanded(
-      //                 child: ListView(
-      //                   controller: scrollController,
-      //                   children: [
-      //                     for (int i=0; i<50; i++)
-      //                       Padding(
-      //                           padding: EdgeInsets.all(4),
-      //                           child: Container(
-      //                               color: Colors.grey,
-      //                               child: Padding(
-      //                                 padding: EdgeInsets.all(10),
-      //                                 child: Text("hello"),
-      //                               )
-      //                           )
-      //                       )
-      //                   ],
-      //                 ),
-      //               ),
-      //               Row(
-      //                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      //                 children: [
-      //                   PlatformTextButton(
-      //                       color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
-      //                       onPressed: () {},
-      //                       child: const Text("Delete")
-      //                   ),
-      //                   PlatformTextButton(
-      //                       color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context),
-      //                       onPressed: () {},
-      //                       child: const Text("Confirm")
-      //                   )
-      //                 ],
-      //               ),
-      //             ],
-      //           ),
-      //         ),
-      //       ),
-      //     ),
-      //   ],
-      // )
-
       // panel for when a trail is selected
       selectedTrail != null ? TrailInfoWidget(
-        scrollController: scrollController,
-        panelController: panelController,
+        scrollController: widget.scrollController,
+        panelController: widget.panelController,
         title: selectedTrail.name,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 14, right: 14, top: 8),
+            padding: const EdgeInsets.symmetric(vertical: 10),
             child: Opacity(
-              opacity: panelController.snapWidgetOpacity,
+              opacity: widget.panelController.snapWidgetOpacity,
               child: TrailElevationGraph(
                 trail: selectedTrail,
-                height: panelController.panelSnapHeight*0.6,
+                height: widget.panelController.panelSnapHeight*0.6,
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.only(top: 14),
             child: Opacity(
-              opacity: panelController.fullWidgetOpacity,
+              opacity: widget.panelController.fullWidgetOpacity,
               child: TrailHazardsWidget(
                 trail: selectedTrail
               ),
@@ -376,8 +331,8 @@ class PanelPage extends ConsumerWidget {
 
       // panel for when nothing is selected
       TrailInfoWidget(
-        scrollController: scrollController,
-        panelController: panelController,
+        scrollController: widget.scrollController,
+        panelController: widget.panelController,
         children: const []
       ),
     );
