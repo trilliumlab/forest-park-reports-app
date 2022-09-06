@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -285,19 +286,23 @@ class HazardInfoPopup extends StatelessWidget {
                     hazard.timeString(),
                   ),
                 ),
-                if (hazard.image != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
-                    child: ClipRRect(
-                      borderRadius: radius,
-                      child: AspectRatio(
-                        aspectRatio: 3/4,
-                        child: SizedBox.shrink(
-                          child: HazardImage(hazard.image!),
-                        )
-                      ),
-                    ),
-                  ),
+                // Consumer(
+                //   builder: (context, ref, ___) {
+                //     final lastImage = ref.watch(hazardUpdateProvider(hazard.uuid)).lastImage;
+                //     return lastImage != null ? Padding(
+                //       padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
+                //       child: ClipRRect(
+                //         borderRadius: radius,
+                //         child: AspectRatio(
+                //             aspectRatio: 3/4,
+                //             child: SizedBox.shrink(
+                //               child: HazardImage(lastImage),
+                //             )
+                //         ),
+                //       ),
+                //     ) : Container();
+                //   },
+                // ),
               ],
             ),
           ),

@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:forest_park_reports/util/extensions.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationProviderNotifier extends StateNotifier<Position?> {
@@ -9,6 +8,7 @@ class LocationProviderNotifier extends StateNotifier<Position?> {
   LocationProviderNotifier(this.ref) : super(null) {
     ref.watch(locationPermissionProvider);
     Geolocator.getPositionStream().listen((event) {
+      print("GOT NEW LOCATION");
       state = event;
     });
   }

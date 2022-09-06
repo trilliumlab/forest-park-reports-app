@@ -34,11 +34,17 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   }
 
   Future _submit() async {
+    print('_submit called');
+
     setState(() => _inProgress = true);
     final parkTrails = ref.read(parkTrailsProvider);
     // TODO actually handle location errors
+    print('requesting location');
     final location = (await ref.read(locationProvider.notifier).getLocation())!;
+    print('got location: $location');
     var snappedLoc = parkTrails.snapLocation(location.latLng()!);
+
+    print('got snapped location');
 
     final continueCompleter = Completer<bool>();
     if (snappedLoc.distance > 10+(location.accuracy)) {
@@ -65,6 +71,8 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     } else {
       continueCompleter.complete(true);
     }
+
+    print('location is good');
 
     if (!await continueCompleter.future) {
       setState(() => _inProgress = false);
@@ -268,13 +276,14 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.topCenter,
-                child: LinearProgressIndicator(
-                  value: _uploadProgress > 0.95 ? null : _uploadProgress,
-                  backgroundColor: Colors.transparent,
+              if (_inProgress)
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: LinearProgressIndicator(
+                    value: _uploadProgress > 0.95 || _uploadProgress < 0.05 ? null : _uploadProgress,
+                    backgroundColor: Colors.transparent,
+                  ),
                 ),
-              ),
             ],
           ),
         ),

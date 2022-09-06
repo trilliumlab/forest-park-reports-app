@@ -32,8 +32,8 @@ class TrailHazardsWidget extends ConsumerWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-                "Hazards",
-                style: theme.textTheme.subtitle1
+              "Hazards",
+              style: theme.textTheme.subtitle1
             ),
           ),
         ),
@@ -60,11 +60,14 @@ class HazardInfoWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final hazardUpdates = ref.watch(hazardUpdateProvider(hazard.uuid));
+    final lastImage = hazardUpdates.lastImage;
     return PlatformTextButton(
       padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
       onPressed: () {
+        ref.read(parkTrailsProvider.notifier).deselectTrail();
         ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
-        ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+        ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
       },
       material: (_, __) => MaterialTextButtonData(
         style: ButtonStyle(
@@ -91,68 +94,20 @@ class HazardInfoWidget extends ConsumerWidget {
               )
             ],
           ),
-          if (hazard.image != null)
+          if (lastImage != null)
             SizedBox(
                 height: 80,
                 child: AspectRatio(
                   aspectRatio: 4/3,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: HazardImage(hazard.image!),
+                    child: HazardImage(lastImage),
                   ),
                 )
             )
         ],
       ),
     );
-  }
-}
-
-class TitleHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final String? title;
-  TitleHeaderDelegate(this.title);
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final theme = Theme.of(context);
-    return Stack(
-      children: [
-        if (title != null)
-          ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-              child: Container(
-                color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
-                width: MediaQuery.of(context).size.width,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 14, right: 14, top: 16, bottom: 6),
-                  child: Text(
-                    title!,
-                    style: theme.textTheme.headline6,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        const Align(
-          alignment: Alignment.topCenter,
-          child: PlatformPill(),
-        ),
-      ],
-    );
-  }
-
-  @override
-  double get maxExtent => 50;
-
-  @override
-  double get minExtent => 50;
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return true;
   }
 }
 
@@ -184,6 +139,27 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
         height: max(widget.panelController.panelSnapHeight, widget.panelController.panelHeight)-MediaQueryData.fromWindow(window).padding.bottom,
         child: Column(
           children: [
+            Stack(
+              children: [
+                if (widget.title != null)
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 14, right: 14, top: 16, bottom: 10),
+                      child: Text(
+                        widget.title!,
+                        style: Theme.of(context).textTheme.headline6,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                const Align(
+                  alignment: Alignment.topCenter,
+                  child: PlatformPill(),
+                ),
+              ],
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -192,11 +168,6 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
                   child: CustomScrollView(
                     controller: widget.scrollController,
                     slivers: [
-                      SliverPersistentHeader(
-                        pinned: true,
-                        floating: true,
-                        delegate: TitleHeaderDelegate(widget.title),
-                      ),
                       SliverList(
                         delegate: SliverChildListDelegate([
                           ...widget.children,
@@ -217,9 +188,6 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
                   ),
                 ),
               ),
-            SizedBox(
-              height: MediaQueryData.fromWindow(window).padding.bottom,
-            ),
           ],
         ),
       ),

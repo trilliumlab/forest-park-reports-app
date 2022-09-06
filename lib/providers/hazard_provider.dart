@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:typed_data';
 
+import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -53,6 +55,50 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
 
 final activeHazardProvider = StateNotifierProvider
   <ActiveHazardNotifier, List<Hazard>>((ref) => ActiveHazardNotifier(ref));
+
+class HazardUpdateList extends ListBase<HazardUpdate> {
+  final List<HazardUpdate> l;
+
+  HazardUpdateList(this.l);
+
+  @override
+  set length(int newLength) { l.length = newLength; }
+  @override
+  int get length => l.length;
+  @override
+  HazardUpdate operator [](int index) => l[index];
+  @override
+  void operator []=(int index, HazardUpdate value) { l[index] = value; }
+
+  String? get lastImage => lastWhereOrNull((e) => e.image != null)?.image;
+}
+
+class HazardUpdateNotifier extends StateNotifier<HazardUpdateList> {
+  StateNotifierProviderRef ref;
+  String hazard;
+  HazardUpdateNotifier(this.ref, this.hazard) : super(HazardUpdateList([])) {
+    refresh();
+  }
+
+  Future refresh() async {
+    final res = await ref.read(dioProvider).get("/hazard/$hazard");
+    final updates = HazardUpdateList([
+      for (final val in res.data)
+        HazardUpdate.fromJson(val)
+    ]);
+    updates.sort((a, b) => a.time.millisecondsSinceEpoch - b.time.millisecondsSinceEpoch);
+    state = updates;
+  }
+
+  Future create(UpdateHazardRequest request) async {
+    final res = await ref.read(dioProvider).post("/hazard/update", data: request.toJson());
+    state = HazardUpdateList([...state, HazardUpdate.fromJson(res.data)]);
+  }
+}
+
+final hazardUpdateProvider = StateNotifierProvider.family
+  <HazardUpdateNotifier, HazardUpdateList, String>((ref, hazard) =>
+    HazardUpdateNotifier(ref, hazard));
 
 class HazardPhotoProgress {
   int transmitted;

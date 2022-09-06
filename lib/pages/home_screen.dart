@@ -1,8 +1,8 @@
-import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
@@ -11,6 +11,7 @@ import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:forest_park_reports/util/permissions_dialog.dart';
 import 'package:forest_park_reports/util/statusbar_blur.dart';
 import 'package:forest_park_reports/widgets/add_hazard_modal.dart';
+import 'package:forest_park_reports/widgets/hazard_info.dart';
 import 'package:forest_park_reports/widgets/trail_info.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
@@ -240,15 +241,20 @@ class PanelPage extends ConsumerStatefulWidget {
   ConsumerState<PanelPage> createState() => _PanelPageState();
 }
 
+//TODO stateless?
 class _PanelPageState extends ConsumerState<PanelPage> {
-  Size _textSize = Size.zero;
-  Size _bwSize = Size.zero;
-
   @override
   Widget build(BuildContext context) {
     final selectedTrail = ref.watch(parkTrailsProvider.select((p) => p.selectedTrail));
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
     final hazardTrail = ref.read(parkTrailsProvider).trails[selectedHazard?.location.trail];
+
+    HazardUpdateList? hazardUpdates;
+    String? lastImage;
+    if (selectedHazard != null) {
+      hazardUpdates = ref.watch(hazardUpdateProvider(selectedHazard.uuid));
+      lastImage = hazardUpdates!.lastImage;
+    }
 
     return Panel(
       // panel for when a hazard is selected
@@ -263,10 +269,22 @@ class _PanelPageState extends ConsumerState<PanelPage> {
               child: Padding(
                 padding: const EdgeInsets.only(left: 20, right: 10),
                 child: PlatformTextButton(
-                    color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
-                    onPressed: () {},
-                    padding: EdgeInsets.zero,
-                    child: const Text("Delete")
+                  onPressed: () {
+                    ref.read(hazardUpdateProvider(selectedHazard.uuid).notifier).create(
+                      UpdateHazardRequest(
+                          hazard: selectedHazard.uuid,
+                          active: false,
+                      ),
+                    );
+                    ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                    ref.read(selectedHazardProvider.notifier).deselect();
+                    ref.read(activeHazardProvider.notifier).refresh();
+                  },
+                  padding: EdgeInsets.zero,
+                  child: Text(
+                    "Delete",
+                    style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)),
+                  ),
                 ),
               ),
             ),
@@ -274,30 +292,54 @@ class _PanelPageState extends ConsumerState<PanelPage> {
               child: Padding(
                 padding: const EdgeInsets.only(left: 10, right: 20),
                 child: PlatformTextButton(
-                  color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context),
-                  onPressed: () {},
+                  onPressed: () {
+                    ref.read(hazardUpdateProvider(selectedHazard.uuid).notifier).create(
+                      UpdateHazardRequest(
+                        hazard: selectedHazard.uuid,
+                        active: true,
+                      ),
+                    );
+                    ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                    ref.read(selectedHazardProvider.notifier).deselect();
+                    ref.read(activeHazardProvider.notifier).refresh();
+                  },
                   padding: EdgeInsets.zero,
-                  child: const Text("Confirm")
+                  child: Text(
+                    "Confirm",
+                    style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context)),
+                  ),
                 ),
               ),
             ),
           ],
         ),
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Opacity(
-              opacity: widget.panelController.snapWidgetOpacity,
-              child: SizedBox(
-                height: widget.panelController.panelSnapHeight * 0.7
-                  + (widget.panelController.panelOpenHeight-widget.panelController.panelSnapHeight)*widget.panelController.pastSnapPosition * 0.6,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  child: HazardImage(selectedHazard.image!),
+          if (lastImage != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Opacity(
+                opacity: widget.panelController.snapWidgetOpacity,
+                child: SizedBox(
+                  height: widget.panelController.panelSnapHeight * 0.7
+                      + (widget.panelController.panelOpenHeight-widget.panelController.panelSnapHeight)*widget.panelController.pastSnapPosition * 0.6,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    child: HazardImage(lastImage),
+                  ),
                 ),
               ),
             ),
-          ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.all(Radius.circular(8)),
+              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
+            ),
+            child: Column(
+              children: hazardUpdates!.map((update) => UpdateInfoWidget(
+                update: update,
+              )).toList(),
+            ),
+          )
         ],
       ):
 

@@ -9,16 +9,14 @@ DateFormat _formatter = DateFormat('hh:mm a MMMM dd y');
 class Hazard extends NewHazardRequest {
   String uuid;
   DateTime time;
-  bool active;
 
-  String timeString() => _formatter.format(time);
+  String timeString() => _formatter.format(time.toLocal());
 
-  Hazard(this.uuid, this.time, this.active, super.hazard, super.location, [super.image]);
+  Hazard(this.uuid, this.time, super.hazard, super.location, [super.image]);
 
   Hazard.fromJson(Map<String, dynamic> json)
       : uuid = json['uuid'],
         time = DateTime.parse(json['time']),
-        active = json['active'],
         super.fromJson(json);
 
   @override
@@ -59,6 +57,61 @@ class NewHazardRequest {
   @override
   String toString() {
     return toJson().toString();
+  }
+}
+
+class HazardUpdate extends UpdateHazardRequest {
+  String uuid;
+  DateTime time;
+
+  String timeString() => _formatter.format(time.toLocal());
+
+  HazardUpdate({
+    required this.uuid,
+    required this.time,
+    required super.hazard,
+    required super.active,
+    super.image,
+  });
+
+  HazardUpdate.fromJson(Map<String, dynamic> json)
+      : uuid = json['uuid'],
+        time = DateTime.parse(json['time']),
+        super.fromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'uuid': uuid,
+      'time': time.toIso8601String(),
+      ...super.toJson(),
+    };
+  }
+
+}
+
+class UpdateHazardRequest {
+  String hazard;
+  bool active;
+  String? image;
+
+  UpdateHazardRequest({
+    required this.hazard,
+    required this.active,
+    this.image
+  });
+
+  UpdateHazardRequest.fromJson(Map<String, dynamic> json)
+      : hazard = json['hazard'],
+        active = json['active'],
+        image = json.containsKey('image') ? json['image'] : null;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'hazard': hazard,
+      'active': active,
+      'image': image,
+    };
   }
 }
 
