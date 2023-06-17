@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
+// import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,23 +33,23 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
   // TODO add satallite map style
   // TODO set initial camera position to be centered on ForestPark
   late final MapController _mapController;
-  late final PopupController _popupController;
-  late StreamController<double?> _centerCurrentLocationStreamController;
+  // late final PopupController _popupController;
+  late StreamController<double?> _followCurrentLocationStreamController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _mapController = MapController();
-    _popupController = PopupController();
-    _centerCurrentLocationStreamController = StreamController<double?>();
+    // _popupController = PopupController();
+    _followCurrentLocationStreamController = StreamController<double?>();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _mapController.dispose();
-    _centerCurrentLocationStreamController.close();
+    _followCurrentLocationStreamController.close();
     super.dispose();
   }
 
@@ -72,10 +72,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     final parkTrails = ref.watch(parkTrailsProvider);
     final locationStatus = ref.watch(locationPermissionProvider);
 
-    final centerOnLocation = ref.watch(centerOnLocationProvider);
-    ref.listen(centerOnLocationProvider, (prev, next) {
+    final followOnLocation = ref.watch(followOnLocationProvider);
+    ref.listen(followOnLocationProvider, (prev, next) {
       if (next != prev && next != CenterOnLocationUpdate.never) {
-        _centerCurrentLocationStreamController.add(null);
+        _followCurrentLocationStreamController.add(null);
       }
     });
 
@@ -90,13 +90,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               if (hazard == ref.read(selectedHazardProvider).hazard) {
                 ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
                 ref.read(selectedHazardProvider.notifier).deselect();
-                _popupController.hideAllPopups();
+                // _popupController.hideAllPopups();
               } else {
                 if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
                   ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
                 }
                 ref.read(selectedHazardProvider.notifier).select(hazard);
-                _popupController.showPopupsOnlyFor([marker]);
+                // _popupController.showPopupsOnlyFor([marker]);
               }
             },
             child: Icon(
@@ -115,9 +115,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
     ref.listen<SelectedHazard>(selectedHazardProvider, (prev, next) {
       if (next.hazard == null) {
-        _popupController.hideAllPopups();
+        // _popupController.hideAllPopups();
       } else {
-        _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
+        // _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
         if (next.moveCamera) {
           _mapController.move(next.hazard!.location, _mapController.zoom);
         }
@@ -127,7 +127,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        center: LatLng(45.57416784067063, -122.76892379502566),
+        center: const LatLng(45.57416784067063, -122.76892379502566),
         zoom: 11.5,
         onPositionChanged: (MapPosition position, bool hasGesture) {
           if (position.zoom != null) {
@@ -135,66 +135,45 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 ref.read(parkTrailsProvider.notifier).updateZoom(position.zoom!));
           }
           if (hasGesture) {
-            ref.read(centerOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.never);
+            ref.read(followOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.never);
           }
         },
         maxZoom: 22,
       ),
       children: [
-        TileLayerWidget(
-          options: TileLayerOptions(
-            tileProvider: FMTC.instance('forestPark').getTileProvider(),
-            backgroundColor: const Color(0xff53634b),
-            // lightMode
-            //     ? const Color(0xfff7f7f2)
-            //     : const Color(0xff36475c),
-            urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
-            // urlTemplate: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}@2x",
-            // urlTemplate: true
-            //         ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
-            //         : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
-            maxNativeZoom: 22,
-            maxZoom: 22,
-          ),
+        TileLayer(
+          tileProvider: FMTC.instance('forestPark').getTileProvider(),
+          backgroundColor: const Color(0xff53634b),
+          // lightMode
+          //     ? const Color(0xfff7f7f2)
+          //     : const Color(0xff36475c),
+          urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+          // urlTemplate: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}@2x",
+          // urlTemplate: true
+          //         ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
+          //         : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+          maxNativeZoom: 22,
+          maxZoom: 22,
         ),
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
         if (locationStatus.permission.authorized)
-          LocationMarkerLayerWidget(
-            plugin: LocationMarkerPlugin(
-              centerCurrentLocationStream: _centerCurrentLocationStreamController.stream,
-              centerOnLocationUpdate: centerOnLocation,
-            ),
+          CurrentLocationLayer(
+            followCurrentLocationStream: _followCurrentLocationStreamController.stream,
+            followOnLocationUpdate: followOnLocation,
           ),
-        TappablePolylineLayerWidget(
-          options: TappablePolylineLayerOptions(
-            // Will only render visible polylines, increasing performance
-            polylineCulling: true,
-            polylines: parkTrails.polylines,
-            onTap: (polylines, tapPosition) {
-              // deselect hazards
-              _popupController.hideAllPopups();
-              ref.read(selectedHazardProvider.notifier).deselect();
+        TappablePolylineLayer(
+          // Will only render visible polylines, increasing performance
+          polylineCulling: true,
+          polylines: parkTrails.polylines,
+          onTap: (polylines, tapPosition) {
+            // deselect hazards
+            // _popupController.hideAllPopups();
+            ref.read(selectedHazardProvider.notifier).deselect();
 
-              // select polyline
-              final tag = polylines.first.tag?.split("_").first;
-              if (tag == parkTrails.selectedTrail?.uuid) {
-                if (ref.read(panelPositionProvider).position == PanelPosition.open) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
-                } else {
-                  ref.read(selectedHazardProvider.notifier).deselect();
-                  ref.read(parkTrailsProvider.notifier).deselectTrail();
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
-                }
-              } else {
-                ref.read(parkTrailsProvider.notifier)
-                    .selectTrail(parkTrails.trails[tag]!);
-                if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
-                }
-              }
-            },
-            onMiss: (tapPosition) {
+            // select polyline
+            final tag = polylines.first.tag?.split("_").first;
+            if (tag == parkTrails.selectedTrail?.uuid) {
               if (ref.read(panelPositionProvider).position == PanelPosition.open) {
                 ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
               } else {
@@ -202,28 +181,41 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 ref.read(parkTrailsProvider.notifier).deselectTrail();
                 ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
               }
-            },
-          ),
-        ),
-        MarkerLayerWidget(
-          options: MarkerLayerOptions(
-            markers: parkTrails.markers,
-          ),
-        ),
-        PopupMarkerLayerWidget(
-          options: PopupMarkerLayerOptions(
-            markerRotateOrigin: const Offset(15, 15),
-            popupController: _popupController,
-            popupBuilder: (_, marker) {
-              if (marker is HazardMarker) {
-                return HazardInfoPopup(hazard: marker.hazard);
+            } else {
+              ref.read(parkTrailsProvider.notifier)
+                  .selectTrail(parkTrails.trails[tag]!);
+              if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
+                ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
               }
-              return Container();
-            },
-            popupAnimation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
-            markers: markers,
-          ),
-        )
+            }
+          },
+          onMiss: (tapPosition) {
+            if (ref.read(panelPositionProvider).position == PanelPosition.open) {
+              ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+            } else {
+              ref.read(selectedHazardProvider.notifier).deselect();
+              ref.read(parkTrailsProvider.notifier).deselectTrail();
+              ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+            }
+          },
+        ),
+        MarkerLayer(
+          markers: parkTrails.markers,
+        ),
+        // PopupMarkerLayerWidget(
+        //   options: PopupMarkerLayerOptions(
+        //     markerRotateOrigin: const Offset(15, 15),
+        //     popupController: _popupController,
+        //     popupBuilder: (_, marker) {
+        //       if (marker is HazardMarker) {
+        //         return HazardInfoPopup(hazard: marker.hazard);
+        //       }
+        //       return Container();
+        //     },
+        //     popupAnimation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
+        //     markers: markers,
+        //   ),
+        // ),
       ],
       //TODO attribution, this one looks off
       // nonRotatedChildren: [

@@ -30,8 +30,8 @@ class HomeScreen extends StatefulWidget {
 // this stores whether camera follows the gps location. This will be set to
 // false by panning the camera. when not stickied, pressing the sticky button
 // will animate the camera to the current gps location and set sticky to true
-final centerOnLocationProvider = StateProvider<CenterOnLocationUpdate>(
-    (ref) => CenterOnLocationUpdate.never
+final followOnLocationProvider = StateProvider<FollowOnLocationUpdate>(
+    (ref) => FollowOnLocationUpdate.never
 );
 
 class ScreenPanelController extends PanelController {
@@ -183,13 +183,13 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final centerOnLocation = ref.watch(centerOnLocationProvider);
+                  final centerOnLocation = ref.watch(followOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
                       final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
                       if (!mounted) return;
                       if (status.permission.authorized) {
-                        ref.read(centerOnLocationProvider.notifier)
+                        ref.read(followOnLocationProvider.notifier)
                             .update((state) => CenterOnLocationUpdate.always);
                       } else {
                         showMissingPermissionDialog(
