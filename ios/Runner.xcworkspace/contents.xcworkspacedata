@@ -2,12 +2,6 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:../../../../Downloads/waypoint.gpx">
-   </FileRef>
-   <FileRef
-      location = "group:../assets/trails/Adams Community Garden Loop via Wildwood Trail.gpx">
-   </FileRef>
-   <FileRef
       location = "group:Runner.xcodeproj">
    </FileRef>
    <FileRef

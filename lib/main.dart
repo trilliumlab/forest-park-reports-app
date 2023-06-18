@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -113,6 +114,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       // to use widgets that render in the style of the device's platform.
       // Eg. cupertino on ios, and material 3 on android
       child: PlatformProvider(
+        initialPlatform: kPlatformOverride,
         builder: (context) => child,
       ),
     );
