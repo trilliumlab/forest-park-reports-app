@@ -104,7 +104,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               color: isMaterial(context)
                   ? Theme
                   .of(context)
-                  .errorColor
+                  .colorScheme.error
                   : CupertinoDynamicColor.resolve(
                   CupertinoColors.destructiveRed, context)
             ),
@@ -135,7 +135,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 ref.read(parkTrailsProvider.notifier).updateZoom(position.zoom!));
           }
           if (hasGesture) {
-            ref.read(followOnLocationProvider.notifier).update((state) => CenterOnLocationUpdate.never);
+            ref.read(followOnLocationProvider.notifier).update((state) => FollowOnLocationUpdate.never);
           }
         },
         maxZoom: 22,
@@ -161,43 +161,48 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
           CurrentLocationLayer(
             followCurrentLocationStream: _followCurrentLocationStreamController.stream,
             followOnLocationUpdate: followOnLocation,
+            // headingStream: const Stream.empty(),
           ),
-        TappablePolylineLayer(
-          // Will only render visible polylines, increasing performance
-          polylineCulling: true,
-          polylines: parkTrails.polylines,
-          onTap: (polylines, tapPosition) {
-            // deselect hazards
-            // _popupController.hideAllPopups();
-            ref.read(selectedHazardProvider.notifier).deselect();
-
-            // select polyline
-            final tag = polylines.first.tag?.split("_").first;
-            if (tag == parkTrails.selectedTrail?.uuid) {
-              if (ref.read(panelPositionProvider).position == PanelPosition.open) {
-                ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
-              } else {
+        Consumer(
+          builder: (context, ref, _) {
+            return TappablePolylineLayer(
+              // Will only render visible polylines, increasing performance
+              polylineCulling: true,
+              polylines: parkTrails.polylines,
+              onTap: (polylines, tapPosition) {
+                // deselect hazards
+                // _popupController.hideAllPopups();
                 ref.read(selectedHazardProvider.notifier).deselect();
-                ref.read(parkTrailsProvider.notifier).deselectTrail();
-                ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
-              }
-            } else {
-              ref.read(parkTrailsProvider.notifier)
-                  .selectTrail(parkTrails.trails[tag]!);
-              if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
-                ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
-              }
-            }
-          },
-          onMiss: (tapPosition) {
-            if (ref.read(panelPositionProvider).position == PanelPosition.open) {
-              ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
-            } else {
-              ref.read(selectedHazardProvider.notifier).deselect();
-              ref.read(parkTrailsProvider.notifier).deselectTrail();
-              ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
-            }
-          },
+
+                // select polyline
+                final tag = polylines.first.tag?.split("_").first;
+                if (tag == parkTrails.selectedTrail?.uuid) {
+                  if (ref.read(panelPositionProvider).position == PanelPosition.open) {
+                    ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                  } else {
+                    ref.read(selectedHazardProvider.notifier).deselect();
+                    ref.read(parkTrailsProvider.notifier).deselectTrail();
+                    ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                  }
+                } else {
+                  ref.read(parkTrailsProvider.notifier)
+                      .selectTrail(parkTrails.trails[tag]!);
+                  if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
+                    ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                  }
+                }
+              },
+              onMiss: (tapPosition) {
+                if (ref.read(panelPositionProvider).position == PanelPosition.open) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                } else {
+                  ref.read(selectedHazardProvider.notifier).deselect();
+                  ref.read(parkTrailsProvider.notifier).deselectTrail();
+                  ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                }
+              },
+            );
+          }
         ),
         MarkerLayer(
           markers: parkTrails.markers,
