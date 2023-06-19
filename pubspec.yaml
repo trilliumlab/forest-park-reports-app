@@ -38,7 +38,7 @@ dependencies:
   hooks_riverpod: ^2.3.6
   riverpod_annotation: ^2.1.1
   # consider upgrading to sliding_up_panel2
-  sliding_up_panel: ^2.0.0+1
+  sliding_up_panel2: ^3.3.0+1
   flutter_platform_widgets: ^3.3.5
   dio: ^5.2.1+1
   path_provider: ^2.0.15

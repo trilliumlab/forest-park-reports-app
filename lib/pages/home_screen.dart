@@ -18,7 +18,7 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
-import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -65,6 +65,8 @@ class _HomeScreenState extends State<HomeScreen> {
     snapPoint: 0.40,
     panelClosedHeight: 100,
   );
+
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -126,8 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 snapPoint: _panelController.snapPoint,
                 body: const ForestParkMap(),
                 controller: _panelController,
-                panelBuilder: (sc) => PanelPage(
-                  scrollController: sc,
+                scrollController: _scrollController,
+                panelBuilder: () => PanelPage(
+                  scrollController: _scrollController,
                   panelController: _panelController,
                 ),
                 // don't render panel sheet so we can add custom blur
