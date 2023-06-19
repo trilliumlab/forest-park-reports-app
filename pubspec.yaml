@@ -35,7 +35,8 @@ dependencies:
   cupertino_icons: ^1.0.5
   latlong2: ^0.9.0
   geolocator: ^9.0.2
-  flutter_riverpod: ^2.3.6
+  hooks_riverpod: ^2.3.6
+  riverpod_annotation: ^2.1.1
   # consider upgrading to sliding_up_panel2
   sliding_up_panel: ^2.0.0+1
   flutter_platform_widgets: ^3.3.5
@@ -62,17 +63,18 @@ dependencies:
   # allow simplification of LatLng
   simplify:
     git: https://github.com/trilliumlab/simplify.git
+  freezed_annotation: ^2.2.0
+  json_annotation: ^4.8.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  build_runner: ^2.4.5
+  riverpod_generator: ^2.2.3
+  riverpod_lint: ^1.3.2
+  freezed: ^2.3.5
+  json_serializable: ^6.7.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -15,7 +15,7 @@ import 'package:forest_park_reports/widgets/hazard_info.dart';
 import 'package:forest_park_reports/widgets/trail_info.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -252,7 +252,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
     HazardUpdateList? hazardUpdates;
     String? lastImage;
     if (selectedHazard != null) {
-      hazardUpdates = ref.watch(hazardUpdateProvider(selectedHazard.uuid));
+      hazardUpdates = ref.watch(hazardUpdatesProvider(selectedHazard.uuid));
       lastImage = hazardUpdates!.lastImage;
     }
 
@@ -270,7 +270,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 padding: const EdgeInsets.only(left: 20, right: 10),
                 child: PlatformTextButton(
                   onPressed: () {
-                    ref.read(hazardUpdateProvider(selectedHazard.uuid).notifier).create(
+                    ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
                       UpdateHazardRequest(
                           hazard: selectedHazard.uuid,
                           active: false,
@@ -293,7 +293,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 padding: const EdgeInsets.only(left: 10, right: 20),
                 child: PlatformTextButton(
                   onPressed: () {
-                    ref.read(hazardUpdateProvider(selectedHazard.uuid).notifier).create(
+                    ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
                       UpdateHazardRequest(
                         hazard: selectedHazard.uuid,
                         active: true,

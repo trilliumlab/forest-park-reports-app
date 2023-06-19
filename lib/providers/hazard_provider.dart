@@ -5,19 +5,23 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
-  StateNotifierProviderRef ref;
-  ActiveHazardNotifier(this.ref) : super([]) {
+part 'hazard_provider.g.dart';
+
+@riverpod
+class ActiveHazard extends _$ActiveHazard {
+  @override
+  List<Hazard> build() {
     refresh();
     Timer.periodic(
       const Duration(seconds: 10),
-      (_) => refresh(),
+          (_) => refresh(),
     );
+    return [];
   }
   Future refresh() async {
     final res = await ref.read(dioProvider).get("/hazard/active");
@@ -28,22 +32,22 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
   }
   Future<String?> uploadImage(XFile file, {void Function(int, int)? onSendProgress}) async {
     final image = await FlutterImageCompress.compressWithFile(
-      file.path,
-      keepExif: true,
-      quality: 80
+        file.path,
+        keepExif: true,
+        quality: 80
     );
     FormData formData = FormData.fromMap({
       "file": MultipartFile.fromBytes(image!),
     });
     final res = await ref.read(dioProvider).post(
-      "/hazard/image",
-      data: formData,
-      options: Options(
-        headers: {
-          'Accept-Ranged': 'bytes'
-        },
-      ),
-      onSendProgress: onSendProgress
+        "/hazard/image",
+        data: formData,
+        options: Options(
+          headers: {
+            'Accept-Ranged': 'bytes'
+          },
+        ),
+        onSendProgress: onSendProgress
     );
     return res.data['uuid'];
   }
@@ -52,9 +56,6 @@ class ActiveHazardNotifier extends StateNotifier<List<Hazard>> {
     state = [...state, Hazard.fromJson(res.data)];
   }
 }
-
-final activeHazardProvider = StateNotifierProvider
-  <ActiveHazardNotifier, List<Hazard>>((ref) => ActiveHazardNotifier(ref));
 
 class HazardUpdateList extends ListBase<HazardUpdate> {
   final List<HazardUpdate> l;
@@ -73,13 +74,15 @@ class HazardUpdateList extends ListBase<HazardUpdate> {
   String? get lastImage => lastWhereOrNull((e) => e.image != null)?.image;
 }
 
-class HazardUpdateNotifier extends StateNotifier<HazardUpdateList> {
-  StateNotifierProviderRef ref;
-  String hazard;
-  HazardUpdateNotifier(this.ref, this.hazard) : super(HazardUpdateList([])) {
+@riverpod
+class HazardUpdates extends _$HazardUpdates {
+  late final String hazard;
+  @override
+  HazardUpdateList build(String hazard) {
+    this.hazard = hazard;
     refresh();
+    return HazardUpdateList([]);
   }
-
   Future refresh() async {
     final res = await ref.read(dioProvider).get("/hazard/$hazard");
     final updates = HazardUpdateList([
@@ -96,10 +99,6 @@ class HazardUpdateNotifier extends StateNotifier<HazardUpdateList> {
   }
 }
 
-final hazardUpdateProvider = StateNotifierProvider.family
-  <HazardUpdateNotifier, HazardUpdateList, String>((ref, hazard) =>
-    HazardUpdateNotifier(ref, hazard));
-
 class HazardPhotoProgress {
   int transmitted;
   int total;
@@ -114,15 +113,19 @@ class HazardPhotoProgress {
 final hazardPhotoProgressProvider = StateProvider.family<HazardPhotoProgress, String>(
         (ref, uuid) => HazardPhotoProgress(0, 0));
 
-final hazardPhotoProvider = FutureProvider.family<Uint8List?, String>((ref, uuid) async {
-  final res = await ref.read(dioProvider).get<Uint8List>(
-    "/hazard/image/$uuid",
-    options: Options(responseType: ResponseType.bytes),
-    onReceiveProgress: (received, total) =>
-        ref.read(hazardPhotoProgressProvider(uuid).notifier).state = HazardPhotoProgress(received, total),
-  );
-  return res.data;
-});
+@riverpod
+class HazardPhoto extends _$HazardPhoto {
+  @override
+  Future<Uint8List?> build(String uuid) async {
+    final res = await ref.read(dioProvider).get<Uint8List>(
+      "/hazard/image/$uuid",
+      options: Options(responseType: ResponseType.bytes),
+      onReceiveProgress: (received, total) =>
+      ref.read(hazardPhotoProgressProvider(uuid).notifier).state = HazardPhotoProgress(received, total),
+    );
+    return res.data;
+  }
+}
 
 class SelectedHazard {
   final bool moveCamera;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:collection/collection.dart';
@@ -161,7 +162,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
           CurrentLocationLayer(
             followCurrentLocationStream: _followCurrentLocationStreamController.stream,
             followOnLocationUpdate: followOnLocation,
-            // headingStream: const Stream.empty(),
+            // Only enable heading on mobile
+            headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
           ),
         Consumer(
           builder: (context, ref, _) {
