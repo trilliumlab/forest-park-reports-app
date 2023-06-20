@@ -274,7 +274,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 child: PlatformTextButton(
                   onPressed: () {
                     ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
-                      UpdateHazardRequest(
+                      UpdateHazardRequestModel(
                           hazard: selectedHazard.uuid,
                           active: false,
                       ),
@@ -297,7 +297,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 child: PlatformTextButton(
                   onPressed: () {
                     ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
-                      UpdateHazardRequest(
+                      UpdateHazardRequestModel(
                         hazard: selectedHazard.uuid,
                         active: true,
                       ),

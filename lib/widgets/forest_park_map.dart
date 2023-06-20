@@ -114,7 +114,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       return marker;
     }).toList();
 
-    ref.listen<SelectedHazard>(selectedHazardProvider, (prev, next) {
+    ref.listen<SelectedHazardState>(selectedHazardProvider, (prev, next) {
       if (next.hazard == null) {
         // _popupController.hideAllPopups();
       } else {
@@ -236,7 +236,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 }
 
 class HazardInfoPopup extends StatelessWidget {
-  final Hazard hazard;
+  final HazardModel hazard;
   const HazardInfoPopup({super.key, required this.hazard});
 
   @override
@@ -344,6 +344,6 @@ class HazardImage extends ConsumerWidget {
 }
 
 class HazardMarker extends Marker {
-  final Hazard hazard;
+  final HazardModel hazard;
   HazardMarker({required this.hazard, required super.builder}) : super(point: hazard.location);
 }

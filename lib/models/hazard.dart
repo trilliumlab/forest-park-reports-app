@@ -6,15 +6,15 @@ import 'package:latlong2/latlong.dart';
 // Tuesday, July 12th, 2022 at 11:53am
 // 11:53 AM July 12 2022
 DateFormat _formatter = DateFormat('hh:mm a MMMM dd y');
-class Hazard extends NewHazardRequest {
+class HazardModel extends NewHazardRequestModel {
   String uuid;
   DateTime time;
 
   String timeString() => _formatter.format(time.toLocal());
 
-  Hazard(this.uuid, this.time, super.hazard, super.location, [super.image]);
+  HazardModel(this.uuid, this.time, super.hazard, super.location, [super.image]);
 
-  Hazard.fromJson(Map<String, dynamic> json)
+  HazardModel.fromJson(Map<String, dynamic> json)
       : uuid = json['uuid'],
         time = DateTime.parse(json['time']),
         super.fromJson(json);
@@ -34,14 +34,14 @@ class Hazard extends NewHazardRequest {
   }
 }
 
-class NewHazardRequest {
+class NewHazardRequestModel {
   HazardType hazard;
   SnappedLatLng location;
   String? image;
 
-  NewHazardRequest(this.hazard, this.location, [this.image]);
+  NewHazardRequestModel(this.hazard, this.location, [this.image]);
 
-  NewHazardRequest.fromJson(Map<String, dynamic> json)
+  NewHazardRequestModel.fromJson(Map<String, dynamic> json)
       : hazard = HazardType.values.byName(json['hazard']),
         location = SnappedLatLng.fromJson(json['location']),
         image = json.containsKey('image') ? json['image'] : null;
@@ -60,13 +60,13 @@ class NewHazardRequest {
   }
 }
 
-class HazardUpdate extends UpdateHazardRequest {
+class HazardUpdateModel extends UpdateHazardRequestModel {
   String uuid;
   DateTime time;
 
   String timeString() => _formatter.format(time.toLocal());
 
-  HazardUpdate({
+  HazardUpdateModel({
     required this.uuid,
     required this.time,
     required super.hazard,
@@ -74,7 +74,7 @@ class HazardUpdate extends UpdateHazardRequest {
     super.image,
   });
 
-  HazardUpdate.fromJson(Map<String, dynamic> json)
+  HazardUpdateModel.fromJson(Map<String, dynamic> json)
       : uuid = json['uuid'],
         time = DateTime.parse(json['time']),
         super.fromJson(json);
@@ -90,18 +90,18 @@ class HazardUpdate extends UpdateHazardRequest {
 
 }
 
-class UpdateHazardRequest {
+class UpdateHazardRequestModel {
   String hazard;
   bool active;
   String? image;
 
-  UpdateHazardRequest({
+  UpdateHazardRequestModel({
     required this.hazard,
     required this.active,
     this.image
   });
 
-  UpdateHazardRequest.fromJson(Map<String, dynamic> json)
+  UpdateHazardRequestModel.fromJson(Map<String, dynamic> json)
       : hazard = json['hazard'],
         active = json['active'],
         image = json.containsKey('image') ? json['image'] : null;

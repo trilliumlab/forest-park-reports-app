@@ -54,7 +54,7 @@ class TrailHazardsWidget extends ConsumerWidget {
 }
 
 class HazardInfoWidget extends ConsumerWidget {
-  final Hazard hazard;
+  final HazardModel hazard;
   const HazardInfoWidget({super.key, required this.hazard});
 
   @override
@@ -257,7 +257,7 @@ class TrailElevationGraph extends ConsumerWidget {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider)
         .where((e) => e.location.trail == trail.uuid);
-    final Map<double, Hazard?> hazardsMap = {};
+    final Map<double, HazardModel?> hazardsMap = {};
     final List<FlSpot> spots = [];
     final filterInterval = (trail.track!.elevation.length/100).round();
     for (final e in trail.track!.elevation.asMap().entries) {

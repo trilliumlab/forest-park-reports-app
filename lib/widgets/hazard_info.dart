@@ -3,7 +3,7 @@ import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 
 class UpdateInfoWidget extends StatelessWidget {
-  final HazardUpdate update;
+  final HazardUpdateModel update;
   const UpdateInfoWidget({super.key, required this.update});
 
   @override

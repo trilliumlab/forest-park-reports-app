@@ -15,7 +15,7 @@ part 'hazard_provider.g.dart';
 @riverpod
 class ActiveHazard extends _$ActiveHazard {
   @override
-  List<Hazard> build() {
+  List<HazardModel> build() {
     refresh();
     Timer.periodic(
       const Duration(seconds: 10),
@@ -27,7 +27,7 @@ class ActiveHazard extends _$ActiveHazard {
     final res = await ref.read(dioProvider).get("/hazard/active");
     state = [
       for (final val in res.data)
-        Hazard.fromJson(val)
+        HazardModel.fromJson(val)
     ];
   }
   Future<String?> uploadImage(XFile file, {void Function(int, int)? onSendProgress}) async {
@@ -51,14 +51,14 @@ class ActiveHazard extends _$ActiveHazard {
     );
     return res.data['uuid'];
   }
-  Future create(NewHazardRequest request) async {
+  Future create(NewHazardRequestModel request) async {
     final res = await ref.read(dioProvider).post("/hazard/new", data: request.toJson());
-    state = [...state, Hazard.fromJson(res.data)];
+    state = [...state, HazardModel.fromJson(res.data)];
   }
 }
 
-class HazardUpdateList extends ListBase<HazardUpdate> {
-  final List<HazardUpdate> l;
+class HazardUpdateList extends ListBase<HazardUpdateModel> {
+  final List<HazardUpdateModel> l;
 
   HazardUpdateList(this.l);
 
@@ -67,9 +67,9 @@ class HazardUpdateList extends ListBase<HazardUpdate> {
   @override
   int get length => l.length;
   @override
-  HazardUpdate operator [](int index) => l[index];
+  HazardUpdateModel operator [](int index) => l[index];
   @override
-  void operator []=(int index, HazardUpdate value) { l[index] = value; }
+  void operator []=(int index, HazardUpdateModel value) { l[index] = value; }
 
   String? get lastImage => lastWhereOrNull((e) => e.image != null)?.image;
 }
@@ -87,22 +87,22 @@ class HazardUpdates extends _$HazardUpdates {
     final res = await ref.read(dioProvider).get("/hazard/$hazard");
     final updates = HazardUpdateList([
       for (final val in res.data)
-        HazardUpdate.fromJson(val)
+        HazardUpdateModel.fromJson(val)
     ]);
     updates.sort((a, b) => a.time.millisecondsSinceEpoch - b.time.millisecondsSinceEpoch);
     state = updates;
   }
 
-  Future create(UpdateHazardRequest request) async {
+  Future create(UpdateHazardRequestModel request) async {
     final res = await ref.read(dioProvider).post("/hazard/update", data: request.toJson());
-    state = HazardUpdateList([...state, HazardUpdate.fromJson(res.data)]);
+    state = HazardUpdateList([...state, HazardUpdateModel.fromJson(res.data)]);
   }
 }
 
-class HazardPhotoProgress {
+class HazardPhotoProgressState {
   int transmitted;
   int total;
-  HazardPhotoProgress(this.transmitted, this.total);
+  HazardPhotoProgressState(this.transmitted, this.total);
   bool get isComplete => transmitted == total;
   double get progress {
     final p = transmitted/total;
@@ -110,8 +110,14 @@ class HazardPhotoProgress {
   }
 }
 
-final hazardPhotoProgressProvider = StateProvider.family<HazardPhotoProgress, String>(
-        (ref, uuid) => HazardPhotoProgress(0, 0));
+@riverpod
+class HazardPhotoProgress extends _$HazardPhotoProgress {
+  @override
+  HazardPhotoProgressState build(String uuid) => HazardPhotoProgressState(0, 0);
+
+  void updateProgress(int transmitted, int total) =>
+      state = HazardPhotoProgressState(transmitted, total);
+}
 
 @riverpod
 class HazardPhoto extends _$HazardPhoto {
@@ -121,31 +127,31 @@ class HazardPhoto extends _$HazardPhoto {
       "/hazard/image/$uuid",
       options: Options(responseType: ResponseType.bytes),
       onReceiveProgress: (received, total) =>
-      ref.read(hazardPhotoProgressProvider(uuid).notifier).state = HazardPhotoProgress(received, total),
+          ref.read(hazardPhotoProgressProvider(uuid).notifier)
+              .updateProgress(received, total),
     );
     return res.data;
   }
 }
 
-class SelectedHazard {
+class SelectedHazardState {
   final bool moveCamera;
-  final Hazard? hazard;
-  SelectedHazard(this.moveCamera, [this.hazard]);
+  final HazardModel? hazard;
+  SelectedHazardState(this.moveCamera, [this.hazard]);
 }
 
-class SelectedHazardNotifier extends StateNotifier<SelectedHazard> {
-  SelectedHazardNotifier() : super(SelectedHazard(false));
+@riverpod
+class SelectedHazard extends _$SelectedHazard {
+  @override
+  SelectedHazardState build() => SelectedHazardState(false);
 
-  void selectAndMove(Hazard hazard) {
-    state = SelectedHazard(true, hazard);
+  void selectAndMove(HazardModel hazard) {
+    state = SelectedHazardState(true, hazard);
   }
-  void select(Hazard hazard) {
-    state = SelectedHazard(false, hazard);
+  void select(HazardModel hazard) {
+    state = SelectedHazardState(false, hazard);
   }
   void deselect() {
-    state = SelectedHazard(false);
+    state = SelectedHazardState(false);
   }
 }
-
-final selectedHazardProvider = StateNotifierProvider<SelectedHazardNotifier, SelectedHazard>
-  ((ref) => SelectedHazardNotifier());

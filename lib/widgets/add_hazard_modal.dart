@@ -91,7 +91,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
       );
     }
 
-    await activeHazardNotifier.create(NewHazardRequest(
+    await activeHazardNotifier.create(NewHazardRequestModel(
         _selectedHazard!, snappedLoc.location, imageUuid));
     _close();
   }
