@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -30,4 +31,11 @@ extension Authorized on LocationPermission {
 extension RemoveTrailingZeros on double {
   String toStringRemoveTrailing(int fractionDigits) =>
       toStringAsFixed(fractionDigits).toString().replaceFirst(RegExp(r'\.?0*$'), '');
+}
+
+extension PositionToMarker on Position {
+  LocationMarkerPosition locationMarkerPosition() =>
+      LocationMarkerPosition(latitude: latitude, longitude: longitude, accuracy: accuracy);
+  LocationMarkerHeading locationMarkerHeading() =>
+      LocationMarkerHeading(heading: heading, accuracy: accuracy);
 }

@@ -1,24 +1,28 @@
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-enum PanelPosition {
+part 'panel_position_provider.g.dart';
+
+enum PanelPositionState {
   open,
   closed,
   snapped
 }
+
 class PanelPositionUpdate {
-  final PanelPosition position;
+  final PanelPositionState position;
   final bool move;
   PanelPositionUpdate(this.position, this.move);
 }
-class PanelPositionNotifier extends StateNotifier<PanelPositionUpdate> {
-  PanelPositionNotifier() : super(PanelPositionUpdate(PanelPosition.closed, false));
 
-  void move(PanelPosition position) {
+@riverpod
+class PanelPosition extends _$PanelPosition {
+  @override
+  PanelPositionUpdate build() => PanelPositionUpdate(PanelPositionState.closed, false);
+
+  void move(PanelPositionState position) {
     state = PanelPositionUpdate(position, true);
   }
-  void update(PanelPosition position) {
+  void update(PanelPositionState position) {
     state = PanelPositionUpdate(position, false);
   }
 }
-final panelPositionProvider = StateNotifierProvider<PanelPositionNotifier, PanelPositionUpdate>
-  ((ref) => PanelPositionNotifier());

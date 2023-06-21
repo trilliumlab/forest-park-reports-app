@@ -90,13 +90,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ref.listen<PanelPositionUpdate>(panelPositionProvider, (prev, next) {
                 if (next.move) {
                   switch (next.position) {
-                    case PanelPosition.open:
+                    case PanelPositionState.open:
                       _panelController.open();
                       break;
-                    case PanelPosition.closed:
+                    case PanelPositionState.closed:
                       _panelController.close();
                       break;
-                    case PanelPosition.snapped:
+                    case PanelPositionState.snapped:
                       _panelController.animatePanelToSnapPoint();
                       break;
                   }
@@ -106,11 +106,11 @@ class _HomeScreenState extends State<HomeScreen> {
               var position = ref.read(panelPositionProvider).position;
               if (_panelController.isAttached) {
                 if (_panelController.isPanelClosed) {
-                  position = PanelPosition.closed;
+                  position = PanelPositionState.closed;
                 } else if (_panelController.isPanelOpen) {
-                  position = PanelPosition.open;
+                  position = PanelPositionState.open;
                 } else if (_panelController.isPanelSnapped) {
-                  position = PanelPosition.snapped;
+                  position = PanelPositionState.snapped;
                 }
               }
               WidgetsBinding.instance.addPostFrameCallback((_) =>
@@ -189,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final centerOnLocation = ref.watch(followOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
-                      final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
+                      final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
                       if (!mounted) return;
                       if (status.permission.authorized) {
                         ref.read(followOnLocationProvider.notifier)
@@ -279,7 +279,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                           active: false,
                       ),
                     );
-                    ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                     ref.read(selectedHazardProvider.notifier).deselect();
                     ref.read(activeHazardProvider.notifier).refresh();
                   },
@@ -302,7 +302,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                         active: true,
                       ),
                     );
-                    ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                     ref.read(selectedHazardProvider.notifier).deselect();
                     ref.read(activeHazardProvider.notifier).refresh();
                   },

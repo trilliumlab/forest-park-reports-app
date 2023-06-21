@@ -14,7 +14,10 @@ import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:simplify/simplify.dart';
+
+part 'trail_provider.g.dart';
 
 /// Represents a Trail in Forest Park
 class Trail {
@@ -53,8 +56,6 @@ class ColorStop {
 }
 
 const haversine = DistanceHaversine(roundResult: false);
-//TODO reduce polyline points client side
-//TODO process gpx files server side
 /// Represents a GPX file (list of coordinates) in an easy to use way
 class Track {
   List<LatLng> path = [];
@@ -143,8 +144,8 @@ class Track {
 /// is selected, we remove the selected polyline and add in 2 more polylines,
 /// one being the trail in a different color, and one being a transparent
 /// highlight.
-/// The ParkTrails class holds the currently selected polyline
-class ParkTrails {
+/// The ParkTrailsState class holds the currently selected polyline
+class ParkTrailsState {
   final Map<String, Trail> trails;
   final Trail? selectedTrail;
   final List<TrackPolyline> trackPolylines;
@@ -171,12 +172,12 @@ class ParkTrails {
       .toList();
   bool get isPopulated => !(trails.isEmpty || polylines.isEmpty);
 
-  ParkTrails({this.trails = const {}, this.resolution = PolylineResolution.min, this.selectedTrail, this.trackPolylines = const []});
+  ParkTrailsState({this.trails = const {}, this.resolution = PolylineResolution.min, this.selectedTrail, this.trackPolylines = const []});
 
   // We need a copyWith function for everything being used in a StateNotifier
   // because riverpod StateNotifier state is immutable
-  ParkTrails copyWith({required Trail? selectedTrail, PolylineResolution? resolution, List<TrackPolyline>? trackPolylines}) {
-    return ParkTrails(
+  ParkTrailsState copyWith({required Trail? selectedTrail, PolylineResolution? resolution, List<TrackPolyline>? trackPolylines}) {
+    return ParkTrailsState(
       trails: trails,
       resolution: resolution ?? this.resolution,
       selectedTrail: selectedTrail,
@@ -377,12 +378,13 @@ class TrackPolyline {
 
 // A provider that will load all the trail data from the server
 // and can be refreshed to fetch new data.
-class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
-  StateNotifierProviderRef ref;
-  RemoteTrailsNotifier(this.ref) : super({}) {
+@riverpod
+class RemoteTrails extends _$RemoteTrails {
+  @override
+  Map<String, Trail> build() {
     fetchTrails();
+    return {};
   }
-  static final GpxReader _gpxReader = GpxReader();
   Future fetchTrails() async {
     final res = await ref.read(dioProvider).get("/trail/list");
     state = {
@@ -391,10 +393,10 @@ class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
     };
     for (final trail in state.values) {
       final res = await ref.read(dioProvider).get(
-          "/trail/${trail.uuid}",
-          options: Options(
-              responseType: ResponseType.bytes
-          ),
+        "/trail/${trail.uuid}",
+        options: Options(
+            responseType: ResponseType.bytes
+        ),
       );
       final track = Track.decode(res.data);
       state = {
@@ -408,24 +410,19 @@ class RemoteTrailsNotifier extends StateNotifier<Map<String, Trail>> {
   }
 }
 
-final remoteTrailsProvider = StateNotifierProvider<RemoteTrailsNotifier, Map<String, Trail>>((ref) {
-  return RemoteTrailsNotifier(ref);
-});
-
-
-class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
-  // initial state is an empty ParkTrails
-  ParkTrailsNotifier(StateNotifierProviderRef ref) : super(ParkTrails()) {
-    // watch the raw trail provider for updates. When the trails have been
-    // loaded or refreshed it will call _buildPolylines.
+@riverpod
+class ParkTrails extends _$ParkTrails {
+  @override
+  ParkTrailsState build() {
     ref.listen(remoteTrailsProvider, (_, Map<String, Trail> trails) => _buildPolylines(trails));
+    return ParkTrailsState();
   }
 
   // builds the TrailPolylines for each Trail and handles selection logic
   // plus updates ParkTrails state
   Future _buildPolylines(Map<String, Trail> trails) async {
     // initial state update
-    state = ParkTrails(
+    state = ParkTrailsState(
       trails: trails,
       resolution: state.resolution,
       trackPolylines: [
@@ -469,9 +466,4 @@ class ParkTrailsNotifier extends StateNotifier<ParkTrails> {
       state = state.copyWith(selectedTrail: state.selectedTrail, resolution: resolution);
     }
   }
-
 }
-
-final parkTrailsProvider = StateNotifierProvider<ParkTrailsNotifier, ParkTrails>((ref) {
-  return ParkTrailsNotifier(ref);
-});

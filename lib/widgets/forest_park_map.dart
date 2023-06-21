@@ -71,7 +71,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // using ref.watch will allow the widget to be rebuilt everytime
     // the provider is updated
     final parkTrails = ref.watch(parkTrailsProvider);
-    final locationStatus = ref.watch(locationPermissionProvider);
+    final locationStatus = ref.watch(locationPermissionStatusProvider);
 
     final followOnLocation = ref.watch(followOnLocationProvider);
     ref.listen(followOnLocationProvider, (prev, next) {
@@ -89,12 +89,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             onTap: () {
               ref.read(parkTrailsProvider.notifier).deselectTrail();
               if (hazard == ref.read(selectedHazardProvider).hazard) {
-                ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                 ref.read(selectedHazardProvider.notifier).deselect();
                 // _popupController.hideAllPopups();
               } else {
-                if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
                 }
                 ref.read(selectedHazardProvider.notifier).select(hazard);
                 // _popupController.showPopupsOnlyFor([marker]);
@@ -159,11 +159,18 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
         if (locationStatus.permission.authorized)
-          CurrentLocationLayer(
-            followCurrentLocationStream: _followCurrentLocationStreamController.stream,
-            followOnLocationUpdate: followOnLocation,
-            // Only enable heading on mobile
-            headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
+          Consumer(
+            builder: (context, ref, _) {
+              final positionStream = ref.watch(locationProvider.stream);
+              return CurrentLocationLayer(
+                followCurrentLocationStream: _followCurrentLocationStreamController.stream,
+                followOnLocationUpdate: followOnLocation,
+                positionStream: positionStream.map((p) => p.locationMarkerPosition()),
+                // Only enable heading on mobile
+                // headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
+                headingStream: positionStream.map((p) => p.locationMarkerHeading()),
+              );
+            }
           ),
         Consumer(
           builder: (context, ref, _) {
@@ -179,28 +186,28 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                 // select polyline
                 final tag = polylines.first.tag?.split("_").first;
                 if (tag == parkTrails.selectedTrail?.uuid) {
-                  if (ref.read(panelPositionProvider).position == PanelPosition.open) {
-                    ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                  if (ref.read(panelPositionProvider).position == PanelPositionState.open) {
+                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
                   } else {
                     ref.read(selectedHazardProvider.notifier).deselect();
                     ref.read(parkTrailsProvider.notifier).deselectTrail();
-                    ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                   }
                 } else {
                   ref.read(parkTrailsProvider.notifier)
                       .selectTrail(parkTrails.trails[tag]!);
-                  if (ref.read(panelPositionProvider).position == PanelPosition.closed) {
-                    ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                  if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
+                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
                   }
                 }
               },
               onMiss: (tapPosition) {
-                if (ref.read(panelPositionProvider).position == PanelPosition.open) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+                if (ref.read(panelPositionProvider).position == PanelPositionState.open) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
                 } else {
                   ref.read(selectedHazardProvider.notifier).deselect();
                   ref.read(parkTrailsProvider.notifier).deselectTrail();
-                  ref.read(panelPositionProvider.notifier).move(PanelPosition.closed);
+                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                 }
               },
             );
@@ -208,6 +215,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         MarkerLayer(
           markers: parkTrails.markers,
+        ),
+        // Temporary until popup marker back
+        MarkerLayer(
+          markers: markers,
         ),
         // PopupMarkerLayerWidget(
         //   options: PopupMarkerLayerOptions(

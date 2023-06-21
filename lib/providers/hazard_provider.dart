@@ -76,10 +76,8 @@ class HazardUpdateList extends ListBase<HazardUpdateModel> {
 
 @riverpod
 class HazardUpdates extends _$HazardUpdates {
-  late final String hazard;
   @override
   HazardUpdateList build(String hazard) {
-    this.hazard = hazard;
     refresh();
     return HazardUpdateList([]);
   }

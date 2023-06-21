@@ -1,31 +1,39 @@
 import 'dart:io';
 
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class LocationProviderNotifier extends StateNotifier<Position?> {
-  final StateNotifierProviderRef ref;
-  LocationProviderNotifier(this.ref) : super(null) {
-    ref.watch(locationPermissionProvider);
-    Geolocator.getPositionStream().listen((event) {
-      print("GOT NEW LOCATION");
-      state = event;
-    });
-  }
+part 'location_provider.g.dart';
 
-  Future<Position?> getLocation() async {
-    final location = await Geolocator.getCurrentPosition();
-    return state = location;
-  }
+@riverpod
+Stream<Position> location(LocationRef ref) {
+  ref.watch(locationPermissionStatusProvider);
+  return Geolocator.getPositionStream();
 }
-final locationProvider = StateNotifierProvider<LocationProviderNotifier, Position?>((ref) {
-  return LocationProviderNotifier(ref);
-});
 
-class LocationStatus {
+// class LocationProviderNotifier extends StateNotifier<Position?> {
+//   final StateNotifierProviderRef ref;
+//   LocationProviderNotifier(this.ref) : super(null) {
+//     ref.watch(locationPermissionProvider);
+//     Geolocator.getPositionStream().listen((event) {
+//       print("GOT NEW LOCATION");
+//       state = event;
+//     });
+//   }
+//
+//   Future<Position?> getLocation() async {
+//     final location = await Geolocator.getCurrentPosition();
+//     return state = location;
+//   }
+// }
+// final locationProvider = StateNotifierProvider<LocationProviderNotifier, Position?>((ref) {
+//   return LocationProviderNotifier(ref);
+// });
+
+class LocationPermissionStatusState {
   final LocationPermission permission;
   final LocationAccuracyStatus accuracy;
-  LocationStatus([
+  LocationPermissionStatusState([
     this.permission = LocationPermission.unableToDetermine,
     this.accuracy = LocationAccuracyStatus.unknown
   ]);
@@ -33,14 +41,17 @@ class LocationStatus {
   String toString() => '{permission: $permission, accuracy: $accuracy}';
 }
 
-class LocationPermissionProviderNotifier extends StateNotifier<LocationStatus> {
-  LocationPermissionProviderNotifier() : super(LocationStatus()) {
+@riverpod
+class LocationPermissionStatus extends _$LocationPermissionStatus {
+  @override
+  LocationPermissionStatusState build() {
     checkPermission();
+    return LocationPermissionStatusState();
   }
 
-  Future<LocationStatus> checkPermission({bool requestPrecise = false}) async {
+  Future<LocationPermissionStatusState> checkPermission({bool requestPrecise = false}) async {
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.unableToDetermine 
+    if (permission == LocationPermission.unableToDetermine
         || permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
@@ -57,8 +68,9 @@ class LocationPermissionProviderNotifier extends StateNotifier<LocationStatus> {
         }
       }
     }
-    state = LocationStatus(permission, accuracy);
+    state = LocationPermissionStatusState(permission, accuracy);
     return state;
+    //TODO look at this
     // if (permission == PermissionStatus.notDetermined
     //     || (permission == PermissionStatus.restricted
     //         && (requestPrecise || permission != PermissionStatus.restricted)
@@ -71,6 +83,45 @@ class LocationPermissionProviderNotifier extends StateNotifier<LocationStatus> {
     // }
   }
 }
-final locationPermissionProvider = StateNotifierProvider<LocationPermissionProviderNotifier, LocationStatus>((ref) {
-  return LocationPermissionProviderNotifier();
-});
+
+// class LocationPermissionProviderNotifier extends StateNotifier<LocationPermissionStatusState> {
+//   LocationPermissionProviderNotifier() : super(LocationPermissionStatusState()) {
+//     checkPermission();
+//   }
+//
+//   Future<LocationPermissionStatusState> checkPermission({bool requestPrecise = false}) async {
+//     var permission = await Geolocator.checkPermission();
+//     if (permission == LocationPermission.unableToDetermine
+//         || permission == LocationPermission.denied) {
+//       permission = await Geolocator.requestPermission();
+//     }
+//
+//     // get precise location
+//     var accuracy = await Geolocator.getLocationAccuracy();
+//     if (requestPrecise) {
+//       if (accuracy != LocationAccuracyStatus.precise) {
+//         if (Platform.isIOS && double.parse(Platform.operatingSystemVersion.split(" ")[1]) >= 14) {
+//           accuracy = await Geolocator.requestTemporaryFullAccuracy(purposeKey: 'hazard');
+//         } else {
+//           permission = await Geolocator.requestPermission();
+//           accuracy = await Geolocator.getLocationAccuracy();
+//         }
+//       }
+//     }
+//     state = LocationPermissionStatusState(permission, accuracy);
+//     return state;
+//     // if (permission == PermissionStatus.notDetermined
+//     //     || (permission == PermissionStatus.restricted
+//     //         && (requestPrecise || permission != PermissionStatus.restricted)
+//     //         && !Platform.isIOS)
+//     //     || (permission == PermissionStatus.denied && !Platform.isIOS)
+//     // ) {
+//     //   state = await requestPermission();
+//     // } else {
+//     //   state = permission;
+//     // }
+//   }
+// }
+// final locationPermissionStatusProvider = StateNotifierProvider<LocationPermissionProviderNotifier, LocationPermissionStatusState>((ref) {
+//   return LocationPermissionProviderNotifier();
+// });

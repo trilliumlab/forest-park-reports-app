@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
@@ -13,6 +12,7 @@ import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/util/permissions_dialog.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddHazardModal extends ConsumerStatefulWidget {
@@ -35,15 +35,17 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
 
   Future _submit() async {
     print('_submit called');
-
     setState(() => _inProgress = true);
     final parkTrails = ref.read(parkTrailsProvider);
-    // TODO actually handle location errors
     print('requesting location');
-    final location = (await ref.read(locationProvider.notifier).getLocation())!;
+    final locationData = ref.read(locationProvider);
+    if (!locationData.hasValue) {
+      // TODO actually handle location errors
+      return;
+    }
+    final location = locationData.requireValue;
     print('got location: $location');
     var snappedLoc = parkTrails.snapLocation(location.latLng()!);
-
     print('got snapped location');
 
     final continueCompleter = Completer<bool>();
@@ -97,7 +99,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   }
 
   Future _onSubmit() async {
-    final status = await ref.read(locationPermissionProvider.notifier).checkPermission(requestPrecise: true);
+    final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission(requestPrecise: true);
     if (!mounted) return;
     if (status.accuracy == LocationAccuracyStatus.precise) {
       if (_image == null) {

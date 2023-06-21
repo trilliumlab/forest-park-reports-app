@@ -24,6 +24,7 @@ class TrailHazardsWidget extends ConsumerWidget {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider.select((hazards) =>
         hazards.where((e) => e.location.trail == trail.uuid)));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -67,7 +68,7 @@ class HazardInfoWidget extends ConsumerWidget {
       onPressed: () {
         ref.read(parkTrailsProvider.notifier).deselectTrail();
         ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
-        ref.read(panelPositionProvider.notifier).move(PanelPosition.snapped);
+        ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
       },
       material: (_, __) => MaterialTextButtonData(
         style: ButtonStyle(
