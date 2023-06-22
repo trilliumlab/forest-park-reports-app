@@ -1,17 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:ui';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
-// import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
+import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
@@ -20,6 +17,7 @@ import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
@@ -32,9 +30,8 @@ class ForestParkMap extends ConsumerStatefulWidget {
 
 class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver {
   // TODO add satallite map style
-  // TODO set initial camera position to be centered on ForestPark
   late final MapController _mapController;
-  // late final PopupController _popupController;
+  late final PopupController _popupController;
   late StreamController<double?> _followCurrentLocationStreamController;
 
   @override
@@ -42,7 +39,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _mapController = MapController();
-    // _popupController = PopupController();
+    _popupController = PopupController();
     _followCurrentLocationStreamController = StreamController<double?>();
   }
 
@@ -58,12 +55,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
   @override
   void didChangePlatformBrightness() {
     setState(() {});
-    // This is a workaround for a bug in flutter_map preventing the
-    // TileLayerOptions reset stream from working. Instead we are rebuilding
-    // every image in the application.
-    // This is ~probably~ definitely causing some visual bugs and needs to be updated asap.
-    // Some light mode tiles are still cached, and show when relaunching the app
-    PaintingBinding.instance.imageCache.clear();
+    // // This is a workaround for a bug in flutter_map preventing the
+    // // TileLayerOptions reset stream from working. Instead we are rebuilding
+    // // every image in the application.
+    // // This is ~probably~ definitely causing some visual bugs and needs to be updated asap.
+    // // Some light mode tiles are still cached, and show when relaunching the app
+    // PaintingBinding.instance.imageCache.clear();
   }
 
   @override
@@ -91,13 +88,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               if (hazard == ref.read(selectedHazardProvider).hazard) {
                 ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                 ref.read(selectedHazardProvider.notifier).deselect();
-                // _popupController.hideAllPopups();
+                _popupController.hideAllPopups();
               } else {
                 if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
                   ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
                 }
                 ref.read(selectedHazardProvider.notifier).select(hazard);
-                // _popupController.showPopupsOnlyFor([marker]);
+                _popupController.showPopupsOnlyFor([marker]);
               }
             },
             child: Icon(
@@ -116,9 +113,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
     ref.listen<SelectedHazardState>(selectedHazardProvider, (prev, next) {
       if (next.hazard == null) {
-        // _popupController.hideAllPopups();
+        _popupController.hideAllPopups();
       } else {
-        // _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
+        _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
         if (next.moveCamera) {
           _mapController.move(next.hazard!.location, _mapController.zoom);
         }
@@ -180,7 +177,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               polylines: parkTrails.polylines,
               onTap: (polylines, tapPosition) {
                 // deselect hazards
-                // _popupController.hideAllPopups();
+                _popupController.hideAllPopups();
                 ref.read(selectedHazardProvider.notifier).deselect();
 
                 // select polyline
@@ -216,24 +213,22 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         MarkerLayer(
           markers: parkTrails.markers,
         ),
-        // Temporary until popup marker back
-        MarkerLayer(
-          markers: markers,
+        PopupMarkerLayer(
+          options: PopupMarkerLayerOptions(
+            // markerRotateOrigin: const Offset(15, 15),
+            popupController: _popupController,
+            markers: markers,
+            popupDisplayOptions: PopupDisplayOptions(
+              builder: (_, marker) {
+                if (marker is HazardMarker) {
+                  return HazardInfoPopup(hazard: marker.hazard);
+                }
+                return Container();
+              },
+              animation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
+            )
+          ),
         ),
-        // PopupMarkerLayerWidget(
-        //   options: PopupMarkerLayerOptions(
-        //     markerRotateOrigin: const Offset(15, 15),
-        //     popupController: _popupController,
-        //     popupBuilder: (_, marker) {
-        //       if (marker is HazardMarker) {
-        //         return HazardInfoPopup(hazard: marker.hazard);
-        //       }
-        //       return Container();
-        //     },
-        //     popupAnimation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
-        //     markers: markers,
-        //   ),
-        // ),
       ],
       //TODO attribution, this one looks off
       // nonRotatedChildren: [
