@@ -81,6 +81,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       late final HazardMarker marker;
       marker = HazardMarker(
         hazard: hazard,
+        rotate: true,
+        rotateOrigin: const Offset(15, 15),
         builder: (_) =>
           GestureDetector(
             onTap: () {
@@ -291,9 +293,10 @@ class HazardInfoPopup extends StatelessWidget {
                     hazard.timeString(),
                   ),
                 ),
+                // Renders hazard image on popup
                 // Consumer(
                 //   builder: (context, ref, ___) {
-                //     final lastImage = ref.watch(hazardUpdateProvider(hazard.uuid)).lastImage;
+                //     final lastImage = ref.watch(hazardUpdatesProvider(hazard.uuid)).lastImage;
                 //     return lastImage != null ? Padding(
                 //       padding: const EdgeInsets.only(left: 4, right: 4, bottom: 4),
                 //       child: ClipRRect(
@@ -351,5 +354,5 @@ class HazardImage extends ConsumerWidget {
 
 class HazardMarker extends Marker {
   final HazardModel hazard;
-  HazardMarker({required this.hazard, required super.builder}) : super(point: hazard.location);
+  HazardMarker({required this.hazard, required super.builder, super.rotate, super.rotateOrigin}) : super(point: hazard.location);
 }
