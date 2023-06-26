@@ -23,6 +23,12 @@ jobs:
       - run: dart pub get
       - run: dart run build_runner build
       - run: flutter build ios --release --no-codesign
+      - run: mkdir build/ios/ipa
+      - run: cd build/ios/ipa
+      - run: mkdir Payload
+      - run: cp -r build/ios/iphoneos/Runner.app Payload
+      - run: zip -r -X forest_park_reports.ipa Payload
+      - run: ls
 
   build_apk:
     name: Build Android
@@ -38,7 +44,7 @@ jobs:
           channel: 'stable'
       - run: echo "${{ secrets.ENV_FILE }}" > .env
       - run: echo "${{ secrets.KEY_PROPERTIES_FILE }}" > android/key.properties
-      - run: echo "${{ secrets.TRILLIUM_KEYSTORE }}" | base64 --decode > trillium-keystore.jks
+      - run: echo "${{ secrets.TRILLIUM_KEYSTORE }}" | base64 --decode > android/trillium-keystore.jks
       - run: dart pub get
       - run: dart run build_runner build
       - run: flutter build apk
