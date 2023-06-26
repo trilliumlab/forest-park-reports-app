@@ -23,12 +23,14 @@ jobs:
       - run: dart pub get
       - run: dart run build_runner build
       - run: flutter build ios --release --no-codesign
-      - run: mkdir build/ios/ipa
-      - run: cd build/ios/ipa
       - run: mkdir Payload
       - run: cp -r build/ios/iphoneos/Runner.app Payload
       - run: zip -r -X forest_park_reports.ipa Payload
       - run: ls
+      - uses: actions/upload-artifact@v3
+        with:
+          name: forest_park_reports.ipa
+          path: forest_park_reports.ipa
 
   build_apk:
     name: Build Android
@@ -49,3 +51,7 @@ jobs:
       - run: dart run build_runner build
       - run: flutter build apk
       - run: flutter build appbundle
+      - uses: actions/upload-artifact@v3
+        with:
+          name: forest_park_reports.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
