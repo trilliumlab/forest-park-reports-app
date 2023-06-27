@@ -50,12 +50,14 @@ jobs:
       - run: dart pub get
       - run: dart run build_runner build
       - run: flutter build apk
+      - run: mv build/app/outputs/flutter-apk/app-release.apk forest_park_reports.apk
+      - run: mv build/app/outputs/bundle/release/app-release.aab forest_park_reports.aab
       - run: flutter build appbundle
       - uses: actions/upload-artifact@v3
         with:
           name: forest_park_reports.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: forest_park_reports.apk
       - uses: actions/upload-artifact@v3
         with:
           name: forest_park_reports.aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: forest_park_reports.aab
