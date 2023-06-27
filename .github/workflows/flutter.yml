@@ -55,3 +55,7 @@ jobs:
         with:
           name: forest_park_reports.apk
           path: build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@v3
+        with:
+          name: forest_park_reports.aab
+          path: build/app/outputs/bundle/release/app-release.aab
