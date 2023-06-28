@@ -72,7 +72,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
     final followOnLocation = ref.watch(followOnLocationProvider);
     ref.listen(followOnLocationProvider, (prev, next) {
-      if (next != prev && next != CenterOnLocationUpdate.never) {
+      if (next != prev && next != FollowOnLocationUpdate.never) {
         _followCurrentLocationStreamController.add(null);
       }
     });

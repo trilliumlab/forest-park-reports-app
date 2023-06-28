@@ -37,7 +37,6 @@ dependencies:
   geolocator: ^9.0.2
   hooks_riverpod: ^2.3.6
   riverpod_annotation: ^2.1.1
-  # consider upgrading to sliding_up_panel2
   sliding_up_panel2: ^3.3.0+1
   flutter_platform_widgets: ^3.3.5
   dio: ^5.2.1+1
@@ -51,10 +50,8 @@ dependencies:
   flutter_map_location_marker: ^7.0.0
   flutter_map_marker_popup: ^5.2.0
   flutter_map_tappable_polyline: ^5.0.0
-#  # updates for flutter map 2
-#  flutter_map_tappable_polyline:
-#    git: https://github.com/trilliumlab/flutter_map_tappable_polyline.git
-
+  freezed_annotation: ^2.2.0
+  json_annotation: ^4.8.1
   # fixes elevation not being read
   # TODO update to latest version
   gpx:
@@ -62,8 +59,6 @@ dependencies:
   # allow simplification of LatLng
   simplify:
     git: https://github.com/trilliumlab/simplify.git
-  freezed_annotation: ^2.2.0
-  json_annotation: ^4.8.1
 
 dev_dependencies:
   flutter_test:

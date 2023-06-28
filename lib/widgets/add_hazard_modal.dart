@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/models/hazard_type.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
@@ -34,19 +35,15 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   }
 
   Future _submit() async {
-    print('_submit called');
     setState(() => _inProgress = true);
     final parkTrails = ref.read(parkTrailsProvider);
-    print('requesting location');
     final locationData = ref.read(locationProvider);
     if (!locationData.hasValue) {
       // TODO actually handle location errors
       return;
     }
     final location = locationData.requireValue;
-    print('got location: $location');
     var snappedLoc = parkTrails.snapLocation(location.latLng()!);
-    print('got snapped location');
 
     final continueCompleter = Completer<bool>();
     if (snappedLoc.distance > 10+(location.accuracy)) {
@@ -74,8 +71,6 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
       continueCompleter.complete(true);
     }
 
-    print('location is good');
-
     if (!await continueCompleter.future) {
       setState(() => _inProgress = false);
       return;
@@ -93,8 +88,11 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
       );
     }
 
-    await activeHazardNotifier.create(NewHazardRequestModel(
-        _selectedHazard!, snappedLoc.location, imageUuid));
+    await activeHazardNotifier.create(HazardRequestModel(
+      hazard: _selectedHazard!,
+      location: snappedLoc.location,
+      image: imageUuid
+    ));
     _close();
   }
 
@@ -163,7 +161,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                       "Report New Hazard",
                       style: isCupertino(context)
                           ? CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontSize: 28)
-                          : theme.textTheme.headline6!.copyWith(fontSize: 28),
+                          : theme.textTheme.titleLarge!.copyWith(fontSize: 28),
                     ),
                   ),
                   Padding(

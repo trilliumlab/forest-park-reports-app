@@ -8,11 +8,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/models/snapped_latlng.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
-import 'package:gpx/gpx.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:simplify/simplify.dart';
@@ -40,7 +38,7 @@ class Trail {
           other.uuid == uuid;
 
   @override
-  int get hashCode => hashValues(name, uuid);
+  int get hashCode => Object.hash(name, uuid);
   @override
   String toString() {
     return "$name, uuid:$uuid, ${track?.path.length ?? 0} points";
