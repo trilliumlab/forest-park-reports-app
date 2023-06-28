@@ -5,8 +5,8 @@ import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/models/hazard_update.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -51,7 +51,7 @@ class ActiveHazard extends _$ActiveHazard {
     );
     return res.data['uuid'];
   }
-  Future create(NewHazardRequestModel request) async {
+  Future create(HazardRequestModel request) async {
     final res = await ref.read(dioProvider).post("/hazard/new", data: request.toJson());
     state = [...state, HazardModel.fromJson(res.data)];
   }
@@ -91,7 +91,7 @@ class HazardUpdates extends _$HazardUpdates {
     state = updates;
   }
 
-  Future create(UpdateHazardRequestModel request) async {
+  Future create(HazardUpdateRequestModel request) async {
     final res = await ref.read(dioProvider).post("/hazard/update", data: request.toJson());
     state = HazardUpdateList([...state, HazardUpdateModel.fromJson(res.data)]);
   }

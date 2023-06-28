@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/models/hazard_update.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
@@ -274,7 +275,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 child: PlatformTextButton(
                   onPressed: () {
                     ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
-                      UpdateHazardRequestModel(
+                      HazardUpdateRequestModel(
                           hazard: selectedHazard.uuid,
                           active: false,
                       ),
@@ -297,7 +298,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 child: PlatformTextButton(
                   onPressed: () {
                     ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
-                      UpdateHazardRequestModel(
+                      HazardUpdateRequestModel(
                         hazard: selectedHazard.uuid,
                         active: true,
                       ),
