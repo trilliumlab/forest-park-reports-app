@@ -38,7 +38,7 @@ class Trail {
           other.uuid == uuid;
 
   @override
-  int get hashCode => hashValues(name, uuid);
+  int get hashCode => Object.hash(name, uuid);
   @override
   String toString() {
     return "$name, uuid:$uuid, ${track?.path.length ?? 0} points";

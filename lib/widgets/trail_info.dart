@@ -6,7 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
@@ -34,7 +34,7 @@ class TrailHazardsWidget extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               "Hazards",
-              style: theme.textTheme.subtitle1
+              style: theme.textTheme.titleMedium
             ),
           ),
         ),
@@ -91,7 +91,7 @@ class HazardInfoWidget extends ConsumerWidget {
               ),
               Text(
                   hazard.timeString(),
-                  style: theme.textTheme.subtitle1
+                  style: theme.textTheme.titleMedium
               )
             ],
           ),
@@ -137,7 +137,7 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
     return Align(
       alignment: Alignment.topCenter,
       child: SizedBox(
-        height: max(widget.panelController.panelSnapHeight, widget.panelController.panelHeight)-MediaQueryData.fromWindow(window).padding.bottom,
+        height: max(widget.panelController.panelSnapHeight, widget.panelController.panelHeight)-MediaQueryData.fromView(View.of(context)).padding.bottom,
         child: Column(
           children: [
             Stack(
@@ -149,7 +149,7 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
                       padding: const EdgeInsets.only(left: 14, right: 14, top: 16, bottom: 10),
                       child: Text(
                         widget.title!,
-                        style: Theme.of(context).textTheme.headline6,
+                        style: Theme.of(context).textTheme.titleLarge,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -280,7 +280,7 @@ class TrailElevationGraph extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: Text(
                 "Elevation",
-                style: theme.textTheme.subtitle1
+                style: theme.textTheme.titleMedium
             ),
           ),
         ),
@@ -309,11 +309,11 @@ class TrailElevationGraph extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  gridData: FlGridData(show: false),
+                  gridData: const FlGridData(show: false),
                   borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(
-                      topTitles: AxisTitles(),
-                      rightTitles: AxisTitles(),
+                      topTitles: const AxisTitles(),
+                      rightTitles: const AxisTitles(),
                       leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                               showTitles: true,

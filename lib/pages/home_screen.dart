@@ -2,7 +2,6 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/models/hazard_update.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
@@ -116,10 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               WidgetsBinding.instance.addPostFrameCallback((_) =>
                   ref.read(panelPositionProvider.notifier).update(position));
-              // listen to updates from parkTrailsProvider. This builder
-              // will rebuild whenever a value changes (initial load, trail selected)
-              // we want to know when a trail has been selected so we can show the modal.
-              final parkTrails = ref.watch(parkTrailsProvider);
               //TODO cupertino scrolling physics
               return SlidingUpPanel(
                 maxHeight: _panelController.panelOpenHeight,
@@ -169,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         cupertino: (_, __) => Icon(
                           // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
                           CupertinoIcons.add,
-                          color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                          color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
                               ? CupertinoColors.systemGrey.highContrastColor
                               : CupertinoColors.systemGrey.darkHighContrastColor
                         ),
@@ -187,14 +182,14 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final centerOnLocation = ref.watch(followOnLocationProvider);
+                  final followOnLocation = ref.watch(followOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
                       final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
                       if (!mounted) return;
                       if (status.permission.authorized) {
                         ref.read(followOnLocationProvider.notifier)
-                            .update((state) => CenterOnLocationUpdate.always);
+                            .update((state) => FollowOnLocationUpdate.always);
                       } else {
                         showMissingPermissionDialog(
                             context,
@@ -206,16 +201,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: PlatformWidget(
                       cupertino: (_, __) => Icon(
                         // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                        centerOnLocation == CenterOnLocationUpdate.always
+                        followOnLocation == FollowOnLocationUpdate.always
                             ? CupertinoIcons.location_fill
                             : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                        color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                        color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
                             ? CupertinoColors.systemGrey.highContrastColor
                             : CupertinoColors.systemGrey.darkHighContrastColor
                       ),
                       material: (_, __) => Icon(
                         Icons.my_location_rounded,
-                        color: centerOnLocation == CenterOnLocationUpdate.always
+                        color: followOnLocation == FollowOnLocationUpdate.always
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onBackground
                       ),

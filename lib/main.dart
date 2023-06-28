@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -27,7 +27,7 @@ class App extends StatefulWidget {
 class _AppState extends State<App> with WidgetsBindingObserver {
   // we listen to brightness changes (IE light to dark mode) and
   // rebuild the entire widget tree when it's changed
-  Brightness _brightness = WidgetsBinding.instance.window.platformBrightness;
+  Brightness _brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
   @override
   void initState() {
     super.initState();
@@ -41,7 +41,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   void didChangePlatformBrightness() {
     setState(() {
-      _brightness = WidgetsBinding.instance.window.platformBrightness;
+      _brightness = View.of(context).platformDispatcher.platformBrightness;
     });
   }
 
@@ -119,5 +119,4 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       ),
     );
   }
-
 }

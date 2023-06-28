@@ -35,19 +35,15 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
   }
 
   Future _submit() async {
-    print('_submit called');
     setState(() => _inProgress = true);
     final parkTrails = ref.read(parkTrailsProvider);
-    print('requesting location');
     final locationData = ref.read(locationProvider);
     if (!locationData.hasValue) {
       // TODO actually handle location errors
       return;
     }
     final location = locationData.requireValue;
-    print('got location: $location');
     var snappedLoc = parkTrails.snapLocation(location.latLng()!);
-    print('got snapped location');
 
     final continueCompleter = Completer<bool>();
     if (snappedLoc.distance > 10+(location.accuracy)) {
@@ -74,8 +70,6 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
     } else {
       continueCompleter.complete(true);
     }
-
-    print('location is good');
 
     if (!await continueCompleter.future) {
       setState(() => _inProgress = false);
@@ -167,7 +161,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                       "Report New Hazard",
                       style: isCupertino(context)
                           ? CupertinoTheme.of(context).textTheme.navTitleTextStyle.copyWith(fontSize: 28)
-                          : theme.textTheme.headline6!.copyWith(fontSize: 28),
+                          : theme.textTheme.titleLarge!.copyWith(fontSize: 28),
                     ),
                   ),
                   Padding(
