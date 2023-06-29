@@ -78,31 +78,41 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     // DynamicColorBuilder allows us to get the system theme on android, macos, and windows.
     // On android the colorScheme will be the material you color palette,
     // on macos and windows, this will be derived from the system accent color.
-    return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        // In case we can't get a system theme, we need a fallback theme.
-        // We are only modifying the colorScheme field of ThemeData,
-        // so ONLY USE COLORS FROM THERE!
-        // TODO make a proper app theme and move to theme file.
-        var light = ThemeData.light().copyWith(
-          colorScheme: lightDynamic ?? ThemeData.light().colorScheme.copyWith(
-            background: Colors.grey.shade100,
-            onBackground: Colors.grey.shade800,
-          ),
-          useMaterial3: true,
+    return Builder(
+      builder: (context) {
+        return DynamicColorBuilder(
+          builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+            // In case we can't get a system theme, we need a fallback theme.
+            // We are only modifying the colorScheme field of ThemeData,
+            // so ONLY USE COLORS FROM THERE!
+            // TODO make a proper app theme and move to theme file.
+            var light = ThemeData(
+              colorScheme: lightDynamic,
+              brightness: Brightness.light,
+              useMaterial3: true,
+            );
+            var dark = ThemeData(
+              colorScheme: darkDynamic,
+              brightness: Brightness.dark,
+              useMaterial3: true,
+            );
+            if (isCupertino(context)) {
+              light = light.copyWith(colorScheme: light.colorScheme.copyWith(
+                background: Colors.grey.shade100,
+                onBackground: Colors.grey.shade800,
+              ));
+              dark = dark.copyWith(colorScheme: dark.colorScheme.copyWith(
+                background: Colors.grey.shade900,
+                onBackground: Colors.grey.shade100,
+              ));
+            }
+            return Theme(
+              data: _brightness == Brightness.dark ? dark : light,
+              child: builder(light, dark),
+            );
+          },
         );
-        var dark = ThemeData.dark().copyWith(
-          colorScheme: darkDynamic ?? ThemeData.dark().colorScheme.copyWith(
-            background: Colors.grey.shade900,
-            onBackground: Colors.grey.shade100,
-          ),
-          useMaterial3: true,
-        );
-        return Theme(
-          data: _brightness == Brightness.dark ? dark : light,
-          child: builder(light, dark),
-        );
-      },
+      }
     );
   }
 
@@ -115,7 +125,9 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       // Eg. cupertino on ios, and material 3 on android
       child: PlatformProvider(
         initialPlatform: kPlatformOverride,
-        builder: (context) => child,
+        builder: (context) {
+          return child;
+        },
       ),
     );
   }

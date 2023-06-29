@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -38,11 +37,10 @@ class TrailHazardsWidget extends ConsumerWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-          ),
+        Card(
+          elevation: 1,
+          shadowColor: Colors.transparent,
+          margin: EdgeInsets.zero,
           child: Column(
             children: activeHazards.map((hazard) => HazardInfoWidget(
               hazard: hazard,
@@ -193,6 +191,7 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
         ),
       ),
     );
+    //TODO check this out
         // if (widget.title != null)
         //   Align(
         //     alignment: Alignment.topLeft,
@@ -284,65 +283,125 @@ class TrailElevationGraph extends ConsumerWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-          ),
-          height: height,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-            child: LineChart(
-              LineChartData(
-                  maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
-                  minY: (trail.track!.minElevation/50).floor() * 50.0,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: false,
-                      dotData: FlDotData(
-                          checkToShowDot: (s, d) => hazardsMap[s.x] != null,
-                          getDotPainter: (a, b, c, d) => FlDotCirclePainter(
-                            color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
-                            radius: 5,
-                          )
+        Card(
+          elevation: 1,
+          shadowColor: Colors.transparent,
+          margin: EdgeInsets.zero,
+          child: SizedBox(
+            height: height,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+              child: LineChart(
+                LineChartData(
+                    maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
+                    minY: (trail.track!.minElevation/50).floor() * 50.0,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: false,
+                        dotData: FlDotData(
+                            checkToShowDot: (s, d) => hazardsMap[s.x] != null,
+                            getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+                              color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+                              radius: 5,
+                            )
+                        ),
                       ),
-                    ),
-                  ],
-                  gridData: const FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(),
-                      rightTitles: const AxisTitles(),
-                      leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 65,
-                              getTitlesWidget: (yVal, meta) {
-                                return Text("${yVal.round().toString()} ft");
-                              },
-                              interval: 50
-                          )
-                      ),
-                      bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (xVal, meta) {
-                                final offInterval = (xVal % meta.appliedInterval);
-                                final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
-                                return isRegInterval ? Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
-                                ) : Container();
-                              },
-                              interval: interval
-                          )
-                      )
-                  )
+                    ],
+                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(),
+                        rightTitles: const AxisTitles(),
+                        leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 65,
+                                getTitlesWidget: (yVal, meta) {
+                                  return Text("${yVal.round().toString()} ft");
+                                },
+                                interval: 50
+                            )
+                        ),
+                        bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (xVal, meta) {
+                                  final offInterval = (xVal % meta.appliedInterval);
+                                  final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+                                  return isRegInterval ? Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
+                                  ) : Container();
+                                },
+                                interval: interval
+                            )
+                        )
+                    )
+                ),
               ),
             ),
           ),
         ),
+        // Container(
+        //   decoration: BoxDecoration(
+        //       borderRadius: const BorderRadius.all(Radius.circular(8)),
+        //       color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
+        //   ),
+        //   height: height,
+        //   child: Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        //     child: LineChart(
+        //       LineChartData(
+        //           maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
+        //           minY: (trail.track!.minElevation/50).floor() * 50.0,
+        //           lineBarsData: [
+        //             LineChartBarData(
+        //               spots: spots,
+        //               isCurved: false,
+        //               dotData: FlDotData(
+        //                   checkToShowDot: (s, d) => hazardsMap[s.x] != null,
+        //                   getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+        //                     color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+        //                     radius: 5,
+        //                   )
+        //               ),
+        //             ),
+        //           ],
+        //           gridData: const FlGridData(show: false),
+        //           borderData: FlBorderData(show: false),
+        //           titlesData: FlTitlesData(
+        //               topTitles: const AxisTitles(),
+        //               rightTitles: const AxisTitles(),
+        //               leftTitles: AxisTitles(
+        //                   sideTitles: SideTitles(
+        //                       showTitles: true,
+        //                       reservedSize: 65,
+        //                       getTitlesWidget: (yVal, meta) {
+        //                         return Text("${yVal.round().toString()} ft");
+        //                       },
+        //                       interval: 50
+        //                   )
+        //               ),
+        //               bottomTitles: AxisTitles(
+        //                   sideTitles: SideTitles(
+        //                       showTitles: true,
+        //                       getTitlesWidget: (xVal, meta) {
+        //                         final offInterval = (xVal % meta.appliedInterval);
+        //                         final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+        //                         return isRegInterval ? Padding(
+        //                           padding: const EdgeInsets.only(top: 4),
+        //                           child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
+        //                         ) : Container();
+        //                       },
+        //                       interval: interval
+        //                   )
+        //               )
+        //           )
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

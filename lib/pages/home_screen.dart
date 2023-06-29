@@ -328,17 +328,28 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 ),
               ),
             ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-            ),
+          // TODO move this out of here
+          Card(
+            elevation: 1,
+            shadowColor: Colors.transparent,
+            margin: EdgeInsets.zero,
             child: Column(
               children: hazardUpdates!.map((update) => UpdateInfoWidget(
                 update: update,
               )).toList(),
             ),
-          )
+          ),
+          // Container(
+          //   decoration: BoxDecoration(
+          //       borderRadius: const BorderRadius.all(Radius.circular(8)),
+          //       color: isCupertino(context) ? CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40) : Theme.of(context).colorScheme.secondaryContainer
+          //   ),
+          //   child: Column(
+          //     children: hazardUpdates!.map((update) => UpdateInfoWidget(
+          //       update: update,
+          //     )).toList(),
+          //   ),
+          // ),
         ],
       ):
 
