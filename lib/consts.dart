@@ -10,3 +10,5 @@ const kPlatformOverride = null;
 
 // 11:53 AM July 12 2022
 final DateFormat kDisplayDateFormat = DateFormat('hh:mm a MMMM dd y');
+
+const kNetworkEndian = Endian.little;
