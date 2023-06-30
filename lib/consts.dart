@@ -12,3 +12,5 @@ const kPlatformOverride = null;
 final DateFormat kDisplayDateFormat = DateFormat('hh:mm a MMMM dd y');
 
 const kNetworkEndian = Endian.little;
+
+const kDbName = "forest_park_reports";
