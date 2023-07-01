@@ -8,6 +8,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:forest_park_reports/models/snapped_latlng.dart';
 import 'package:forest_park_reports/models/track.dart';
+import 'package:forest_park_reports/models/trail_metadata.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:latlong2/latlong.dart';
@@ -20,9 +21,9 @@ part 'trail_provider.g.dart';
 class Trail {
   String name;
   String uuid;
-  Track? track;
+  TrackModel? track;
   Trail(this.name, this.uuid, [this.track]);
-  Trail copyWith({String? name, String? uuid, Track? track}) {
+  Trail copyWith({String? name, String? uuid, TrackModel? track}) {
     return Trail(name ?? this.name, uuid ?? this.uuid, track ?? this.track);
   }
 
@@ -312,7 +313,7 @@ class RemoteTrails extends _$RemoteTrails {
             responseType: ResponseType.bytes
         ),
       );
-      final track = Track.decode(res.data);
+      final track = TrackModel.decode(res.data);
       state = {
         for (final oldTrail in state.values)
           if (oldTrail.uuid == trail.uuid)
@@ -324,6 +325,19 @@ class RemoteTrails extends _$RemoteTrails {
   }
 }
 
+@riverpod
+class TrailList extends _$TrailList {
+  @override
+  Future<Set<TrailMetadataModel>> build() async {
+    final res = await ref.read(dioProvider).get("/trail/list");
+    return {
+      for (final json in res.data.values)
+        TrailMetadataModel.fromJson(json)
+    };
+  }
+}
+
+// TODO this needs a complete rework (and will be relatively time consuming)
 @riverpod
 class ParkTrails extends _$ParkTrails {
   @override

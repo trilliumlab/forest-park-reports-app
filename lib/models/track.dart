@@ -8,7 +8,7 @@ import 'package:latlong2/latlong.dart';
 
 const haversine = DistanceHaversine(roundResult: false);
 /// Represents a GPX file (list of coordinates) in an easy to use way
-class Track {
+class TrackModel {
   String name = "";
   List<LatLng> path = [];
   List<double> elevation = [];
@@ -22,7 +22,7 @@ class Track {
   double totalDecline = 0;
 
   // constructs a track from binary encoded track
-  Track.decode(Uint8List buffer) {
+  TrackModel.decode(Uint8List buffer) {
     final data = buffer.buffer.asByteData();
     // keep track of read position
     var cursor = 0;
@@ -30,7 +30,7 @@ class Track {
     // decode trail name
     final nameLength = data.getUint16(cursor, kNetworkEndian);
     cursor += 2;
-    name = utf8.decode(buffer.getRange(cursor, cursor+=nameLength).toList());
+    name = ascii.decode(buffer.getRange(cursor, cursor+=nameLength).toList());
 
     // decode colors
     final colorLength = data.getUint16(cursor, kNetworkEndian);
@@ -94,10 +94,10 @@ class Track {
 
     // encode trail name
     builder.addUint16(name.length);
-    builder.add(utf8.encode(name));
+    builder.add(ascii.encode(name));
 
     // encode colors
-    builder.addUint16(colors.length);
+    builder.addUint16(colors.length * (2+1+1+1));
     for (final color in colors) {
       builder.addUint16(color.index);
       builder.addByte(color.color.red);
@@ -106,7 +106,7 @@ class Track {
     }
 
     // encode path data
-    builder.addUint16(path.length);
+    builder.addUint16(path.length * (4+4+1));
     for (int i=0; i<path.length; i++) {
       builder.addFloat32(path[i].latitude);
       builder.addFloat32(path[i].longitude);
