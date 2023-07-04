@@ -101,8 +101,13 @@ class Trail extends _$Trail {
 
   @override
   Future<TrailModel> build(String uuid) async {
-    // TODO cache
-    return await _fetch();
+    final db = await ref.watch(forestParkDatabaseProvider.future);
+    final trailBlob = await store.record(uuid).get(db);
+    if (trailBlob == null) {
+      return await _fetch();
+    }
+    refresh();
+    return TrailModel.decode(trailBlob.bytes);
   }
 
   Future<TrailModel> _fetch() async {
@@ -112,7 +117,15 @@ class Trail extends _$Trail {
           responseType: ResponseType.bytes
       ),
     );
+
+    final db = await ref.read(forestParkDatabaseProvider.future);
+    store.record(uuid).add(db, Blob(res.data));
+
     return TrailModel.decode(res.data);
+  }
+
+  Future<void> refresh() async {
+    state = AsyncData(await _fetch());
   }
 }
 
