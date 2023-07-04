@@ -32,7 +32,7 @@ class ForestParkDatabase extends _$ForestParkDatabase {
 }
 
 @riverpod
-Future<String> dbPath() async {
+Future<String> dbPath(DbPathRef ref) async {
   if (kIsWeb) {
     return "";
   }

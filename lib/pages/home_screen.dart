@@ -244,9 +244,9 @@ class PanelPage extends ConsumerStatefulWidget {
 class _PanelPageState extends ConsumerState<PanelPage> {
   @override
   Widget build(BuildContext context) {
-    final selectedTrail = ref.watch(parkTrailsProvider.select((p) => p.selectedTrail));
+    final selectedTrail = ref.watch(selectedTrailProvider);
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
-    final hazardTrail = ref.read(parkTrailsProvider).trails[selectedHazard?.location.trail];
+    final hazardTrail = selectedHazard == null ? null : ref.read(trailProvider(selectedHazard.location.trail));
 
     HazardUpdateList? hazardUpdates;
     String? lastImage;
@@ -260,7 +260,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
       child: selectedHazard != null ? TrailInfoWidget(
         scrollController: widget.scrollController,
         panelController: widget.panelController,
-        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
+        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.value?.name}",
         bottomWidget: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

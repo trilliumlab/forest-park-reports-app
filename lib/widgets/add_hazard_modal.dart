@@ -36,17 +36,16 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
 
   Future _submit() async {
     setState(() => _inProgress = true);
-    final parkTrails = ref.read(parkTrailsProvider);
     final locationData = ref.read(locationProvider);
     if (!locationData.hasValue) {
       // TODO actually handle location errors
       return;
     }
     final location = locationData.requireValue;
-    var snappedLoc = parkTrails.snapLocation(location.latLng()!);
+    var snappedLoc = await ref.read(trailListProvider.notifier).snapLocation(location.latLng()!);
 
     final continueCompleter = Completer<bool>();
-    if (snappedLoc.distance > 10+(location.accuracy)) {
+    if (snappedLoc.distance > 10+(location.accuracy) && mounted) {
       showPlatformDialog(context: context, builder: (context) => PlatformAlertDialog(
         title: const Text('Too far from trail'),
         content: const Text('Reports must be made on a marked Forest Park trail'),
