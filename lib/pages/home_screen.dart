@@ -281,7 +281,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                   },
                   padding: EdgeInsets.zero,
                   child: Text(
-                    "Delete",
+                    "Cleared",
                     style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)),
                   ),
                 ),
@@ -304,7 +304,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                   },
                   padding: EdgeInsets.zero,
                   child: Text(
-                    "Confirm",
+                    "Present",
                     style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context)),
                   ),
                 ),
