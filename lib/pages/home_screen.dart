@@ -244,9 +244,9 @@ class PanelPage extends ConsumerStatefulWidget {
 class _PanelPageState extends ConsumerState<PanelPage> {
   @override
   Widget build(BuildContext context) {
-    final selectedTrail = ref.watch(parkTrailsProvider.select((p) => p.selectedTrail));
+    final selectedTrail = ref.watch(selectedTrailProvider);
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
-    final hazardTrail = ref.read(parkTrailsProvider).trails[selectedHazard?.location.trail];
+    final hazardTrail = selectedHazard == null ? null : ref.read(trailProvider(selectedHazard.location.trail));
 
     HazardUpdateList? hazardUpdates;
     String? lastImage;
@@ -260,7 +260,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
       child: selectedHazard != null ? TrailInfoWidget(
         scrollController: widget.scrollController,
         panelController: widget.panelController,
-        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.name}",
+        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.value?.name}",
         bottomWidget: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -281,7 +281,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                   },
                   padding: EdgeInsets.zero,
                   child: Text(
-                    "Delete",
+                    "Cleared",
                     style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context)),
                   ),
                 ),
@@ -304,7 +304,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                   },
                   padding: EdgeInsets.zero,
                   child: Text(
-                    "Confirm",
+                    "Present",
                     style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context)),
                   ),
                 ),
@@ -328,17 +328,28 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                 ),
               ),
             ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-            ),
+          // TODO move this out of here
+          Card(
+            elevation: 1,
+            shadowColor: Colors.transparent,
+            margin: EdgeInsets.zero,
             child: Column(
               children: hazardUpdates!.map((update) => UpdateInfoWidget(
                 update: update,
               )).toList(),
             ),
-          )
+          ),
+          // Container(
+          //   decoration: BoxDecoration(
+          //       borderRadius: const BorderRadius.all(Radius.circular(8)),
+          //       color: isCupertino(context) ? CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40) : Theme.of(context).colorScheme.secondaryContainer
+          //   ),
+          //   child: Column(
+          //     children: hazardUpdates!.map((update) => UpdateInfoWidget(
+          //       update: update,
+          //     )).toList(),
+          //   ),
+          // ),
         ],
       ):
 

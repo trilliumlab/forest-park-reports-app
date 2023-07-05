@@ -1,4 +1,7 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:latlong2/latlong.dart';
+
+part 'snapped_latlng.freezed.dart';
 
 // A way of representing a LatLng pair that exists on a path. Stores
 // the path uuid, along with the index of the point, and a LatLng pair
@@ -24,6 +27,12 @@ class SnappedLatLng extends LatLng {
   }
   @override
   String toString() {
-    return "${super.toString()} trailUuid:$trail, index:$index";
+    return "[${super.toString()} trailUuid:$trail, index:$index]";
   }
+}
+
+@freezed
+class SnappedResult with _$SnappedResult {
+  const SnappedResult._();
+  const factory SnappedResult(SnappedLatLng location, double distance) = _SnappedResult;
 }

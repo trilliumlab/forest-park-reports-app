@@ -36,17 +36,16 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
 
   Future _submit() async {
     setState(() => _inProgress = true);
-    final parkTrails = ref.read(parkTrailsProvider);
     final locationData = ref.read(locationProvider);
     if (!locationData.hasValue) {
       // TODO actually handle location errors
       return;
     }
     final location = locationData.requireValue;
-    var snappedLoc = parkTrails.snapLocation(location.latLng()!);
+    var snappedLoc = await ref.read(trailListProvider.notifier).snapLocation(location.latLng()!);
 
     final continueCompleter = Completer<bool>();
-    if (snappedLoc.distance > 10+(location.accuracy)) {
+    if (snappedLoc.distance > 10+(location.accuracy) && mounted) {
       showPlatformDialog(context: context, builder: (context) => PlatformAlertDialog(
         title: const Text('Too far from trail'),
         content: const Text('Reports must be made on a marked Forest Park trail'),
@@ -176,23 +175,36 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                             for (final type in HazardType.values)
                               type: Text(
                                 type.name,
-                                style: isCupertino(context)
-                                    ? CupertinoTheme.of(context).textTheme.textStyle
-                                    : theme.textTheme.bodyLarge,
+                                style: CupertinoTheme.of(context).textTheme.textStyle,
                               ),
                           }
                       ),
-                      // TODO waiting on m3 support
-                      material: (context, _) => DropdownButton(
-                        onChanged: (HazardType? value) => setState(() {
-                          _selectedHazard = value;
-                        }),
-                        value: _selectedHazard,
-                        hint: const Text('Hazard Type'),
-                        items: HazardType.values.map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type.name),
-                        )).toList(),
+                      // FIXME workaround for https://github.com/flutter/flutter/issues/121493
+                      material: (context, _) => SizedBox(
+                        height: 40,
+                        child: SegmentedButton<HazardType>(
+                          emptySelectionAllowed: true,
+                          showSelectedIcon: false,
+                          selected: {
+                            if (_selectedHazard != null)
+                              _selectedHazard!,
+                          },
+                          onSelectionChanged: (selection) {
+                            if (selection.length == 1) {
+                              setState(() => _selectedHazard = selection.first);
+                            }
+                          },
+                          segments: [
+                            for (final type in HazardType.values)
+                              ButtonSegment(
+                                value: type,
+                                label: Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Text(type.name)
+                                )
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -208,17 +220,17 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                                 color: CupertinoDynamicColor.resolve(CupertinoColors.quaternarySystemFill, context),
                                 child: child!,
                               ),
-                              material: (context, child, __) => ElevatedButton(
-                                onPressed: _cameraSelect,
-                                style: ButtonStyle(
-                                  shape: MaterialStateProperty.all(
-                                      const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(Radius.circular(18))
-                                      )
-                                  ),
-                                  padding: MaterialStateProperty.all(EdgeInsets.zero),
+                              material: (context, child, __) => Card(
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
-                                child: child,
+                                shadowColor: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _cameraSelect,
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: child,
+                                ),
                               ),
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints.expand(),
@@ -234,6 +246,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                       ),
                     ),
                   ),
+                  // TODO check material you colors on android device
                   Padding(
                     padding: const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 28),
                     child: PlatformWidget(
@@ -247,7 +260,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
                           style: CupertinoTheme.of(context).textTheme.textStyle,
                         ),
                       ),
-                      material: (context, _) => ElevatedButton(
+                      material: (context, _) => FilledButton(
                         onPressed: _selectedHazard == null ? null : _onSubmit,
                         child: const Text('Submit'),
                       ),

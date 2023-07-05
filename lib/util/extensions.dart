@@ -1,6 +1,8 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -38,4 +40,17 @@ extension PositionToMarker on Position {
       LocationMarkerPosition(latitude: latitude, longitude: longitude, accuracy: accuracy);
   LocationMarkerHeading locationMarkerHeading() =>
       LocationMarkerHeading(heading: heading, accuracy: accuracy);
+}
+
+extension Writer on BytesBuilder {
+  void addUint16(int value) {
+    final data = ByteData(2);
+    data.setUint16(0, value, kNetworkEndian);
+    add(data.buffer.asUint8List());
+  }
+  void addFloat32(double value) {
+    final data = ByteData(4);
+    data.setFloat32(0, value, kNetworkEndian);
+    add(data.buffer.asUint8List());
+  }
 }

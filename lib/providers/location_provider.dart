@@ -51,16 +51,5 @@ class LocationPermissionStatus extends _$LocationPermissionStatus {
     }
     state = LocationPermissionStatusState(permission, accuracy);
     return state;
-    //TODO look at this
-    // if (permission == PermissionStatus.notDetermined
-    //     || (permission == PermissionStatus.restricted
-    //         && (requestPrecise || permission != PermissionStatus.restricted)
-    //         && !Platform.isIOS)
-    //     || (permission == PermissionStatus.denied && !Platform.isIOS)
-    // ) {
-    //   state = await requestPermission();
-    // } else {
-    //   state = permission;
-    // }
   }
 }

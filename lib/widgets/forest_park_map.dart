@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -20,6 +21,7 @@ import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import 'package:simplify/simplify.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
@@ -63,11 +65,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // PaintingBinding.instance.imageCache.clear();
   }
 
+  //TODO move provider consumption out of main widget
   @override
   Widget build(BuildContext context) {
     // using ref.watch will allow the widget to be rebuilt everytime
     // the provider is updated
-    final parkTrails = ref.watch(parkTrailsProvider);
+    // final parkTrails = ref.watch(parkTrailsProvider);
     final locationStatus = ref.watch(locationPermissionStatusProvider);
 
     final followOnLocation = ref.watch(followOnLocationProvider);
@@ -86,7 +89,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         builder: (_) =>
           GestureDetector(
             onTap: () {
-              ref.read(parkTrailsProvider.notifier).deselectTrail();
+              ref.read(selectedTrailProvider.notifier).deselect();
               if (hazard == ref.read(selectedHazardProvider).hazard) {
                 ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
                 ref.read(selectedHazardProvider.notifier).deselect();
@@ -132,7 +135,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         onPositionChanged: (MapPosition position, bool hasGesture) {
           if (position.zoom != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) =>
-                ref.read(parkTrailsProvider.notifier).updateZoom(position.zoom!));
+                ref.read(polylineResolutionProvider.notifier)
+                    .updateZoom(position.zoom!));
           }
           if (hasGesture) {
             ref.read(followOnLocationProvider.notifier).update((state) => FollowOnLocationUpdate.never);
@@ -171,53 +175,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               );
             }
           ),
-        Consumer(
-          builder: (context, ref, _) {
-            return TappablePolylineLayer(
-              // Will only render visible polylines, increasing performance
-              polylineCulling: true,
-              polylines: parkTrails.polylines,
-              onTap: (polylines, tapPosition) {
-                // deselect hazards
-                _popupController.hideAllPopups();
-                ref.read(selectedHazardProvider.notifier).deselect();
-
-                // select polyline
-                final tag = polylines.first.tag?.split("_").first;
-                if (tag == parkTrails.selectedTrail?.uuid) {
-                  if (ref.read(panelPositionProvider).position == PanelPositionState.open) {
-                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
-                  } else {
-                    ref.read(selectedHazardProvider.notifier).deselect();
-                    ref.read(parkTrailsProvider.notifier).deselectTrail();
-                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
-                  }
-                } else {
-                  ref.read(parkTrailsProvider.notifier)
-                      .selectTrail(parkTrails.trails[tag]!);
-                  if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
-                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
-                  }
-                }
-              },
-              onMiss: (tapPosition) {
-                if (ref.read(panelPositionProvider).position == PanelPositionState.open) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
-                } else {
-                  ref.read(selectedHazardProvider.notifier).deselect();
-                  ref.read(parkTrailsProvider.notifier).deselectTrail();
-                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
-                }
-              },
-            );
-          }
-        ),
-        MarkerLayer(
-          markers: parkTrails.markers,
-        ),
+        const TrailPolylineLayer(),
+        const TrailEndsMarkerLayer(),
         PopupMarkerLayer(
           options: PopupMarkerLayerOptions(
-            // markerRotateOrigin: const Offset(15, 15),
             popupController: _popupController,
             markers: markers,
             popupDisplayOptions: PopupDisplayOptions(
@@ -239,6 +200,140 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       //     onSourceTapped: null,
       //   ),
       // ],
+    );
+  }
+}
+
+class TrailEndsMarkerLayer extends ConsumerWidget {
+  const TrailEndsMarkerLayer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trailMetadata = ref.watch(selectedTrailProvider);
+    if (trailMetadata == null) {
+      return Container();
+    }
+
+    final trail = ref.watch(trailProvider(trailMetadata.uuid)).value;
+    if (trail == null) {
+      return Container();
+    }
+
+    final prevPoint = trail.path[trail.path.length-2];
+    final bearing = trail.path.last.bearingTo(prevPoint);
+
+    return MarkerLayer(
+      markers: [
+        // End marker
+        Marker(
+          point: trail.path.last,
+          builder: (_) => RotationTransition(
+            turns: AlwaysStoppedAnimation(bearing/(2*pi)),
+            child: const Icon(
+              Icons.square,
+              color: Colors.red,
+              size: 12.0,
+            ),
+          ),
+        ),
+        // Start marker
+        Marker(
+          point: trail.path.first,
+          builder: (_) => const Icon(
+            Icons.circle,
+            color: Colors.green,
+            size: 12.0,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class TrailPolylineLayer extends ConsumerWidget {
+  const TrailPolylineLayer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedTrail = ref.watch(selectedTrailProvider);
+    final trailList = ref.watch(trailListProvider).value;
+    final polylineResolution = ref.watch(polylineResolutionProvider);
+
+    if (trailList == null) {
+      return Container();
+    }
+
+    return TappablePolylineLayer(
+      // Will only render visible polylines, increasing performance
+      polylineCulling: true,
+      polylines: trailList.map((trailMetadata) {
+        final trail = ref.watch(trailProvider(trailMetadata.uuid)).value;
+        if (trail == null) {
+          return null;
+        }
+        final path = trail.getPath(polylineResolution);
+
+        return selectedTrail?.uuid == trailMetadata.uuid ? TaggedPolyline(
+          tag: trailMetadata.uuid,
+          points: path,
+          strokeWidth: 1.0,
+          borderColor: CupertinoColors.activeGreen.withAlpha(80),
+          borderStrokeWidth: 8.0,
+          color: CupertinoColors.activeGreen,
+        ) : TaggedPolyline(
+          tag: trailMetadata.uuid,
+          points: path,
+          strokeWidth: 1.0,
+          color: CupertinoColors.activeOrange,
+        );
+      }).whereNotNull().toList()..sort((a, b) {
+        // sorts the list to have selected polylines at the top
+        return (a.tag == selectedTrail?.uuid ? 1 : 0) -
+        (b.tag == selectedTrail?.uuid ? 1 : 0);
+      }),
+      onTap: (polylines, tapPosition) {
+        // deselect hazards
+        ref.read(selectedHazardProvider.notifier).deselect();
+
+        // select polyline
+        final tag = polylines.first.tag;
+        if (tag == selectedTrail?.uuid) {
+          if (ref
+              .read(panelPositionProvider)
+              .position == PanelPositionState.open
+          ) {
+            ref.read(panelPositionProvider.notifier).move(
+                PanelPositionState.snapped);
+          } else {
+            ref.read(selectedHazardProvider.notifier).deselect();
+            ref.read(selectedTrailProvider.notifier).deselect();
+            ref.read(panelPositionProvider.notifier).move(
+                PanelPositionState.closed);
+          }
+        } else {
+          ref.read(selectedTrailProvider.notifier)
+              .select(trailList.firstWhere((e) => e.uuid == tag));
+          if (ref
+              .read(panelPositionProvider)
+              .position == PanelPositionState.closed) {
+            ref.read(panelPositionProvider.notifier).move(
+                PanelPositionState.snapped);
+          }
+        }
+      },
+      onMiss: (tapPosition) {
+        if (ref
+            .read(panelPositionProvider)
+            .position == PanelPositionState.open) {
+          ref.read(panelPositionProvider.notifier).move(
+              PanelPositionState.snapped);
+        } else {
+          ref.read(selectedHazardProvider.notifier).deselect();
+          ref.read(selectedTrailProvider.notifier).deselect();
+          ref.read(panelPositionProvider.notifier).move(
+              PanelPositionState.closed);
+        }
+      },
     );
   }
 }

@@ -1,11 +1,12 @@
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:forest_park_reports/models/trail.dart';
+import 'package:forest_park_reports/models/trail_metadata.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
@@ -16,7 +17,7 @@ import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 
 class TrailHazardsWidget extends ConsumerWidget {
-  final Trail trail;
+  final TrailMetadataModel trail;
   const TrailHazardsWidget({super.key, required this.trail});
 
   @override
@@ -38,11 +39,10 @@ class TrailHazardsWidget extends ConsumerWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-          ),
+        Card(
+          elevation: 1,
+          shadowColor: Colors.transparent,
+          margin: EdgeInsets.zero,
           child: Column(
             children: activeHazards.map((hazard) => HazardInfoWidget(
               hazard: hazard,
@@ -66,7 +66,7 @@ class HazardInfoWidget extends ConsumerWidget {
     return PlatformTextButton(
       padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
       onPressed: () {
-        ref.read(parkTrailsProvider.notifier).deselectTrail();
+        ref.read(selectedTrailProvider.notifier).deselect();
         ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
         ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
       },
@@ -193,6 +193,7 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
         ),
       ),
     );
+    //TODO check this out
         // if (widget.title != null)
         //   Align(
         //     alignment: Alignment.topLeft,
@@ -245,7 +246,7 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
 }
 
 class TrailElevationGraph extends ConsumerWidget {
-  final Trail trail;
+  final TrailMetadataModel trail;
   final double height;
   const TrailElevationGraph({
     super.key,
@@ -258,18 +259,24 @@ class TrailElevationGraph extends ConsumerWidget {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider)
         .where((e) => e.location.trail == trail.uuid);
+    final trailData = ref.watch(trailProvider(trail.uuid)).value;
+    if (trailData == null) {
+      return Center(
+        child: PlatformCircularProgressIndicator()
+      );
+    }
     final Map<double, HazardModel?> hazardsMap = {};
     final List<FlSpot> spots = [];
-    final filterInterval = (trail.track!.elevation.length/100).round();
-    for (final e in trail.track!.elevation.asMap().entries) {
+    final filterInterval = (trailData.elevation.length/100).round();
+    for (final e in trailData.elevation.asMap().entries) {
       if (e.key % filterInterval == 0) {
-        final distance = trail.track!.distance[e.key];
+        final distance = trailData.distance[e.key];
         spots.add(FlSpot(distance, e.value));
         hazardsMap[distance] =
             activeHazards.firstWhereOrNull((h) => h.location.index == e.key);
       }
     }
-    final maxInterval = trail.track!.distance.last/5;
+    final maxInterval = trailData.distance.last/5;
     final interval = maxInterval-maxInterval/20;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,65 +291,125 @@ class TrailElevationGraph extends ConsumerWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(8)),
-              color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
-          ),
-          height: height,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-            child: LineChart(
-              LineChartData(
-                  maxY: (trail.track!.maxElevation/50).ceil() * 50.0,
-                  minY: (trail.track!.minElevation/50).floor() * 50.0,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: false,
-                      dotData: FlDotData(
-                          checkToShowDot: (s, d) => hazardsMap[s.x] != null,
-                          getDotPainter: (a, b, c, d) => FlDotCirclePainter(
-                            color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
-                            radius: 5,
-                          )
+        Card(
+          elevation: 1,
+          shadowColor: Colors.transparent,
+          margin: EdgeInsets.zero,
+          child: SizedBox(
+            height: height,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+              child: LineChart(
+                LineChartData(
+                    maxY: (trailData.maxElevation/50).ceil() * 50.0,
+                    minY: (trailData.minElevation/50).floor() * 50.0,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: false,
+                        dotData: FlDotData(
+                            checkToShowDot: (s, d) => hazardsMap[s.x] != null,
+                            getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+                              color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+                              radius: 5,
+                            )
+                        ),
                       ),
-                    ),
-                  ],
-                  gridData: const FlGridData(show: false),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(),
-                      rightTitles: const AxisTitles(),
-                      leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 65,
-                              getTitlesWidget: (yVal, meta) {
-                                return Text("${yVal.round().toString()} ft");
-                              },
-                              interval: 50
-                          )
-                      ),
-                      bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (xVal, meta) {
-                                final offInterval = (xVal % meta.appliedInterval);
-                                final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
-                                return isRegInterval ? Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
-                                ) : Container();
-                              },
-                              interval: interval
-                          )
-                      )
-                  )
+                    ],
+                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(),
+                        rightTitles: const AxisTitles(),
+                        leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 65,
+                                getTitlesWidget: (yVal, meta) {
+                                  return Text("${yVal.round().toString()} ft");
+                                },
+                                interval: 50
+                            )
+                        ),
+                        bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (xVal, meta) {
+                                  final offInterval = (xVal % meta.appliedInterval);
+                                  final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+                                  return isRegInterval ? Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
+                                  ) : Container();
+                                },
+                                interval: interval
+                            )
+                        )
+                    )
+                ),
               ),
             ),
           ),
         ),
+        // Container(
+        //   decoration: BoxDecoration(
+        //       borderRadius: const BorderRadius.all(Radius.circular(8)),
+        //       color: CupertinoDynamicColor.resolve(CupertinoColors.systemFill, context).withAlpha(40)
+        //   ),
+        //   height: height,
+        //   child: Padding(
+        //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+        //     child: LineChart(
+        //       LineChartData(
+        //           maxY: (trailData.maxElevation/50).ceil() * 50.0,
+        //           minY: (trailData.minElevation/50).floor() * 50.0,
+        //           lineBarsData: [
+        //             LineChartBarData(
+        //               spots: spots,
+        //               isCurved: false,
+        //               dotData: FlDotData(
+        //                   checkToShowDot: (s, d) => hazardsMap[s.x] != null,
+        //                   getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+        //                     color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
+        //                     radius: 5,
+        //                   )
+        //               ),
+        //             ),
+        //           ],
+        //           gridData: const FlGridData(show: false),
+        //           borderData: FlBorderData(show: false),
+        //           titlesData: FlTitlesData(
+        //               topTitles: const AxisTitles(),
+        //               rightTitles: const AxisTitles(),
+        //               leftTitles: AxisTitles(
+        //                   sideTitles: SideTitles(
+        //                       showTitles: true,
+        //                       reservedSize: 65,
+        //                       getTitlesWidget: (yVal, meta) {
+        //                         return Text("${yVal.round().toString()} ft");
+        //                       },
+        //                       interval: 50
+        //                   )
+        //               ),
+        //               bottomTitles: AxisTitles(
+        //                   sideTitles: SideTitles(
+        //                       showTitles: true,
+        //                       getTitlesWidget: (xVal, meta) {
+        //                         final offInterval = (xVal % meta.appliedInterval);
+        //                         final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+        //                         return isRegInterval ? Padding(
+        //                           padding: const EdgeInsets.only(top: 4),
+        //                           child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
+        //                         ) : Container();
+        //                       },
+        //                       interval: interval
+        //                   )
+        //               )
+        //           )
+        //       ),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
