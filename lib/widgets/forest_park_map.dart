@@ -21,7 +21,6 @@ import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-import 'package:simplify/simplify.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
