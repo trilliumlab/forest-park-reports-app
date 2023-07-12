@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/models/hazard_update.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
@@ -142,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // When panel is visible, position 20dp above the panel height (_fabHeight)
           // when panel is hidden, set it to 20db from bottom
           Positioned(
-            right: 10.0,
+            right: kFabPadding,
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight - 8) + 20,
             child: Consumer(
                 builder: (context, ref, child) {
@@ -178,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Positioned(
-            right: 10.0,
+            right: kFabPadding,
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
@@ -213,6 +214,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: followOnLocation == FollowOnLocationUpdate.always
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onBackground
+                      ),
+                    ),
+                  );
+                }
+            ),
+          ),
+          // Settings FAB
+          Positioned(
+            right: kFabPadding,
+            top: kIosStatusBarHeight + kFabPadding,
+            child: Consumer(
+                builder: (context, ref, child) {
+                  final followOnLocation = ref.watch(followOnLocationProvider);
+                  return PlatformFAB(
+                    onPressed: () async {
+                      print("Settings pressed");
+                    },
+                    child: PlatformWidget(
+                      cupertino: (_, __) => Icon(
+                        // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                          CupertinoIcons.gear,
+                          color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
+                              ? CupertinoColors.systemGrey.highContrastColor
+                              : CupertinoColors.systemGrey.darkHighContrastColor
+                      ),
+                      material: (_, __) => Icon(
+                          Icons.settings,
+                          color: theme.colorScheme.onBackground,
                       ),
                     ),
                   );

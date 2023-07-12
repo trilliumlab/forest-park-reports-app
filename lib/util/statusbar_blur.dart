@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
+import 'package:forest_park_reports/consts.dart';
 
 class StatusBarBlur extends StatelessWidget {
   const StatusBarBlur({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class StatusBarBlur extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            height: 50,
+            height: kIosStatusBarHeight,
           ),
         ),
       ),
