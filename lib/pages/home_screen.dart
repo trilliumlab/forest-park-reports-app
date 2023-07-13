@@ -201,17 +201,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                         isFirstClick = false;
                       } else {
-                        ref.read(centerOnLocationProvider.notifier)
-                              .update((state) => CenterOnLocationUpdate(
-                                latitude:45.5594,
-                                longitude: -122.7368,
-                              )
-                            );
-                          ),
-                        isFirstClick = true;
-                        );
-
+                        print("45.5594, -122.7368")
                       }
+                      isFirstClick = true;
                     },
                     child: PlatformWidget(
                       cupertino: (_, __) => Icon(
