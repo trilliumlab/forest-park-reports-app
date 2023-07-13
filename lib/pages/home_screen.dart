@@ -201,7 +201,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                         isFirstClick = false;
                       } else {
-                        print("45.5594, -122.7368")
+                        print("45.5594, -122.7368");
                       }
                       isFirstClick = true;
                     },
