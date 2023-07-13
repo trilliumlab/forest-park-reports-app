@@ -182,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final followOnLocation = ref.watch(followOnLocationProvider);
+                  final centerOnLocation = ref.watch(centerOnLocationProvider);
                   bool isFirstClick = true;
                   return PlatformFAB(
                     onPressed: () async {
