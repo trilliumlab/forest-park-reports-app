@@ -183,19 +183,34 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Consumer(
                 builder: (context, ref, child) {
                   final followOnLocation = ref.watch(followOnLocationProvider);
+                  bool isFirstClick = true;
                   return PlatformFAB(
                     onPressed: () async {
-                      final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
-                      if (!mounted) return;
-                      if (status.permission.authorized) {
-                        ref.read(followOnLocationProvider.notifier)
-                            .update((state) => FollowOnLocationUpdate.always);
+                      if (isFirstClick) {
+                        final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
+                        if (!mounted) return;
+                        if (status.permission.authorized) {
+                          ref.read(centerOnLocationProvider.notifier)
+                              .update((state) => CenterOnLocationUpdate.always);
+                        } else {
+                          showMissingPermissionDialog(
+                              context,
+                              'Location Required',
+                              'Location permission is required to jump to current location'
+                          );
+                        }
+                        isFirstClick = false;
                       } else {
-                        showMissingPermissionDialog(
-                            context,
-                            'Location Required',
-                            'Location permission is required to jump to current location'
+                        ref.read(centerOnLocationProvider.notifier)
+                              .update((state) => CenterOnLocationUpdate(
+                                latitude:45.5594,
+                                longitude: -122.7368,
+                              )
+                            );
+                          ),
+                        isFirstClick = true;
                         );
+
                       }
                     },
                     child: PlatformWidget(
