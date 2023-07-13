@@ -182,28 +182,21 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final centerOnLocation = ref.watch(centerOnLocationProvider);
-                  bool isFirstClick = true;
+                  final followOnLocation = ref.watch(followOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
-                      if (isFirstClick) {
-                        final status = await ref.read(locationPermissionProvider.notifier).checkPermission();
-                        if (!mounted) return;
-                        if (status.permission.authorized) {
-                          ref.read(centerOnLocationProvider.notifier)
-                              .update((state) => CenterOnLocationUpdate.always);
-                        } else {
-                          showMissingPermissionDialog(
-                              context,
-                              'Location Required',
-                              'Location permission is required to jump to current location'
-                          );
-                        }
-                        isFirstClick = false;
+                      final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
+                      if (!mounted) return;
+                      if (status.permission.authorized) {
+                        ref.read(followOnLocationProvider.notifier)
+                            .update((state) => FollowOnLocationUpdate.always);
                       } else {
-                        print("45.5594, -122.7368");
+                        showMissingPermissionDialog(
+                            context,
+                            'Location Required',
+                            'Location permission is required to jump to current location'
+                        );
                       }
-                      isFirstClick = true;
                     },
                     child: PlatformWidget(
                       cupertino: (_, __) => Icon(
