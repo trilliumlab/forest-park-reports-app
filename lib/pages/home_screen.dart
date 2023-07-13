@@ -219,6 +219,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
             ),
           ),
+          Positioned(
+            right: 10.0,
+            bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 140,
+            child: Consumer(
+              builder: (context, ref, child) {
+                return PlatformFAB(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SettingsApp()),
+                    );
+                  },
+                  child: PlatformWidget(
+                    cupertino: (_, __) => Icon(
+                      // Customize the icon for Cupertino
+                      CupertinoIcons.settings,
+                      color: WidgetsBinding.instance.window.platformBrightness == Brightness.light
+                          ? CupertinoColors.systemGrey.highContrastColor
+                          : CupertinoColors.systemGrey.darkHighContrastColor,
+                    ),
+                    material: (_, __) => Icon(
+                      // Customize the icon for Material
+                      Icons.settings,
+                      color: theme.colorScheme.onBackground,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           // status bar blur
           if (isCupertino(context))
             const StatusBarBlur(),
