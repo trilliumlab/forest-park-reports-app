@@ -10,6 +10,7 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
@@ -129,8 +130,9 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        center: const LatLng(45.57416784067063, -122.76892379502566),
-        zoom: 11.5,
+        center: kHomeCameraPosition.center,
+        zoom: kHomeCameraPosition.zoom,
+        rotation: kHomeCameraPosition.rotation,
         onPositionChanged: (MapPosition position, bool hasGesture) {
           if (position.zoom != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) =>
