@@ -7,6 +7,7 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/models/hazard_type.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
+import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
