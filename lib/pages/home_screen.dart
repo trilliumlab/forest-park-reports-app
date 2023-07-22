@@ -160,10 +160,13 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Transform.rotate(
                   angle: compassRotation * (math.pi / 180),
-                  child: Icon(
-                    Icons.navigation,
-                    size: 30.0,
-                    color: Colors.blue,
+                  child: Transform.scale(
+                    scale: 1.3,
+                    child: Icon(
+                      Icons.navigation,
+                      size: 30.0,
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
                 Text(
