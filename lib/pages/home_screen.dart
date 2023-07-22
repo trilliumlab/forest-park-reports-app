@@ -221,42 +221,62 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 10.0,
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
-                builder: (context, ref, child) {
-                  final followOnLocation = ref.watch(followOnLocationProvider);
-                  return PlatformFAB(
-                    onPressed: () async {
-                      final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
-                      if (!mounted) return;
-                      if (status.permission.authorized) {
-                        ref.read(followOnLocationProvider.notifier)
-                            .update((state) => FollowOnLocationUpdate.always);
-                      } else {
-                        showMissingPermissionDialog(
-                            context,
-                            'Location Required',
-                            'Location permission is required to jump to current location'
-                        );
-                      }
-                    },
-                    child: PlatformWidget(
-                      cupertino: (_, __) => Icon(
-                        // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                        followOnLocation == FollowOnLocationUpdate.always
-                            ? CupertinoIcons.location_fill
-                            : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                        color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
-                            ? CupertinoColors.systemGrey.highContrastColor
-                            : CupertinoColors.systemGrey.darkHighContrastColor
-                      ),
-                      material: (_, __) => Icon(
-                        Icons.my_location_rounded,
-                        color: followOnLocation == FollowOnLocationUpdate.always
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onBackground
-                      ),
-                    ),
+              builder: (context, ref, child) {
+                final followOnLocation = ref.watch(followOnLocationProvider);
+                final mapController = ref.read(mapControllerProvider);
+                int clickCounter = 0;
+          
+                void centerOnForestPark() {
+                  mapController.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(latitudeOfForestPark, longitudeOfForestPark)),
                   );
                 }
+          
+                void centerOnCurrentLocation() {
+                  final userLocation = // Get the user's current location here.
+                  mapController.animateCamera(
+                    CameraUpdate.newLatLng(LatLng(userLocation.latitude, userLocation.longitude)),
+                  );
+                }
+          
+                return PlatformFAB(
+                  onPressed: () async {
+                    final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
+                    if (!mounted) return;
+                    if (status.permission.authorized) {
+                      clickCounter++;
+                      if (clickCounter % 2 == 0) {
+                        centerOnForestPark();
+                      } else {
+                        centerOnCurrentLocation();
+                      }
+                    } else {
+                      showMissingPermissionDialog(
+                        context,
+                        'Location Required',
+                        'Location permission is required to jump to current location',
+                      );
+                    }
+                  },
+                  child: PlatformWidget(
+                    cupertino: (_, __) => Icon(
+                      // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
+                      followOnLocation == FollowOnLocationUpdate.always
+                          ? CupertinoIcons.location_fill
+                          : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                      color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
+                          ? CupertinoColors.systemGrey.highContrastColor
+                          : CupertinoColors.systemGrey.darkHighContrastColor,
+                    ),
+                    material: (_, __) => Icon(
+                      Icons.my_location_rounded,
+                      color: followOnLocation == FollowOnLocationUpdate.always
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onBackground,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           Positioned(
