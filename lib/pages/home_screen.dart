@@ -163,6 +163,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.blue,
               ),
             ),
+            Text(
+                  'N',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
           // When panel is visible, position 20dp above the panel height (_fabHeight)
           // when panel is hidden, set it to 20db from bottom
