@@ -32,7 +32,7 @@ class HomeScreen extends StatefulWidget {
 // false by panning the camera. when not stickied, pressing the sticky button
 // will animate the camera to the current gps location and set sticky to true
 final followOnLocationProvider = StateProvider<FollowOnLocationUpdate>(
-    (ref) => FollowOnLocationUpdate.never
+        (ref) => FollowOnLocationUpdate.never
 );
 
 class ScreenPanelController extends PanelController {
@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       break;
                   }
                 }
-              }); 
+              });
               // update panel position
               var position = ref.read(panelPositionProvider).position;
               if (_panelController.isAttached) {
@@ -203,10 +203,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
                           // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                          CupertinoIcons.add,
-                          color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
-                              ? CupertinoColors.systemGrey.highContrastColor
-                              : CupertinoColors.systemGrey.darkHighContrastColor
+                            CupertinoIcons.add,
+                            color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
+                                ? CupertinoColors.systemGrey.highContrastColor
+                                : CupertinoColors.systemGrey.darkHighContrastColor
                         ),
                         material: (_, __) => Icon(
                           Icons.add,
@@ -224,20 +224,16 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, ref, child) {
                 final followOnLocation = ref.watch(followOnLocationProvider);
                 int clickCounter = 0;
-          
+
                 void centerOnForestPark() {
-                  final forestParkLatitude = 45.5200;
-                  final forestParkLongitude = -122.6774;
-                  ref.read(followOnLocationProvider.notifier).update((state) {
-                    return FollowOnLocationUpdate.custom;
-                  });
+                  // Implement the logic to center the map on Forest Park here
                 }
-          
+
                 void centerOnCurrentLocation() {
                   ref.read(followOnLocationProvider.notifier)
-                            .update((state) => FollowOnLocationUpdate.always);
+                      .update((state) => FollowOnLocationUpdate.always);
                 }
-          
+
                 return PlatformFAB(
                   onPressed: () async {
                     final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
@@ -359,8 +355,8 @@ class _PanelPageState extends ConsumerState<PanelPage> {
                   onPressed: () {
                     ref.read(hazardUpdatesProvider(selectedHazard.uuid).notifier).create(
                       HazardUpdateRequestModel(
-                          hazard: selectedHazard.uuid,
-                          active: false,
+                        hazard: selectedHazard.uuid,
+                        active: false,
                       ),
                     );
                     ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
@@ -462,7 +458,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
             child: Opacity(
               opacity: widget.panelController.fullWidgetOpacity,
               child: TrailHazardsWidget(
-                trail: selectedTrail
+                  trail: selectedTrail
               ),
             ),
           ),
@@ -471,9 +467,9 @@ class _PanelPageState extends ConsumerState<PanelPage> {
 
       // panel for when nothing is selected
       TrailInfoWidget(
-        scrollController: widget.scrollController,
-        panelController: widget.panelController,
-        children: const []
+          scrollController: widget.scrollController,
+          panelController: widget.panelController,
+          children: const []
       ),
     );
   }
@@ -509,17 +505,17 @@ class Panel extends StatelessWidget {
           child: ClipRRect(
             borderRadius: panelRadius,
             child: PlatformWidget(
-              cupertino: (context, _) => BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-                child: Container(
-                  color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
-                  child: child,
+                cupertino: (context, _) => BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                  child: Container(
+                    color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
+                    child: child,
+                  ),
                 ),
-              ),
-              material: (_, __) => Container(
-                color: theme.colorScheme.background,
-                child: child,
-              )
+                material: (_, __) => Container(
+                  color: theme.colorScheme.background,
+                  child: child,
+                )
             ),
           ),
         ),
@@ -560,11 +556,11 @@ class PlatformFAB extends StatelessWidget {
                 width: 50,
                 height: 50,
                 child: CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
-                  pressedOpacity: 0.9,
-                  onPressed: onPressed,
-                  child: child
+                    padding: EdgeInsets.zero,
+                    color: CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemBackground, context).withAlpha(210),
+                    pressedOpacity: 0.9,
+                    onPressed: onPressed,
+                    child: child
                 ),
               ),
             ),
@@ -590,7 +586,7 @@ class PlatformPill extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: Container(
         margin: EdgeInsets.symmetric(
-          vertical: isIos ? 5 : 10
+            vertical: isIos ? 5 : 10
         ),
         width: isIos ? 35 : 26,
         height: 5,
@@ -622,10 +618,10 @@ class _SettingsAppState extends State<SettingsApp> {
     if (isMaterial(context)) {
       if (isDarkModeEnabled) {
         return ThemeData(
-         useMaterial3: true,
-         brightness: Brightness.dark,
+          useMaterial3: true,
+          brightness: Brightness.dark,
         );
-     } else {
+      } else {
         return ThemeData(
           useMaterial3: true,
           brightness: Brightness.light,
@@ -638,7 +634,7 @@ class _SettingsAppState extends State<SettingsApp> {
     }
     return ThemeData.light();
   }
-  
+
   void _toggleDarkMode(bool value) {
     setState(() {
       _isDarkModeEnabled = value;
@@ -924,26 +920,6 @@ class LanguageSelection extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-enum FollowOnLocationUpdate {
-  always,
-  custom,
-}
-
-class FollowOnLocationData {
-  final double latitude;
-  final double longitude;
-  FollowOnLocationData({required this.latitude, required this.longitude});
-}
-
-extension FollowOnLocationUpdateExtension on FollowOnLocationUpdate {
-  FollowOnLocationData? get customData {
-    if (this == FollowOnLocationUpdate.custom) {
-      return FollowOnLocationData(latitude: 45.5200, longitude: -122.6774);
-    }
-    return null;
   }
 }
 
