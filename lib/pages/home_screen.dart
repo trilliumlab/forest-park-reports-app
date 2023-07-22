@@ -18,7 +18,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
-import 'package:flutter_sensors/flutter_sensors.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'dart:math' as math;
 
 class HomeScreen extends StatefulWidget {
