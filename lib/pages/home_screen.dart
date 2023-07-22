@@ -229,10 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final forestParkLatitude = 45.5200;
                   final forestParkLongitude = -122.6774;
                   ref.read(followOnLocationProvider.notifier).update((state) {
-                    return FollowOnLocationUpdate.custom(
-                      latitude: forestParkLatitude,
-                      longitude: forestParkLongitude,
-                    );
+                    return FollowOnLocationUpdate.custom;
                   });
                 }
           
@@ -927,6 +924,26 @@ class LanguageSelection extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+enum FollowOnLocationUpdate {
+  always,
+  custom,
+}
+
+class FollowOnLocationData {
+  final double latitude;
+  final double longitude;
+  FollowOnLocationData({required this.latitude, required this.longitude});
+}
+
+extension FollowOnLocationUpdateExtension on FollowOnLocationUpdate {
+  FollowOnLocationData? get customData {
+    if (this == FollowOnLocationUpdate.custom) {
+      return FollowOnLocationData(latitude: 0.0, longitude: 0.0);
+    }
+    return null;
   }
 }
 
