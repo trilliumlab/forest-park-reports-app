@@ -76,8 +76,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     accelerometerEvents.listen((AccelerometerEvent event) {
       double rotation = -event.y;
-      setState(() {
-        compassRotation = rotation;
+      magnetometerEvents.listen((MagnetometerEvent magnetometerEvent) {
+        double magneticFieldZ = magnetometerEvent.z;
+        double azimuth = math.atan2(-magneticFieldZ, event.y);
+        double azimuthDegrees = azimuth * (180 / math.pi);
+        setState(() {
+          compassRotation = rotation - azimuthDegrees;
+        });
       });
     });
   }
@@ -148,10 +153,10 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           Positioned(
-            top: 20.0,
+            top: 60.0,
             right: 20.0,
             child: Transform.rotate(
-              angle: compassRotation, // Rotate the compass based on the rotation angle
+              angle: compassRotation * (math.pi / 180),
               child: Icon(
                 Icons.navigation,
                 size: 30.0,
