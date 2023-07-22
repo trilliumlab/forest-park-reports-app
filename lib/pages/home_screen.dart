@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/models/hazard_update.dart';
@@ -19,6 +18,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
+import 'package:sensors/sensors.dart';
+import 'dart:math' as math;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -73,6 +74,21 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // _panelHeight = _initFabHeight;
   }
+  
+  double compassRotation = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Start listening to device orientation changes
+    accelerometerEvents.listen((AccelerometerEvent event) {
+      double rotation = -event.y;
+      setState(() {
+        compassRotation = rotation;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       break;
                   }
                 }
-              });
+              }); 
               // update panel position
               var position = ref.read(panelPositionProvider).position;
               if (_panelController.isAttached) {
@@ -138,6 +154,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 }),
               );
             },
+          ),
+          Positioned(
+            top: 20.0,
+            right: 20.0,
+            child: Transform.rotate(
+              angle: compassRotation, // Rotate the compass based on the rotation angle
+              child: Icon(
+                Icons.compass,
+                size: 30.0,
+                color: Colors.blue,
+              ),
+            ),
           ),
           // When panel is visible, position 20dp above the panel height (_fabHeight)
           // when panel is hidden, set it to 20db from bottom
