@@ -597,19 +597,14 @@ class _SettingsAppState extends State<SettingsApp> {
   String _selectedMode = 'Light';
   TargetPlatform _initialPlatform = TargetPlatform.android;
 
-  // Helper function to get the appropriate theme data based on platform and selected mode
-  dynamic getThemeData(BuildContext context) {
+  dynamic getThemeData(BuildContext context, bool isDarkModeEnabled) {
     if (isMaterial(context)) {
-      if (_selectedMode == 'Dark') {
+      if (isDarkModeEnabled) {
         return ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.dark,
+         useMaterial3: true,
+         brightness: Brightness.dark,
         );
-      } else if (_selectedMode == 'System') {
-        return ThemeData.light().copyWith(
-          scaffoldBackgroundColor: Colors.blue,
-        );
-      } else {
+     } else {
         return ThemeData(
           useMaterial3: true,
           brightness: Brightness.light,
@@ -617,13 +612,12 @@ class _SettingsAppState extends State<SettingsApp> {
       }
     } else if (isCupertino(context)) {
       return CupertinoThemeData(
-        brightness: _selectedMode == 'Dark' ? Brightness.dark : Brightness.light,
+        brightness: isDarkModeEnabled ? Brightness.dark : Brightness.light,
       );
     }
     return ThemeData.light();
   }
-
-  // Toggle Dark Mode
+  
   void _toggleDarkMode(bool value) {
     setState(() {
       _isDarkModeEnabled = value;
@@ -656,12 +650,12 @@ class _SettingsAppState extends State<SettingsApp> {
     });
   }
 
+  // Get the name of the app theme based on platform
   String getAppThemeName() {
-    return _initialPlatform == TargetPlatform.iOS
-        ? 'iOS Theme'
-        : 'Android Theme';
+    return _initialPlatform == TargetPlatform.iOS ? 'iOS Theme' : 'Android Theme';
   }
 
+  // Method to go back to the main page
   void _goBack(BuildContext context) {
     Navigator.pop(context);
   }
@@ -673,7 +667,7 @@ class _SettingsAppState extends State<SettingsApp> {
       builder: (context) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: getThemeData(context),
+          theme: getThemeData(context, _isDarkModeEnabled), // Use the theme based on _isDarkModeEnabled
           home: Material(
             child: PlatformScaffold(
               appBar: PlatformAppBar(
@@ -784,7 +778,7 @@ class PlatformSegmentedControl<T> extends StatelessWidget {
                 ),
             ],
             emptySelectionAllowed: true,
-            onSelectionChanged: (selected) => onSelectionChanged(selected.first as T?),
+            onSelectionChanged: (selected) => onSelectionChanged(selected.first),
             selected: {
               if (selected != null)
                 selected,
