@@ -161,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Transform.rotate(
                   angle: compassRotation * (math.pi / 180),
                   child: Transform.scale(
-                    scale: 1.3,
+                    scale: 1.5,
                     child: Icon(
                       Icons.navigation,
                       size: 30.0,
