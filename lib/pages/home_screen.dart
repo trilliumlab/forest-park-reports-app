@@ -69,19 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final _scrollController = ScrollController();
 
-  @override
-  void initState() {
-    super.initState();
-    // _panelHeight = _initFabHeight;
-  }
-  
   double compassRotation = 0.0;
 
   @override
   void initState() {
     super.initState();
-
-    // Start listening to device orientation changes
     accelerometerEvents.listen((AccelerometerEvent event) {
       double rotation = -event.y;
       setState(() {
