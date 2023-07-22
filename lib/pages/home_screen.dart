@@ -226,7 +226,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 int clickCounter = 0;
           
                 void centerOnForestPark() {
-                  // Implement the logic to center the map on Forest Park here
+                  final forestParkLatitude = 45.5200;
+                  final forestParkLongitude = -122.6774;
+                  ref.read(followOnLocationProvider.notifier).update((state) {
+                    return FollowOnLocationUpdate.custom(
+                      latitude: forestParkLatitude,
+                      longitude: forestParkLongitude,
+                    );
+                  });
                 }
           
                 void centerOnCurrentLocation() {
