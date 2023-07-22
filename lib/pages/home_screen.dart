@@ -619,11 +619,14 @@ class _SettingsAppState extends State<SettingsApp> {
     });
   }
 
-  // Get the name of the app theme based on platform
   String getAppThemeName() {
     return _initialPlatform == TargetPlatform.iOS
         ? 'iOS Theme'
         : 'Android Theme';
+  }
+
+  void _goBack(BuildContext context) {
+    Navigator.pop(context);
   }
 
   @override
@@ -638,6 +641,10 @@ class _SettingsAppState extends State<SettingsApp> {
             child: PlatformScaffold(
               appBar: PlatformAppBar(
                 title: Text('Settings'),
+                leading: PlatformIconButton(
+                  icon: Icon(context.platformIcons.back),
+                  onPressed: () => _goBack(context),
+                ),
               ),
               body: Padding(
                 padding: const EdgeInsets.all(16.0),
