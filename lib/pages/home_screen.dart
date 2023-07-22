@@ -223,20 +223,15 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final followOnLocation = ref.watch(followOnLocationProvider);
-                final mapController = ref.read(mapControllerProvider);
                 int clickCounter = 0;
           
                 void centerOnForestPark() {
-                  mapController.animateCamera(
-                    CameraUpdate.newLatLng(LatLng(latitudeOfForestPark, longitudeOfForestPark)),
-                  );
+                  // Implement the logic to center the map on Forest Park here
                 }
           
                 void centerOnCurrentLocation() {
-                  final userLocation = // Get the user's current location here.
-                  mapController.animateCamera(
-                    CameraUpdate.newLatLng(LatLng(userLocation.latitude, userLocation.longitude)),
-                  );
+                  ref.read(followOnLocationProvider.notifier)
+                            .update((state) => FollowOnLocationUpdate.always);
                 }
           
                 return PlatformFAB(
@@ -254,13 +249,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       showMissingPermissionDialog(
                         context,
                         'Location Required',
-                        'Location permission is required to jump to current location',
+                        'Location permission is required to jump to the current location',
                       );
                     }
                   },
                   child: PlatformWidget(
                     cupertino: (_, __) => Icon(
-                      // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
                       followOnLocation == FollowOnLocationUpdate.always
                           ? CupertinoIcons.location_fill
                           : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
