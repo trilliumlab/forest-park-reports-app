@@ -941,7 +941,7 @@ class FollowOnLocationData {
 extension FollowOnLocationUpdateExtension on FollowOnLocationUpdate {
   FollowOnLocationData? get customData {
     if (this == FollowOnLocationUpdate.custom) {
-      return FollowOnLocationData(latitude: 0.0, longitude: 0.0);
+      return FollowOnLocationData(latitude: 45.5200, longitude: -122.6774);
     }
     return null;
   }
