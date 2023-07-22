@@ -155,15 +155,18 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             top: 60.0,
             right: 20.0,
-            child: Transform.rotate(
-              angle: compassRotation * (math.pi / 180),
-              child: Icon(
-                Icons.navigation,
-                size: 30.0,
-                color: Colors.blue,
-              ),
-            ),
-            Text(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Transform.rotate(
+                  angle: compassRotation * (math.pi / 180),
+                  child: Icon(
+                    Icons.navigation,
+                    size: 30.0,
+                    color: Colors.blue,
+                  ),
+                ),
+                Text(
                   'N',
                   style: TextStyle(
                     color: Colors.white,
