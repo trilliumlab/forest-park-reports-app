@@ -30,7 +30,8 @@ class PanelPage extends ConsumerStatefulWidget {
 class _PanelPageState extends ConsumerState<PanelPage> {
   @override
   Widget build(BuildContext context) {
-    final selectedTrail = ref.watch(selectedTrailProvider);
+    final selectedTrailID = ref.watch(selectedTrailProvider);
+    final selectedTrail = selectedTrailID == null ? null : ref.watch(trailsProvider).value?.get(selectedTrailID);
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
     final hazardTrail = selectedHazard == null ? null : ref.read(trailsProvider).value?.get(selectedHazard.location.trail);
 
@@ -145,14 +146,14 @@ class _PanelPageState extends ConsumerState<PanelPage> {
         scrollController: widget.scrollController,
         panelController: widget.panelController,
         // TODO show real name
-        title: selectedTrail.toString(),
+        title: selectedTrail.tags["name"],
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Opacity(
               opacity: widget.panelController.snapWidgetOpacity,
               child: TrailElevationGraph(
-                trailID: selectedTrail,
+                trailID: selectedTrail.id,
                 height: widget.panelController.panelSnapHeight*0.6,
               ),
             ),
@@ -162,7 +163,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
             child: Opacity(
               opacity: widget.panelController.fullWidgetOpacity,
               child: TrailHazardsWidget(
-                  trail: selectedTrail
+                  trail: selectedTrail.id
               ),
             ),
           ),
