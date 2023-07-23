@@ -2,12 +2,42 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:collection/collection.dart';
 import 'package:forest_park_reports/consts.dart';
+import 'package:forest_park_reports/util/extensions.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:simplify/simplify.dart';
 
 part 'trail.freezed.dart';
+
+class TrailList extends DelegatingList<TrailModel> {
+  TrailList(List<TrailModel> trails) : super(trails);
+
+  // Constructs a list of trails from a buffer
+  factory TrailList.decode(Uint8List buffer) {
+    final data = buffer.buffer.asByteData(buffer.offsetInBytes, buffer.lengthInBytes);
+    // keep track of read position
+    var cursor = 0;
+    
+    final List<TrailModel> trails = [];
+
+    while (cursor < buffer.length) {
+      final trailLength = data.getUint32(cursor, kNetworkEndian);
+      cursor += 4;
+      final trailData = buffer.buffer.asUint8List(cursor, trailLength);
+      cursor += trailLength;
+
+      trails.add(TrailModel.decode(trailData));
+    }
+
+    return TrailList(trails);
+  }
+
+  TrailModel? get(int id) {
+    return firstWhereOrNull((trail) => trail.id == id);
+  }
+}
 
 // TODO move
 class Coordinate extends LatLng {
@@ -52,13 +82,14 @@ class TrailModel {
     return _pathCache[resolution]!;
   }
 
+  // TODO use factory constructor
   // constructs a track from binary encoded track
   TrailModel.decode(Uint8List buffer) {
-    final data = buffer.buffer.asByteData();
+    final data = buffer.buffer.asByteData(buffer.offsetInBytes, buffer.lengthInBytes);
     // keep track of read position
     var cursor = 0;
 
-    // decode trail name
+    // decode system name
     final systemLength = data.getUint16(cursor, kNetworkEndian);
     cursor += 2;
     system = ascii.decode(buffer.getRange(cursor, cursor+=systemLength).toList());
@@ -66,8 +97,6 @@ class TrailModel {
     // decode id
     id = data.getUint64(cursor, kNetworkEndian);
     cursor += 8;
-
-    print("DECODING ID $id");
 
     // decode tags
     final tagSize = data.getUint16(cursor, kNetworkEndian);
@@ -101,17 +130,13 @@ class TrailModel {
     // decode nodes
     final nodeSize = data.getUint16(cursor, kNetworkEndian);
     cursor += 2;
-    print("NODE SIZE $nodeSize");
     for (int i=0; i<nodeSize; i++) {
       nodes.add(data.getUint64(cursor, kNetworkEndian));
       cursor += 8;
     }
 
-    print("NODES DECODED ${nodes.length}");
-
     // decode geometry
     final geometrySize = data.getUint16(cursor, kNetworkEndian);
-    print("GEOMETRY SIZE $geometrySize");
     cursor += 2;
     for (int i=0; i<geometrySize; i++) {
       // read latlong
@@ -126,7 +151,7 @@ class TrailModel {
         elevation = data.getFloat32(cursor, kNetworkEndian);
         cursor += 4;
       } else {
-        elevation = geometry.last.elevation + (data.getInt8(cursor++).toDouble()/4);
+        elevation = geometry.last.elevation + (data.getInt8(cursor++).toDouble()/kElevationDeltaModifier);
       }
       // calculate max and min elevation + delta
       final delta = elevation - (geometry.lastOrNull?.elevation ?? elevation);
@@ -150,41 +175,58 @@ class TrailModel {
       // add latlong to path
       geometry.add(coord);
     }
-
-    print("DECODED TRAIL ${system}");
   }
 
   Uint8List encode() {
     final builder = BytesBuilder();
 
-    // TODO update encoding
-    // // encode trail name
-    // builder.addUint16(name.length);
-    // builder.add(ascii.encode(name));
-    //
-    // // encode colors
-    // builder.addUint16(colors.length * (2+1+1+1));
-    // for (final color in colors) {
-    //   builder.addUint16(color.index);
-    //   builder.addByte(color.color.red);
-    //   builder.addByte(color.color.green);
-    //   builder.addByte(color.color.blue);
-    // }
-    //
-    // // encode path data
-    // builder.addUint16(path.length * (4+4+1));
-    // for (int i=0; i<path.length; i++) {
-    //   builder.addFloat32(path[i].latitude);
-    //   builder.addFloat32(path[i].longitude);
-    //   if (i==0) {
-    //     builder.addFloat32(elevation[i]);
-    //   } else {
-    //     builder.addByte((
-    //         (elevation[i] - elevation[0])
-    //             - (elevation[i-1] - elevation[0])
-    //     ).round());
-    //   }
-    // }
+    // encode system name
+    builder.addUint16(system.length);
+    builder.add(ascii.encode(system));
+
+    // encode ID
+    builder.addUint64(id);
+
+    // encode tags
+    builder.addUint16(tags.length);
+    for (final tag in tags.entries) {
+      // encode key
+      builder.addUint16(tag.key.length);
+      builder.add(ascii.encode(tag.key));
+      // encode value
+      builder.addUint16(tag.value.length);
+      builder.add(ascii.encode(tag.value));
+    }
+
+    // encode bounds
+    builder.addFloat32(bounds.minlat);
+    builder.addFloat32(bounds.minlon);
+    builder.addFloat32(bounds.maxlat);
+    builder.addFloat32(bounds.maxlon);
+
+    // encode nodes
+    builder.addUint16(nodes.length);
+    for (final node in nodes) {
+      builder.addUint64(node);
+    }
+
+    // encode geometry data
+    builder.addUint16(geometry.length);
+
+    for (int i=0; i<geometry.length; i++) {
+      builder.addFloat32(geometry[i].latitude);
+      builder.addFloat32(geometry[i].longitude);
+      if (i==0) {
+        builder.addFloat32(geometry[i].elevation);
+      } else {
+        builder.addByte((
+            (
+                (geometry[i].elevation - geometry[0].elevation)
+                    - (geometry[i-1].elevation - geometry[0].elevation)
+            ) * kElevationDeltaModifier
+        ).round());
+      }
+    }
 
     return builder.takeBytes();
   }
@@ -194,8 +236,8 @@ enum PolylineResolutionModel {
   full(0),
   ultra(0.00004),
   high(0.0002),
-  medium(0.0004),
-  low(0.0007);
+  medium(0.0003),
+  low(0.0004);
 
   final double tolerance;
   const PolylineResolutionModel(this.tolerance);

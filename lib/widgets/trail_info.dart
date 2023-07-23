@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
@@ -258,7 +259,7 @@ class TrailElevationGraph extends ConsumerWidget {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider)
         .where((e) => e.location.trail == trailID);
-    final trailData = ref.watch(trailProvider(trailID)).value;
+    final trailData = ref.watch(trailsProvider).value?.get(trailID);
     if (trailData == null) {
       return Center(
         child: PlatformCircularProgressIndicator()
@@ -266,7 +267,7 @@ class TrailElevationGraph extends ConsumerWidget {
     }
     final Map<double, HazardModel?> hazardsMap = {};
     final List<FlSpot> spots = [];
-    final filterInterval = (trailData.geometry.length/100).round();
+    final filterInterval = max((trailData.geometry.length/kElevationMaxEntries).round(), 1);
     for (final e in trailData.geometry.asMap().entries) {
       if (e.key % filterInterval == 0) {
         final distance = trailData.distance[e.key];
@@ -324,8 +325,9 @@ class TrailElevationGraph extends ConsumerWidget {
                             sideTitles: SideTitles(
                                 showTitles: true,
                                 reservedSize: 65,
+                                // TODO add units to settings
                                 getTitlesWidget: (yVal, meta) {
-                                  return Text("${yVal.round().toString()} ft");
+                                  return Text("${yVal.round().toString()} m");
                                 },
                                 interval: 50
                             )

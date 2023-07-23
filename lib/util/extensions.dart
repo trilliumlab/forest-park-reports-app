@@ -43,6 +43,16 @@ extension PositionToMarker on Position {
 }
 
 extension Writer on BytesBuilder {
+  void addUint64(int value) {
+    final data = ByteData(8);
+    data.setUint64(0, value, kNetworkEndian);
+    add(data.buffer.asUint8List());
+  }
+  void addUint32(int value) {
+    final data = ByteData(4);
+    data.setUint32(0, value, kNetworkEndian);
+    add(data.buffer.asUint8List());
+  }
   void addUint16(int value) {
     final data = ByteData(2);
     data.setUint16(0, value, kNetworkEndian);

@@ -32,7 +32,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
   Widget build(BuildContext context) {
     final selectedTrail = ref.watch(selectedTrailProvider);
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
-    final hazardTrail = selectedHazard == null ? null : ref.read(trailProvider(selectedHazard.location.trail));
+    final hazardTrail = selectedHazard == null ? null : ref.read(trailsProvider).value?.get(selectedHazard.location.trail);
 
     HazardUpdateList? hazardUpdates;
     String? lastImage;
@@ -47,7 +47,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
         scrollController: widget.scrollController,
         panelController: widget.panelController,
         // TODO fetch trail name
-        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.value}",
+        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.tags["name"]}",
         bottomWidget: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

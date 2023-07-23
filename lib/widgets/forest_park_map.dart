@@ -215,7 +215,7 @@ class TrailEndsMarkerLayer extends ConsumerWidget {
       return Container();
     }
 
-    final trail = ref.watch(trailProvider(trailID)).value;
+    final trail = ref.watch(trailsProvider).value?.get(trailID);
     if (trail == null) {
       return Container();
     }
@@ -257,33 +257,29 @@ class TrailPolylineLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTrail = ref.watch(selectedTrailProvider);
-    final trailList = ref.watch(trailListProvider).value;
+    final trails = ref.watch(trailsProvider).value;
     final polylineResolution = ref.watch(polylineResolutionProvider);
 
-    if (trailList == null) {
+    if (trails == null) {
       return Container();
     }
 
     return TappablePolylineLayer(
       // Will only render visible polylines, increasing performance
       polylineCulling: true,
-      polylines: trailList.map((trailID) {
-        final trail = ref.watch(trailProvider(trailID)).value;
-        if (trail == null) {
-          return null;
-        }
-        final path = trail.getPath(polylineResolution);
+      polylines: trails.map((trail) {
+        final geometry = trail.getPath(polylineResolution);
 
-        return selectedTrail == trailID ? TaggedPolyline(
-          tag: trailID.toString(),
-          points: path,
+        return selectedTrail == trail.id ? TaggedPolyline(
+          tag: trail.id.toString(),
+          points: geometry,
           strokeWidth: 1.0,
           borderColor: CupertinoColors.activeGreen.withAlpha(80),
           borderStrokeWidth: 8.0,
           color: CupertinoColors.activeGreen,
         ) : TaggedPolyline(
-          tag: trailID.toString(),
-          points: path,
+          tag: trail.id.toString(),
+          points: geometry,
           strokeWidth: 1.0,
           color: CupertinoColors.activeOrange,
         );
@@ -313,7 +309,7 @@ class TrailPolylineLayer extends ConsumerWidget {
           }
         } else {
           ref.read(selectedTrailProvider.notifier)
-              .select(trailList.firstWhere((e) => e.toString() == tag));
+              .select(trails.firstWhere((e) => e.id.toString() == tag).id);
           if (ref
               .read(panelPositionProvider)
               .position == PanelPositionState.closed) {

@@ -24,13 +24,19 @@ class PolylineResolution extends _$PolylineResolution {
 }
 
 @riverpod
-class TrailList extends _$TrailList {
-  static final store = StoreRef<String, int>("trail_list");
+class Trails extends _$Trails {
+  static final store = StoreRef<int, Blob>("trail_data");
 
   @override
-  Future<Set<int>> build() async {
+  Future<TrailList> build() async {
+    final trails = TrailList([]);
+
     final db = await ref.watch(forestParkDatabaseProvider.future);
-    final trails = (await store.find(db)).map((e) => e.value).toSet();
+
+    for (final trail in await store.find(db)) {
+       trails.add(TrailModel.decode(trail.value.bytes));
+    }
+
     if (trails.isNotEmpty) {
       refresh();
       return trails;
@@ -38,21 +44,22 @@ class TrailList extends _$TrailList {
     return await _fetch();
   }
 
-  Future<Set<int>> _fetch() async {
-    final res = await ref.read(dioProvider).get("/trail/list");
+  Future<TrailList> _fetch() async {
+    final res = await ref.read(dioProvider).get(
+      "/trail/all",
+      options: Options(
+          responseType: ResponseType.bytes
+      ),
+    );
 
-    final List<int> trails = [
-      for (final trailID in res.data)
-        trailID
-    ];
+    final trails = TrailList.decode(res.data);
 
     final db = await ref.read(forestParkDatabaseProvider.future);
-    db.transaction((txn) {
-      store.delete(db);
-      store.addAll(db, trails);
-    });
+    for (final trail in trails) {
+      store.record(trail.id).add(db, Blob(trail.encode()));
+    }
 
-    return trails.toSet();
+    return trails;
   }
 
   Future<void> refresh() async {
@@ -71,19 +78,18 @@ class TrailList extends _$TrailList {
     int? closestTrail;
     LatLng? closestLatLng;
     int index = 0;
-    await Future.wait(trailList.map((trailID) async {
-      final trail = await ref.read(trailProvider(trailID).future);
+    for (final trail in trailList) {
       final geometry = trail.geometry;
       for (int i=0; i<geometry.length; i++) {
         final dist = _squareDist(loc, geometry[i]);
         if (squareDist == null || dist < squareDist!) {
           squareDist = dist;
-          closestTrail = trailID;
+          closestTrail = trail.id;
           closestLatLng = geometry[i];
           index = i;
         }
       }
-    }));
+    }
 
     final snappedLoc = SnappedLatLng(closestTrail!, index, closestLatLng!);
     final dist = const DistanceVincenty().as(LengthUnit.Meter, loc, snappedLoc);
@@ -94,39 +100,39 @@ class TrailList extends _$TrailList {
   }
 }
 
-@riverpod
-class Trail extends _$Trail {
-  static final store = StoreRef<int, Blob>("trail_data");
-
-  @override
-  Future<TrailModel> build(int id) async {
-    final db = await ref.watch(forestParkDatabaseProvider.future);
-    final trailBlob = await store.record(id).get(db);
-    if (trailBlob == null) {
-      return await _fetch();
-    }
-    refresh();
-    return TrailModel.decode(trailBlob.bytes);
-  }
-
-  Future<TrailModel> _fetch() async {
-    final res = await ref.read(dioProvider).get(
-      "/trail/$id",
-      options: Options(
-          responseType: ResponseType.bytes
-      ),
-    );
-
-    final db = await ref.read(forestParkDatabaseProvider.future);
-    store.record(id).add(db, Blob(res.data));
-
-    return TrailModel.decode(res.data);
-  }
-
-  Future<void> refresh() async {
-    state = AsyncData(await _fetch());
-  }
-}
+// @riverpod
+// class Trail extends _$Trail {
+//   static final store = StoreRef<int, Blob>("trail_data");
+//
+//   @override
+//   Future<TrailModel> build(int id) async {
+//     final db = await ref.watch(forestParkDatabaseProvider.future);
+//     final trailBlob = await store.record(id).get(db);
+//     if (trailBlob == null) {
+//       return await _fetch();
+//     }
+//     refresh();
+//     return TrailModel.decode(trailBlob.bytes);
+//   }
+//
+//   Future<TrailModel> _fetch() async {
+//     final res = await ref.read(dioProvider).get(
+//       "/trail/$id",
+//       options: Options(
+//           responseType: ResponseType.bytes
+//       ),
+//     );
+//
+//     final db = await ref.read(forestParkDatabaseProvider.future);
+//     store.record(id).add(db, Blob(res.data));
+//
+//     return TrailModel.decode(res.data);
+//   }
+//
+//   Future<void> refresh() async {
+//     state = AsyncData(await _fetch());
+//   }
+// }
 
 @riverpod
 class SelectedTrail extends _$SelectedTrail {
