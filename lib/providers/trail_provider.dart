@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:forest_park_reports/models/snapped_latlng.dart';
 import 'package:forest_park_reports/models/trail.dart';
-import 'package:forest_park_reports/models/trail_metadata.dart';
 import 'package:forest_park_reports/providers/database_provider.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:latlong2/latlong.dart';
@@ -26,12 +25,12 @@ class PolylineResolution extends _$PolylineResolution {
 
 @riverpod
 class TrailList extends _$TrailList {
-  static final store = intMapStoreFactory.store("trail_metadata");
+  static final store = StoreRef<String, int>("trail_list");
 
   @override
-  Future<Set<TrailMetadataModel>> build() async {
+  Future<Set<int>> build() async {
     final db = await ref.watch(forestParkDatabaseProvider.future);
-    final trails = (await store.find(db)).map((e) => TrailMetadataModel.fromJson(e.value)).toSet();
+    final trails = (await store.find(db)).map((e) => e.value).toSet();
     if (trails.isNotEmpty) {
       refresh();
       return trails;
@@ -39,21 +38,21 @@ class TrailList extends _$TrailList {
     return await _fetch();
   }
 
-  Future<Set<TrailMetadataModel>> _fetch() async {
+  Future<Set<int>> _fetch() async {
     final res = await ref.read(dioProvider).get("/trail/list");
 
-    final List<Map<String, dynamic>> jsonList = [
-      for (final json in res.data.values)
-        json
+    final List<int> trails = [
+      for (final trailID in res.data)
+        trailID
     ];
 
     final db = await ref.read(forestParkDatabaseProvider.future);
     db.transaction((txn) {
       store.delete(db);
-      store.addAll(db, jsonList);
+      store.addAll(db, trails);
     });
 
-    return jsonList.map((json) => TrailMetadataModel.fromJson(json)).toSet();
+    return trails.toSet();
   }
 
   Future<void> refresh() async {
@@ -69,24 +68,24 @@ class TrailList extends _$TrailList {
     // as i'd like the earth to be flat, it's not. However, this
     // should be good enough to sort by distance, and it's fast.
     double? squareDist;
-    TrailMetadataModel? closestTrail;
+    int? closestTrail;
     LatLng? closestLatLng;
     int index = 0;
-    await Future.wait(trailList.map((trailMetadata) async {
-      final trail = await ref.read(trailProvider(trailMetadata.uuid).future);
-      final path = trail.path;
-      for (int i=0; i<path.length; i++) {
-        final dist = _squareDist(loc, path[i]);
+    await Future.wait(trailList.map((trailID) async {
+      final trail = await ref.read(trailProvider(trailID).future);
+      final geometry = trail.geometry;
+      for (int i=0; i<geometry.length; i++) {
+        final dist = _squareDist(loc, geometry[i]);
         if (squareDist == null || dist < squareDist!) {
           squareDist = dist;
-          closestTrail = trailMetadata;
-          closestLatLng = path[i];
+          closestTrail = trailID;
+          closestLatLng = geometry[i];
           index = i;
         }
       }
     }));
 
-    final snappedLoc = SnappedLatLng(closestTrail!.uuid, index, closestLatLng!);
+    final snappedLoc = SnappedLatLng(closestTrail!, index, closestLatLng!);
     final dist = const DistanceVincenty().as(LengthUnit.Meter, loc, snappedLoc);
     return SnappedResult(snappedLoc, dist);
   }
@@ -97,12 +96,12 @@ class TrailList extends _$TrailList {
 
 @riverpod
 class Trail extends _$Trail {
-  static final store = StoreRef<String, Blob>("trail_data");
+  static final store = StoreRef<int, Blob>("trail_data");
 
   @override
-  Future<TrailModel> build(String uuid) async {
+  Future<TrailModel> build(int id) async {
     final db = await ref.watch(forestParkDatabaseProvider.future);
-    final trailBlob = await store.record(uuid).get(db);
+    final trailBlob = await store.record(id).get(db);
     if (trailBlob == null) {
       return await _fetch();
     }
@@ -112,14 +111,14 @@ class Trail extends _$Trail {
 
   Future<TrailModel> _fetch() async {
     final res = await ref.read(dioProvider).get(
-      "/trail/$uuid",
+      "/trail/$id",
       options: Options(
           responseType: ResponseType.bytes
       ),
     );
 
     final db = await ref.read(forestParkDatabaseProvider.future);
-    store.record(uuid).add(db, Blob(res.data));
+    store.record(id).add(db, Blob(res.data));
 
     return TrailModel.decode(res.data);
   }
@@ -132,8 +131,8 @@ class Trail extends _$Trail {
 @riverpod
 class SelectedTrail extends _$SelectedTrail {
   @override
-  TrailMetadataModel? build() => null;
+  int? build() => null;
 
   void deselect() => state = null;
-  void select(TrailMetadataModel? selection) => state = selection;
+  void select(int? selection) => state = selection;
 }

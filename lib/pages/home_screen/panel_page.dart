@@ -46,7 +46,8 @@ class _PanelPageState extends ConsumerState<PanelPage> {
       child: selectedHazard != null ? TrailInfoWidget(
         scrollController: widget.scrollController,
         panelController: widget.panelController,
-        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.value?.name}",
+        // TODO fetch trail name
+        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.value}",
         bottomWidget: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -143,14 +144,15 @@ class _PanelPageState extends ConsumerState<PanelPage> {
       selectedTrail != null ? TrailInfoWidget(
         scrollController: widget.scrollController,
         panelController: widget.panelController,
-        title: selectedTrail.name,
+        // TODO show real name
+        title: selectedTrail.toString(),
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Opacity(
               opacity: widget.panelController.snapWidgetOpacity,
               child: TrailElevationGraph(
-                trail: selectedTrail,
+                trailID: selectedTrail,
                 height: widget.panelController.panelSnapHeight*0.6,
               ),
             ),
