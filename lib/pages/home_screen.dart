@@ -224,9 +224,10 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, ref, child) {
                 final followOnLocation = ref.watch(followOnLocationProvider);
                 int clickCounter = 0;
-
+                
                 void centerOnForestPark() {
-                  // Implement the logic to center the map on Forest Park here
+                  ref.read(followOnLocationProvider.notifier)
+                      .update((state) => FollowOnLocationUpdate.never);
                 }
 
                 void centerOnCurrentLocation() {
