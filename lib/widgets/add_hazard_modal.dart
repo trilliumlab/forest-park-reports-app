@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/models/hazard_type.dart';
-import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
@@ -43,7 +42,7 @@ class _AddHazardModalState extends ConsumerState<AddHazardModal> {
       return;
     }
     final location = locationData.requireValue;
-    var snappedLoc = await ref.read(trailListProvider.notifier).snapLocation(location.latLng()!);
+    var snappedLoc = await ref.read(trailsProvider.notifier).snapLocation(location.latLng()!);
 
     final continueCompleter = Completer<bool>();
     if (snappedLoc.distance > 10+(location.accuracy) && mounted) {

@@ -5,7 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
-import 'package:forest_park_reports/models/trail_metadata.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
@@ -17,14 +17,14 @@ import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 
 class TrailHazardsWidget extends ConsumerWidget {
-  final TrailMetadataModel trail;
+  final int trail;
   const TrailHazardsWidget({super.key, required this.trail});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider.select((hazards) =>
-        hazards.where((e) => e.location.trail == trail.uuid)));
+        hazards.where((e) => e.location.trail == trail)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,11 +246,11 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
 }
 
 class TrailElevationGraph extends ConsumerWidget {
-  final TrailMetadataModel trail;
+  final int trailID;
   final double height;
   const TrailElevationGraph({
     super.key,
-    required this.trail,
+    required this.trailID,
     required this.height,
   });
 
@@ -258,8 +258,8 @@ class TrailElevationGraph extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider)
-        .where((e) => e.location.trail == trail.uuid);
-    final trailData = ref.watch(trailProvider(trail.uuid)).value;
+        .where((e) => e.location.trail == trailID);
+    final trailData = ref.watch(trailsProvider).value?.get(trailID);
     if (trailData == null) {
       return Center(
         child: PlatformCircularProgressIndicator()
@@ -267,13 +267,13 @@ class TrailElevationGraph extends ConsumerWidget {
     }
     final Map<double, HazardModel?> hazardsMap = {};
     final List<FlSpot> spots = [];
-    final filterInterval = (trailData.elevation.length/100).round();
-    for (final e in trailData.elevation.asMap().entries) {
+    final filterInterval = max((trailData.geometry.length/kElevationMaxEntries).round(), 1);
+    for (final e in trailData.geometry.asMap().entries) {
       if (e.key % filterInterval == 0) {
         final distance = trailData.distance[e.key];
-        spots.add(FlSpot(distance, e.value));
+        spots.add(FlSpot(distance, e.value.elevation));
         hazardsMap[distance] =
-            activeHazards.firstWhereOrNull((h) => h.location.index == e.key);
+            activeHazards.firstWhereOrNull((h) => h.location.node == e.key);
       }
     }
     final maxInterval = trailData.distance.last/5;
@@ -325,8 +325,9 @@ class TrailElevationGraph extends ConsumerWidget {
                             sideTitles: SideTitles(
                                 showTitles: true,
                                 reservedSize: 65,
+                                // TODO add units to settings
                                 getTitlesWidget: (yVal, meta) {
-                                  return Text("${yVal.round().toString()} ft");
+                                  return Text("${yVal.round().toString()} m");
                                 },
                                 interval: 50
                             )

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/models/hazard_update.dart';
 import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
+import 'package:forest_park_reports/providers/database_provider.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
+import 'package:sembast/sembast_io.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -230,7 +232,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   final followOnLocation = ref.watch(followOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
-                      print("Settings pressed");
+                      final db = await ref.read(forestParkDatabaseProvider.future);
+                      await databaseFactoryIo.deleteDatabase(db.path);
                     },
                     child: PlatformWidget(
                       cupertino: (_, __) => Icon(

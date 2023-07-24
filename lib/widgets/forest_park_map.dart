@@ -210,24 +210,24 @@ class TrailEndsMarkerLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trailMetadata = ref.watch(selectedTrailProvider);
-    if (trailMetadata == null) {
+    final trailID = ref.watch(selectedTrailProvider);
+    if (trailID == null) {
       return Container();
     }
 
-    final trail = ref.watch(trailProvider(trailMetadata.uuid)).value;
+    final trail = ref.watch(trailsProvider).value?.get(trailID);
     if (trail == null) {
       return Container();
     }
 
-    final prevPoint = trail.path[trail.path.length-2];
-    final bearing = trail.path.last.bearingTo(prevPoint);
+    final prevPoint = trail.geometry[trail.geometry.length-2];
+    final bearing = trail.geometry.last.bearingTo(prevPoint);
 
     return MarkerLayer(
       markers: [
         // End marker
         Marker(
-          point: trail.path.last,
+          point: trail.geometry.last,
           builder: (_) => RotationTransition(
             turns: AlwaysStoppedAnimation(bearing/(2*pi)),
             child: const Icon(
@@ -239,7 +239,7 @@ class TrailEndsMarkerLayer extends ConsumerWidget {
         ),
         // Start marker
         Marker(
-          point: trail.path.first,
+          point: trail.geometry.first,
           builder: (_) => const Icon(
             Icons.circle,
             color: Colors.green,
@@ -257,40 +257,36 @@ class TrailPolylineLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedTrail = ref.watch(selectedTrailProvider);
-    final trailList = ref.watch(trailListProvider).value;
+    final trails = ref.watch(trailsProvider).value;
     final polylineResolution = ref.watch(polylineResolutionProvider);
 
-    if (trailList == null) {
+    if (trails == null) {
       return Container();
     }
 
     return TappablePolylineLayer(
       // Will only render visible polylines, increasing performance
       polylineCulling: true,
-      polylines: trailList.map((trailMetadata) {
-        final trail = ref.watch(trailProvider(trailMetadata.uuid)).value;
-        if (trail == null) {
-          return null;
-        }
-        final path = trail.getPath(polylineResolution);
+      polylines: trails.map((trail) {
+        final geometry = trail.getPath(polylineResolution);
 
-        return selectedTrail?.uuid == trailMetadata.uuid ? TaggedPolyline(
-          tag: trailMetadata.uuid,
-          points: path,
+        return selectedTrail == trail.id ? TaggedPolyline(
+          tag: trail.id.toString(),
+          points: geometry,
           strokeWidth: 1.0,
           borderColor: CupertinoColors.activeGreen.withAlpha(80),
           borderStrokeWidth: 8.0,
           color: CupertinoColors.activeGreen,
         ) : TaggedPolyline(
-          tag: trailMetadata.uuid,
-          points: path,
+          tag: trail.id.toString(),
+          points: geometry,
           strokeWidth: 1.0,
           color: CupertinoColors.activeOrange,
         );
       }).whereNotNull().toList()..sort((a, b) {
         // sorts the list to have selected polylines at the top
-        return (a.tag == selectedTrail?.uuid ? 1 : 0) -
-        (b.tag == selectedTrail?.uuid ? 1 : 0);
+        return (a.tag == selectedTrail?.toString() ? 1 : 0) -
+        (b.tag == selectedTrail?.toString() ? 1 : 0);
       }),
       onTap: (polylines, tapPosition) {
         // deselect hazards
@@ -298,7 +294,7 @@ class TrailPolylineLayer extends ConsumerWidget {
 
         // select polyline
         final tag = polylines.first.tag;
-        if (tag == selectedTrail?.uuid) {
+        if (tag == selectedTrail?.toString()) {
           if (ref
               .read(panelPositionProvider)
               .position == PanelPositionState.open
@@ -313,7 +309,7 @@ class TrailPolylineLayer extends ConsumerWidget {
           }
         } else {
           ref.read(selectedTrailProvider.notifier)
-              .select(trailList.firstWhere((e) => e.uuid == tag));
+              .select(trails.firstWhere((e) => e.id.toString() == tag).id);
           if (ref
               .read(panelPositionProvider)
               .position == PanelPositionState.closed) {
