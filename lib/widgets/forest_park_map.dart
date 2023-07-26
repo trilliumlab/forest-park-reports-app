@@ -23,6 +23,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 
+import '../providers/follow_on_location_provider.dart';
+
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
 

@@ -24,19 +24,14 @@ import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 
+import '../providers/follow_on_location_provider.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
-// this stores whether camera follows the gps location. This will be set to
-// false by panning the camera. when not stickied, pressing the sticky button
-// will animate the camera to the current gps location and set sticky to true
-final followOnLocationProvider = StateProvider<FollowOnLocationUpdate>(
-    (ref) => FollowOnLocationUpdate.never
-);
 
 class ScreenPanelController extends PanelController {
   // utility functions
