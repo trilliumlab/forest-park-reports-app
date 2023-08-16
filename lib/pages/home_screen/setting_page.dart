@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 
 class SettingsApp extends StatefulWidget {
   @override
@@ -144,11 +145,11 @@ class _SettingsAppState extends State<SettingsApp> {
                     ),
                     SizedBox(height: 16.0),
                     // Language
-                    LanguageSelection(
-                      selectedLanguage: _selectedLanguage,
-                      updateLanguage: _updateLanguage,
-                    ),
-                    SizedBox(height: 16.0),
+                    //LanguageSelection(
+                     // selectedLanguage: _selectedLanguage,
+                      //updateLanguage: _updateLanguage,
+                    //),
+                    //SizedBox(height: 16.0),
                     // Selected Mode
                     SelectedMode(
                       selectedMode: _selectedMode,

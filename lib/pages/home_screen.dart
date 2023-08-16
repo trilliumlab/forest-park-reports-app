@@ -24,6 +24,8 @@ import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 
+import 'home_screen/setting_page.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -234,6 +236,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () async {
                       final db = await ref.read(forestParkDatabaseProvider.future);
                       await databaseFactoryIo.deleteDatabase(db.path);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SettingsApp()),
+                      );
                     },
                     child: PlatformWidget(
                       cupertino: (_, __) => Icon(
