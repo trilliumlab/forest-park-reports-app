@@ -181,19 +181,28 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final followOnLocation = ref.watch(followOnLocationProvider);
+                  final followOnLocation = ref.watch(followOnLocationTargetProvider);
                   return PlatformFAB(
                     onPressed: () async {
                       final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
+                      final followOnLocationTarget = ref.watch(followOnLocationTargetProvider);
                       if (!mounted) return;
                       if (status.permission.authorized) {
-                        ref.read(followOnLocationProvider.notifier)
-                            .update((state) => FollowOnLocationUpdate.always);
+                        switch (followOnLocationTarget) {
+                          case FollowOnLocationTargetState.none:
+                            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.currentLocation);
+                          case FollowOnLocationTargetState.currentLocation:
+                            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.forestPark);
+                            followOnLocation;
+                          case FollowOnLocationTargetState.forestPark:
+                            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.currentLocation);
+                            CenterOnForestPark;
+                        }
                       } else {
                         showMissingPermissionDialog(
-                            context,
-                            'Location Required',
-                            'Location permission is required to jump to current location'
+                          context,
+                          'Location Required',
+                          'Location permission is required to jump to the current location',
                         );
                       }
                     },
@@ -224,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
             top: kIosStatusBarHeight + kFabPadding,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final followOnLocation = ref.watch(followOnLocationProvider);
+                  final followOnLocation = ref.watch(followOnLocationTargetProvider);
                   return PlatformFAB(
                     onPressed: () async {
                       final db = await ref.read(forestParkDatabaseProvider.future);

@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
@@ -75,8 +76,8 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // final parkTrails = ref.watch(parkTrailsProvider);
     final locationStatus = ref.watch(locationPermissionStatusProvider);
 
-    final followOnLocation = ref.watch(followOnLocationProvider);
-    ref.listen(followOnLocationProvider, (prev, next) {
+    final followOnLocation = ref.watch(followOnLocationTargetProvider);
+    ref.listen(followOnLocationTargetProvider, (prev, next) {
       if (next != prev && next != FollowOnLocationUpdate.never) {
         _followCurrentLocationStreamController.add(null);
       }
@@ -142,7 +143,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                     .updateZoom(position.zoom!));
           }
           if (hasGesture) {
-            ref.read(followOnLocationProvider.notifier).update((state) => FollowOnLocationUpdate.never);
+            ref.read(followOnLocationTargetProvider.notifier).state = FollowOnLocationTargetState.currentLocation;
           }
         },
         maxZoom: 22,
@@ -168,9 +169,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
           Consumer(
             builder: (context, ref, _) {
               final positionStream = ref.watch(locationProvider.stream);
+              final followOnLocationTarget = ref.watch(followOnLocationTargetProvider);
               return CurrentLocationLayer(
                 followCurrentLocationStream: _followCurrentLocationStreamController.stream,
-                followOnLocationUpdate: followOnLocation,
+                followOnLocationUpdate: followOnLocationTarget.update,
                 positionStream: positionStream.map((p) => p.locationMarkerPosition()),
                 // Only enable heading on mobile
                 // headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
@@ -449,4 +451,51 @@ class HazardImage extends ConsumerWidget {
 class HazardMarker extends Marker {
   final HazardModel hazard;
   HazardMarker({required this.hazard, required super.builder, super.rotate, super.rotateOrigin}) : super(point: hazard.location);
+}
+
+class CenterOnForestPark extends StatefulWidget {
+  @override
+  _CenterOnForestParkState createState() => _CenterOnForestParkState();
+}
+
+class _CenterOnForestParkState extends State<CenterOnForestPark> with TickerProviderStateMixin {
+  late final _animatedMapController = AnimatedMapController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+    curve: Curves.easeInOut,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: FlutterMap(
+        mapController:  _animatedMapController.mapController,
+        options: MapOptions(
+          center: kHomeCameraPosition.center,
+          zoom: kHomeCameraPosition.zoom,
+          rotation: kHomeCameraPosition.rotation,
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _animateToForestPark();
+        },
+        child: Icon(Icons.location_on),
+      ),
+    );
+  }
+
+  void _animateToForestPark() {
+    final dest = kHomeCameraPosition.center;
+    final zoom = kHomeCameraPosition.zoom;
+    final rotation = kHomeCameraPosition.rotation;
+    final curve = Curves.easeInOut;
+
+    _animatedMapController.animateTo(
+      dest: dest,
+      zoom: zoom,
+      rotation: rotation,
+      curve: curve,
+    );
+  }
 }
