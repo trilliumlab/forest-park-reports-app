@@ -196,7 +196,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             followOnLocation;
                           case FollowOnLocationTargetState.forestPark:
                             ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.currentLocation);
-                            CenterOnForestPark;
                         }
                       } else {
                         showMissingPermissionDialog(

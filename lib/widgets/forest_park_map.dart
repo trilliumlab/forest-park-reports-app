@@ -33,25 +33,29 @@ class ForestParkMap extends ConsumerStatefulWidget {
   ConsumerState<ForestParkMap> createState() => _ForestParkMapState();
 }
 
-class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver {
+class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver, TickerProviderStateMixin{
   // TODO add satallite map style
-  late final MapController _mapController;
   late final PopupController _popupController;
   late StreamController<double?> _followCurrentLocationStreamController;
+  late final AnimatedMapController _animatedMapController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _mapController = MapController();
     _popupController = PopupController();
     _followCurrentLocationStreamController = StreamController<double?>();
+    _animatedMapController = AnimatedMapController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _mapController.dispose();
+    _animatedMapController.mapController.dispose();
     _followCurrentLocationStreamController.close();
     super.dispose();
   }
@@ -78,8 +82,14 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
 
     final followOnLocation = ref.watch(followOnLocationTargetProvider);
     ref.listen(followOnLocationTargetProvider, (prev, next) {
-      if (next != prev && next != FollowOnLocationUpdate.never) {
-        _followCurrentLocationStreamController.add(null);
+      switch (next) {
+        case FollowOnLocationTargetState.none:
+          _followCurrentLocationStreamController.add(null);
+        case FollowOnLocationTargetState.currentLocation:
+          ref.read(followOnLocationTargetProvider.notifier).state = FollowOnLocationTargetState.forestPark;
+        case FollowOnLocationTargetState.forestPark:
+          _followCurrentLocationStreamController.add(null);
+          _animatedMapController.centerOnPoint(kHomeCameraPosition.center, zoom: kHomeCameraPosition.zoom);
       }
     });
 
@@ -125,13 +135,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       } else {
         _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
         if (next.moveCamera) {
-          _mapController.move(next.hazard!.location, _mapController.zoom);
+          _animatedMapController.centerOnPoint(next.hazard!.location);
         }
       }
     });
 
     return FlutterMap(
-      mapController: _mapController,
+      mapController: _animatedMapController.mapController,
       options: MapOptions(
         center: kHomeCameraPosition.center,
         zoom: kHomeCameraPosition.zoom,
@@ -208,6 +218,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     );
   }
 }
+
 
 class TrailEndsMarkerLayer extends ConsumerWidget {
   const TrailEndsMarkerLayer({super.key});
