@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 
 class SettingsApp extends StatefulWidget {
@@ -290,6 +291,13 @@ class BackgroundGPSSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!isBackgroundGPSEnabled) {
+      FollowOnLocationUpdate.never;
+    } else{
+      FollowOnLocationUpdate.always;
+    }
+
+    // Default behavior when background GPS is enabled
     return ListTile(
       title: Text('Background GPS'),
       trailing: PlatformSwitch(
@@ -299,6 +307,7 @@ class BackgroundGPSSwitch extends StatelessWidget {
     );
   }
 }
+
 
 class LanguageSelection extends StatelessWidget {
   final String selectedLanguage;
