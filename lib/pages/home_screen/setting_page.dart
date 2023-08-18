@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 
-class SettingsApp extends StatefulWidget {
+class SettingsPage extends StatefulWidget {
   @override
   _SettingsAppState createState() => _SettingsAppState();
 }
 
-class _SettingsAppState extends State<SettingsApp> {
+class _SettingsAppState extends State<SettingsPage> {
   bool _isDarkModeEnabled = false;
-  bool _isBackgroundGPSEnabled = false;
+  bool _isBackgroundGPSEnabled = true;
   String _selectedLanguage = 'English';
   String _selectedMapQuality = 'Medium';
   String _selectedMode = 'Light';

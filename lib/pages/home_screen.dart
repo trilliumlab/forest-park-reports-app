@@ -238,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       await databaseFactoryIo.deleteDatabase(db.path);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SettingsApp()),
+                        MaterialPageRoute(builder: (context) => SettingsPage()),
                       );
                     },
                     child: PlatformWidget(
