@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
+import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
@@ -66,7 +67,7 @@ class HazardInfoWidget extends ConsumerWidget {
     return PlatformTextButton(
       padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
       onPressed: () {
-        ref.read(selectedTrailProvider.notifier).deselect();
+        ref.read(selectedRelationProvider.notifier).deselect();
         ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
         ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
       },

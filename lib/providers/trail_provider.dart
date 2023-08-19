@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:forest_park_reports/models/relation.dart';
 import 'package:forest_park_reports/models/snapped_latlng.dart';
 import 'package:forest_park_reports/models/trail.dart';
 import 'package:forest_park_reports/providers/database_provider.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
+import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sembast/blob.dart';
@@ -25,7 +27,7 @@ class PolylineResolution extends _$PolylineResolution {
 
 @riverpod
 class Trails extends _$Trails {
-  static final store = StoreRef<int, Blob>("trail_data");
+  static final store = StoreRef<int, Blob>("trails");
 
   @override
   Future<TrailList> build() async {
@@ -98,47 +100,4 @@ class Trails extends _$Trails {
   double _squareDist(LatLng p1, LatLng p2) {
     return pow(p1.latitude-p2.latitude, 2) + pow(p1.longitude-p2.longitude, 2) as double;
   }
-}
-
-// @riverpod
-// class Trail extends _$Trail {
-//   static final store = StoreRef<int, Blob>("trail_data");
-//
-//   @override
-//   Future<TrailModel> build(int id) async {
-//     final db = await ref.watch(forestParkDatabaseProvider.future);
-//     final trailBlob = await store.record(id).get(db);
-//     if (trailBlob == null) {
-//       return await _fetch();
-//     }
-//     refresh();
-//     return TrailModel.decode(trailBlob.bytes);
-//   }
-//
-//   Future<TrailModel> _fetch() async {
-//     final res = await ref.read(dioProvider).get(
-//       "/trail/$id",
-//       options: Options(
-//           responseType: ResponseType.bytes
-//       ),
-//     );
-//
-//     final db = await ref.read(forestParkDatabaseProvider.future);
-//     store.record(id).add(db, Blob(res.data));
-//
-//     return TrailModel.decode(res.data);
-//   }
-//
-//   Future<void> refresh() async {
-//     state = AsyncData(await _fetch());
-//   }
-// }
-
-@riverpod
-class SelectedTrail extends _$SelectedTrail {
-  @override
-  int? build() => null;
-
-  void deselect() => state = null;
-  void select(int? selection) => state = selection;
 }
