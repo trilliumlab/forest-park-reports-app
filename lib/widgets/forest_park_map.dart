@@ -154,14 +154,15 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
           // lightMode
           //     ? const Color(0xfff7f7f2)
           //     : const Color(0xff36475c),
-          //urlTemplate: "https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga",
-          urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+          urlTemplate: "https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga",
+          //urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
           // urlTemplate: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}@2x",
-          // urlTemplate: true
+          // urlTemplate: false
           //         ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
           //         : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
-          maxNativeZoom: 22,
-          maxZoom: 22,
+          maxNativeZoom: 22-1,
+          maxZoom: 22-1,
+          retinaMode: true,
         ),
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
