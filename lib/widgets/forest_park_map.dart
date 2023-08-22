@@ -145,7 +145,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                     .updateZoom(position.zoom!));
           }
           if (hasGesture) {
-            ref.read(followOnLocationTargetProvider.notifier).state = FollowOnLocationTargetState.none;
+            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.none);
           }
         },
         maxZoom: 22,

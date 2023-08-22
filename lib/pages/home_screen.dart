@@ -203,20 +203,43 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     },
                     child: PlatformWidget(
-                      cupertino: (_, __) => Icon(
-                        // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                          followOnLocationTarget == FollowOnLocationTargetState.currentLocation
-                              ? CupertinoIcons.location_fill
-                              : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
-                          color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
-                              ? CupertinoColors.systemGrey.highContrastColor
-                              : CupertinoColors.systemGrey.darkHighContrastColor
-                      ),
+                      cupertino: (_, __) {
+                        IconData iconData;
+                        Color iconColor;
+                        switch (followOnLocationTarget) {
+                          case FollowOnLocationTargetState.currentLocation:
+                            iconData = CupertinoIcons.location_fill;
+                            iconColor = CupertinoDynamicColor.resolve(
+                              CupertinoColors.systemGrey.highContrastColor,
+                              context,
+                            );
+                            break;
+                          case FollowOnLocationTargetState.none:
+                            iconData = CupertinoIcons.location;
+                            break;
+                          case FollowOnLocationTargetState.forestPark:
+                            iconData = CupertinoIcons.arrow_branch;
+                            break;
+                          default:
+                            iconData = const IconData(
+                              0xf6ee,
+                              fontFamily: CupertinoIcons.iconFont,
+                              fontPackage: CupertinoIcons.iconFontPackage,
+                            );
+                            iconColor = CupertinoDynamicColor.resolve(
+                              CupertinoColors.systemGrey.highContrastColor,
+                              context,
+                            );
+                        }
+                        return Icon(
+                          iconData,
+                        );
+                      },
                       material: (_, __) => Icon(
-                          Icons.my_location_rounded,
-                          color: followOnLocationTarget == FollowOnLocationTargetState.currentLocation
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onBackground
+                        Icons.my_location_rounded,
+                        color: followOnLocationTarget == FollowOnLocationTargetState.currentLocation
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onBackground,
                       ),
                     ),
                   );
