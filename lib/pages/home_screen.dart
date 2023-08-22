@@ -209,10 +209,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         switch (followOnLocationTarget) {
                           case FollowOnLocationTargetState.currentLocation:
                             iconData = CupertinoIcons.location_fill;
-                            iconColor = CupertinoDynamicColor.resolve(
-                              CupertinoColors.systemGrey.highContrastColor,
-                              context,
-                            );
                             break;
                           case FollowOnLocationTargetState.none:
                             iconData = CupertinoIcons.location;
@@ -226,18 +222,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontFamily: CupertinoIcons.iconFont,
                               fontPackage: CupertinoIcons.iconFontPackage,
                             );
-                            iconColor = CupertinoDynamicColor.resolve(
-                              CupertinoColors.systemGrey.highContrastColor,
-                              context,
-                            );
                         }
                         return Icon(
                           iconData,
+                          color: Color.fromARGB(255, 99, 99, 102),
                         );
                       },
                       material: (_, __) => Icon(
                         Icons.my_location_rounded,
-                        color: followOnLocationTarget == FollowOnLocationTargetState.currentLocation
+                        color: followOnLocationTarget == FollowOnLocationTargetState.currentLocation && followOnLocationTarget == FollowOnLocationTargetState.none && followOnLocationTarget == FollowOnLocationTargetState.forestPark
                             ? theme.colorScheme.primary
                             : theme.colorScheme.onBackground,
                       ),
