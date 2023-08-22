@@ -23,7 +23,6 @@ import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
-
 import '../providers/follow_on_location_provider.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
@@ -79,17 +78,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // the provider is updated
     // final parkTrails = ref.watch(parkTrailsProvider);
     final locationStatus = ref.watch(locationPermissionStatusProvider);
-
-    final followOnLocation = ref.watch(followOnLocationTargetProvider);
     ref.listen(followOnLocationTargetProvider, (prev, next) {
-      switch (next) {
-        case FollowOnLocationTargetState.none:
-          _followCurrentLocationStreamController.add(null);
-        case FollowOnLocationTargetState.currentLocation:
-          ref.read(followOnLocationTargetProvider.notifier).state = FollowOnLocationTargetState.forestPark;
-        case FollowOnLocationTargetState.forestPark:
-          _followCurrentLocationStreamController.add(null);
-          _animatedMapController.centerOnPoint(kHomeCameraPosition.center, zoom: kHomeCameraPosition.zoom);
+      if (next==FollowOnLocationTargetState.forestPark){
+        _followCurrentLocationStreamController.add(null);
+        _animatedMapController.centerOnPoint(kHomeCameraPosition.center, zoom: kHomeCameraPosition.zoom);
       }
     });
 
@@ -100,31 +92,31 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         rotate: true,
         rotateOrigin: const Offset(15, 15),
         builder: (_) =>
-          GestureDetector(
-            onTap: () {
-              ref.read(selectedTrailProvider.notifier).deselect();
-              if (hazard == ref.read(selectedHazardProvider).hazard) {
-                ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
-                ref.read(selectedHazardProvider.notifier).deselect();
-                _popupController.hideAllPopups();
-              } else {
-                if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
+            GestureDetector(
+              onTap: () {
+                ref.read(selectedTrailProvider.notifier).deselect();
+                if (hazard == ref.read(selectedHazardProvider).hazard) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
+                  ref.read(selectedHazardProvider.notifier).deselect();
+                  _popupController.hideAllPopups();
+                } else {
+                  if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
+                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
+                  }
+                  ref.read(selectedHazardProvider.notifier).select(hazard);
+                  _popupController.showPopupsOnlyFor([marker]);
                 }
-                ref.read(selectedHazardProvider.notifier).select(hazard);
-                _popupController.showPopupsOnlyFor([marker]);
-              }
-            },
-            child: Icon(
-              Icons.warning_rounded,
-              color: isMaterial(context)
-                  ? Theme
-                  .of(context)
-                  .colorScheme.error
-                  : CupertinoDynamicColor.resolve(
-                  CupertinoColors.destructiveRed, context)
+              },
+              child: Icon(
+                  Icons.warning_rounded,
+                  color: isMaterial(context)
+                      ? Theme
+                      .of(context)
+                      .colorScheme.error
+                      : CupertinoDynamicColor.resolve(
+                      CupertinoColors.destructiveRed, context)
+              ),
             ),
-          ),
       );
       return marker;
     }).toList();
@@ -153,7 +145,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                     .updateZoom(position.zoom!));
           }
           if (hasGesture) {
-            ref.read(followOnLocationTargetProvider.notifier).state = FollowOnLocationTargetState.currentLocation;
+            ref.read(followOnLocationTargetProvider.notifier).state = FollowOnLocationTargetState.none;
           }
         },
         maxZoom: 22,
@@ -177,34 +169,34 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         // we'll probably need to handle taps ourselves, shouldn't be too bad
         if (locationStatus.permission.authorized)
           Consumer(
-            builder: (context, ref, _) {
-              final positionStream = ref.watch(locationProvider.stream);
-              final followOnLocationTarget = ref.watch(followOnLocationTargetProvider);
-              return CurrentLocationLayer(
-                followCurrentLocationStream: _followCurrentLocationStreamController.stream,
-                followOnLocationUpdate: followOnLocationTarget.update,
-                positionStream: positionStream.map((p) => p.locationMarkerPosition()),
-                // Only enable heading on mobile
-                // headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
-                headingStream: positionStream.map((p) => p.locationMarkerHeading()),
-              );
-            }
+              builder: (context, ref, _) {
+                final positionStream = ref.watch(locationProvider.stream);
+                final followOnLocationTarget = ref.watch(followOnLocationTargetProvider);
+                return CurrentLocationLayer(
+                  followCurrentLocationStream: _followCurrentLocationStreamController.stream,
+                  followOnLocationUpdate: followOnLocationTarget.update,
+                  positionStream: positionStream.map((p) => p.locationMarkerPosition()),
+                  // Only enable heading on mobile
+                  // headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
+                  headingStream: positionStream.map((p) => p.locationMarkerHeading()),
+                );
+              }
           ),
         const TrailPolylineLayer(),
         const TrailEndsMarkerLayer(),
         PopupMarkerLayer(
           options: PopupMarkerLayerOptions(
-            popupController: _popupController,
-            markers: markers,
-            popupDisplayOptions: PopupDisplayOptions(
-              builder: (_, marker) {
-                if (marker is HazardMarker) {
-                  return HazardInfoPopup(hazard: marker.hazard);
-                }
-                return Container();
-              },
-              animation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
-            )
+              popupController: _popupController,
+              markers: markers,
+              popupDisplayOptions: PopupDisplayOptions(
+                builder: (_, marker) {
+                  if (marker is HazardMarker) {
+                    return HazardInfoPopup(hazard: marker.hazard);
+                  }
+                  return Container();
+                },
+                animation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
+              )
           ),
         ),
       ],
@@ -301,7 +293,7 @@ class TrailPolylineLayer extends ConsumerWidget {
       }).whereNotNull().toList()..sort((a, b) {
         // sorts the list to have selected polylines at the top
         return (a.tag == selectedTrail?.toString() ? 1 : 0) -
-        (b.tag == selectedTrail?.toString() ? 1 : 0);
+            (b.tag == selectedTrail?.toString() ? 1 : 0);
       }),
       onTap: (polylines, tapPosition) {
         // deselect hazards
@@ -462,51 +454,4 @@ class HazardImage extends ConsumerWidget {
 class HazardMarker extends Marker {
   final HazardModel hazard;
   HazardMarker({required this.hazard, required super.builder, super.rotate, super.rotateOrigin}) : super(point: hazard.location);
-}
-
-class CenterOnForestPark extends StatefulWidget {
-  @override
-  _CenterOnForestParkState createState() => _CenterOnForestParkState();
-}
-
-class _CenterOnForestParkState extends State<CenterOnForestPark> with TickerProviderStateMixin {
-  late final _animatedMapController = AnimatedMapController(
-    vsync: this,
-    duration: const Duration(milliseconds: 500),
-    curve: Curves.easeInOut,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: FlutterMap(
-        mapController:  _animatedMapController.mapController,
-        options: MapOptions(
-          center: kHomeCameraPosition.center,
-          zoom: kHomeCameraPosition.zoom,
-          rotation: kHomeCameraPosition.rotation,
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _animateToForestPark();
-        },
-        child: Icon(Icons.location_on),
-      ),
-    );
-  }
-
-  void _animateToForestPark() {
-    final dest = kHomeCameraPosition.center;
-    final zoom = kHomeCameraPosition.zoom;
-    final rotation = kHomeCameraPosition.rotation;
-    final curve = Curves.easeInOut;
-
-    _animatedMapController.animateTo(
-      dest: dest,
-      zoom: zoom,
-      rotation: rotation,
-      curve: curve,
-    );
-  }
 }
