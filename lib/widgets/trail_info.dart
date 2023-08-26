@@ -300,7 +300,7 @@ class TrailElevationGraph extends ConsumerWidget {
     for (final trail in trails) {
       for (final (i, distance) in trail.distances.indexed) {
         distances.add(distance+cumDistance);
-        if (i == trails.length-1) {
+        if (i == trail.distances.length-1) {
           cumDistance += distance;
         }
       }
