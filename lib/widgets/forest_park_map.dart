@@ -15,6 +15,7 @@ import 'package:forest_park_reports/models/relation.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
+import 'package:forest_park_reports/providers/map_cursor_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
 import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
@@ -196,6 +197,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
             )
           ),
         ),
+        const CursorMarkerLayer(),
       ],
       //TODO attribution, this one looks off
       // nonRotatedChildren: [
@@ -205,6 +207,31 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       //   ),
       // ],
     );
+  }
+}
+
+class CursorMarkerLayer extends ConsumerWidget {
+  const CursorMarkerLayer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cursor = ref.watch(mapCursorProvider);
+    if (cursor == null) {
+      return Container();
+    } else {
+      return MarkerLayer(
+        markers: [
+          Marker(
+            point: cursor,
+            builder: (_) => const Icon(
+              Icons.circle_outlined,
+              color: Colors.purple,
+              size: 16.0,
+            ),
+          ),
+        ],
+      );
+    }
   }
 }
 

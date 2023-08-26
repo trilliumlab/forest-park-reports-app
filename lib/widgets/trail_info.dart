@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
+import 'package:forest_park_reports/providers/map_cursor_provider.dart';
 import 'package:forest_park_reports/providers/relation_provider.dart';
+import 'package:forest_park_reports/util/fl_latlng_spot.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
@@ -293,7 +295,7 @@ class TrailElevationGraph extends ConsumerWidget {
         ...trail.geometry
     ];
 
-    // Create a distance map for the entire relation
+    // Create a distance list for the entire relation
     final distances = [];
     // Store the cumulative distance of all previous trails
     var cumDistance = 0.0;
@@ -312,12 +314,12 @@ class TrailElevationGraph extends ConsumerWidget {
     final Map<double, HazardModel?> hazardsMap = {};
     final List<FlSpot> spots = [];
     final filterInterval = max((geometry.length/kElevationMaxEntries).round(), 1);
-    for (final e in geometry.asMap().entries) {
-      if (e.key % filterInterval == 0) {
-        final distance = distances[e.key];
-        spots.add(FlSpot(distance, e.value.elevation));
+    for (final (i, coord) in geometry.indexed) {
+      if (i % filterInterval == 0) {
+        final distance = distances[i];
+        spots.add(FlCoordinateSpot(distance, coord.elevation, coord));
         hazardsMap[distance] =
-            activeHazards.firstWhereOrNull((h) => h.location.node == e.key);
+            activeHazards.firstWhereOrNull((h) => h.location.node == i);
       }
     }
     final maxInterval = distances.last/5;
@@ -350,7 +352,7 @@ class TrailElevationGraph extends ConsumerWidget {
                     lineBarsData: [
                       LineChartBarData(
                         spots: spots,
-                        isCurved: false,
+                        isCurved: true,
                         dotData: FlDotData(
                             checkToShowDot: (s, d) => hazardsMap[s.x] != null,
                             getDotPainter: (a, b, c, d) => FlDotCirclePainter(
@@ -360,6 +362,25 @@ class TrailElevationGraph extends ConsumerWidget {
                         ),
                       ),
                     ],
+                    lineTouchData: LineTouchData(
+                      touchCallback: (event, ltr) {
+                        // This is used to update the map cursor
+                        // When the graph is dragged, we update the cursor
+                        // When it is released, we clear it.
+                        if (event is FlPanDownEvent || event is FlPanUpdateEvent) {
+                          final lineTouch = ltr?.lineBarSpots?.firstOrNull;
+                          if (lineTouch != null) {
+                            final spot = spots[lineTouch.spotIndex];
+                            if (spot is FlCoordinateSpot) {
+                              ref.read(mapCursorProvider.notifier).set(spot.position);
+                            }
+                          }
+                        }
+                        if (event is FlLongPressEnd || event is FlPanEndEvent || event is FlTapUpEvent || event is FlTapUpEvent) {
+                          ref.read(mapCursorProvider.notifier).clear();
+                        }
+                      }
+                    ),
                     gridData: const FlGridData(show: false),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(

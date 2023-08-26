@@ -28,7 +28,7 @@ const kHomeCameraPosition = CameraPosition(
   zoom: 11.5,
 );
 
-const kElevationMaxEntries = 100;
+const kElevationMaxEntries = 200;
 
 // encoding consts
 const kElevationDeltaModifier = 4;
