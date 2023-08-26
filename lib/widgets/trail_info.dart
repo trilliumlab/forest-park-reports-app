@@ -284,6 +284,7 @@ class TrailElevationGraph extends ConsumerWidget {
     final trails = ref.watch(trailsProvider).valueOrNull?.where((t) =>
         relation.members.contains(t.id)).toList() ?? [];
     if (trails.isEmpty) { return _loading(); }
+    trails.sort((a, b) => relation.members.indexOf(a.id).compareTo(relation.members.indexOf(b.id)));
 
     // Gets all active hazards in the relation
     final activeHazards = ref.watch(activeHazardProvider)
@@ -367,7 +368,8 @@ class TrailElevationGraph extends ConsumerWidget {
                         // This is used to update the map cursor
                         // When the graph is dragged, we update the cursor
                         // When it is released, we clear it.
-                        if (event is FlPanDownEvent || event is FlPanUpdateEvent) {
+                        print(event);
+                        if (event is FlPanDownEvent || event is FlPanUpdateEvent || event is FlLongPressMoveUpdate) {
                           final lineTouch = ltr?.lineBarSpots?.firstOrNull;
                           if (lineTouch != null) {
                             final spot = spots[lineTouch.spotIndex];
