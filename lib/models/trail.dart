@@ -66,7 +66,7 @@ class TrailModel {
   late BoundsModel bounds;
   List<int> nodes = [];
   List<Coordinate> geometry = [];
-  List<double> distance = [0];
+  List<double> distances = [0];
   double maxElevation = 0;
   double minElevation = double.infinity;
   // tracks the elevation positive delta
@@ -167,8 +167,8 @@ class TrailModel {
       final coord = Coordinate(latitude, longitude, elevation);
       // calculate distance and add to array
       if (geometry.isNotEmpty) {
-        distance.add(
-            distance.last + haversine
+        distances.add(
+            distances.last + haversine
                 .as(LengthUnit.Mile, geometry.last, coord)
         );
       }

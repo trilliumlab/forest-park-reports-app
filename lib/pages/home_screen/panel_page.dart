@@ -155,7 +155,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
             child: Opacity(
               opacity: widget.panelController.snapWidgetOpacity,
               child: TrailElevationGraph(
-                trailID: selectedRelation.id,
+                relationID: selectedRelation.id,
                 height: widget.panelController.panelSnapHeight*0.6,
               ),
             ),

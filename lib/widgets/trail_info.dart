@@ -54,8 +54,8 @@ class TrailHazardsWidget extends ConsumerWidget {
                   HazardInfoWidget(
                     hazard: hazard,
                   )).toList(),
-              ) : const Center(
-                child: CupertinoActivityIndicator(),
+              ) : Center(
+                child: PlatformCircularProgressIndicator(),
               ),
           ),
         ),
@@ -256,37 +256,71 @@ class _TrailInfoWidgetState extends State<TrailInfoWidget> {
 }
 
 class TrailElevationGraph extends ConsumerWidget {
-  final int trailID;
+  final int relationID;
   final double height;
   const TrailElevationGraph({
     super.key,
-    required this.trailID,
+    required this.relationID,
     required this.height,
   });
+
+  Widget _loading() {
+    return Center(
+        child: PlatformCircularProgressIndicator()
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    // Gets the relation with relationID
+    final relation = ref.watch(relationsProvider).valueOrNull?.firstWhere((r) => r.id == relationID);
+    if (relation == null) { return _loading(); }
+
+    // Gets all trails that are part of the relation
+    final trails = ref.watch(trailsProvider).valueOrNull?.where((t) =>
+        relation.members.contains(t.id)).toList() ?? [];
+    if (trails.isEmpty) { return _loading(); }
+
+    // Gets all active hazards in the relation
     final activeHazards = ref.watch(activeHazardProvider)
-        .valueOrNull?.where((h) => h.location.trail == trailID) ?? [];
-    final trailData = ref.watch(trailsProvider).value?.get(trailID);
-    if (trailData == null) {
-      return Center(
-        child: PlatformCircularProgressIndicator()
-      );
+        .valueOrNull?.where((h) => relation.members.contains(h.location.trail)) ?? [];
+
+    // Construct the geometry of the entire relation
+    final geometry = [
+      for (final trail in trails)
+        ...trail.geometry
+    ];
+
+    // Create a distance map for the entire relation
+    final distances = [];
+    // Store the cumulative distance of all previous trails
+    var cumDistance = 0.0;
+    for (final trail in trails) {
+      for (final (i, distance) in trail.distances.indexed) {
+        distances.add(distance+cumDistance);
+        if (i == trails.length-1) {
+          cumDistance += distance;
+        }
+      }
     }
+
+    final maxElevation = trails.map((t) => t.maxElevation).reduce(max);
+    final minElevation = trails.map((t) => t.minElevation).reduce(min);
+
     final Map<double, HazardModel?> hazardsMap = {};
     final List<FlSpot> spots = [];
-    final filterInterval = max((trailData.geometry.length/kElevationMaxEntries).round(), 1);
-    for (final e in trailData.geometry.asMap().entries) {
+    final filterInterval = max((geometry.length/kElevationMaxEntries).round(), 1);
+    for (final e in geometry.asMap().entries) {
       if (e.key % filterInterval == 0) {
-        final distance = trailData.distance[e.key];
+        final distance = distances[e.key];
         spots.add(FlSpot(distance, e.value.elevation));
         hazardsMap[distance] =
             activeHazards.firstWhereOrNull((h) => h.location.node == e.key);
       }
     }
-    final maxInterval = trailData.distance.last/5;
+    final maxInterval = distances.last/5;
     final interval = maxInterval-maxInterval/20;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,8 +345,8 @@ class TrailElevationGraph extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
               child: LineChart(
                 LineChartData(
-                    maxY: (trailData.maxElevation/50).ceil() * 50.0,
-                    minY: (trailData.minElevation/50).floor() * 50.0,
+                    maxY: (maxElevation/50).ceil() * 50.0,
+                    minY: (minElevation/50).floor() * 50.0,
                     lineBarsData: [
                       LineChartBarData(
                         spots: spots,
