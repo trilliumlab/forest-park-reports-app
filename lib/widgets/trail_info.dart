@@ -18,14 +18,17 @@ import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 
 class TrailHazardsWidget extends ConsumerWidget {
-  final int trail;
-  const TrailHazardsWidget({super.key, required this.trail});
+  final int relationID;
+  const TrailHazardsWidget({super.key, required this.relationID});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final activeHazards = ref.watch(activeHazardProvider.select((hazards) =>
-        hazards.where((e) => e.location.trail == trail)));
+    final activeHazards = ref.watch(relationsProvider.selectAsync((relations) =>
+        relations.firstWhereOrNull((r) => r.id == relationID)))
+        .then((relation) => ref.watch(activeHazardProvider.select((hazards) =>
+        hazards.valueOrNull?.where((e) =>
+        relation?.members.contains(e.location.trail) ?? false))));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -44,10 +47,16 @@ class TrailHazardsWidget extends ConsumerWidget {
           elevation: 1,
           shadowColor: Colors.transparent,
           margin: EdgeInsets.zero,
-          child: Column(
-            children: activeHazards.map((hazard) => HazardInfoWidget(
-              hazard: hazard,
-            )).toList(),
+          child: FutureBuilder(
+            future: activeHazards,
+            builder: (context, activeHazards) => activeHazards.data != null ? Column(
+              children: activeHazards.data!.map((hazard) =>
+                  HazardInfoWidget(
+                    hazard: hazard,
+                  )).toList(),
+              ) : const Center(
+                child: CupertinoActivityIndicator(),
+              ),
           ),
         ),
       ],
@@ -259,7 +268,7 @@ class TrailElevationGraph extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activeHazards = ref.watch(activeHazardProvider)
-        .where((e) => e.location.trail == trailID);
+        .valueOrNull?.where((h) => h.location.trail == trailID) ?? [];
     final trailData = ref.watch(trailsProvider).value?.get(trailID);
     if (trailData == null) {
       return Center(

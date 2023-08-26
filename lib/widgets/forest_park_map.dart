@@ -81,7 +81,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       }
     });
 
-    final markers = ref.watch(activeHazardProvider).map((hazard) {
+    final markers = (ref.watch(activeHazardProvider).valueOrNull??[]).map((hazard) {
       late final HazardMarker marker;
       marker = HazardMarker(
         hazard: hazard,

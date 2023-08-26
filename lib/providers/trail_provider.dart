@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
-import 'package:forest_park_reports/models/relation.dart';
 import 'package:forest_park_reports/models/snapped_latlng.dart';
 import 'package:forest_park_reports/models/trail.dart';
 import 'package:forest_park_reports/providers/database_provider.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
-import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sembast/blob.dart';

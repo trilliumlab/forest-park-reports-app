@@ -165,7 +165,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
             child: Opacity(
               opacity: widget.panelController.fullWidgetOpacity,
               child: TrailHazardsWidget(
-                  trail: selectedRelation.id
+                  relationID: selectedRelation.id
               ),
             ),
           ),
