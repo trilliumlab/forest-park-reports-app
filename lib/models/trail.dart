@@ -169,7 +169,7 @@ class TrailModel {
       if (geometry.isNotEmpty) {
         distances.add(
             distances.last + haversine
-                .as(LengthUnit.Mile, geometry.last, coord)
+                .as(LengthUnit.Meter, geometry.last, coord)
         );
       }
       // add latlong to path

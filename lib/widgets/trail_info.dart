@@ -313,7 +313,7 @@ class TrailElevationGraph extends ConsumerWidget {
     final minElevation = trails.map((t) => t.minElevation).reduce(min);
 
     final Map<double, HazardModel?> hazardsMap = {};
-    final List<FlSpot> spots = [];
+    final List<FlCoordinateSpot> spots = [];
     final filterInterval = max((geometry.length/kElevationMaxEntries).round(), 1);
     for (final (i, coord) in geometry.indexed) {
       if (i % filterInterval == 0) {
@@ -368,51 +368,59 @@ class TrailElevationGraph extends ConsumerWidget {
                         // This is used to update the map cursor
                         // When the graph is dragged, we update the cursor
                         // When it is released, we clear it.
-                        print(event);
                         if (event is FlPanDownEvent || event is FlPanUpdateEvent || event is FlLongPressMoveUpdate) {
                           final lineTouch = ltr?.lineBarSpots?.firstOrNull;
                           if (lineTouch != null) {
                             final spot = spots[lineTouch.spotIndex];
-                            if (spot is FlCoordinateSpot) {
-                              ref.read(mapCursorProvider.notifier).set(spot.position);
-                            }
+                            ref.read(mapCursorProvider.notifier).set(spot.position);
                           }
                         }
                         if (event is FlLongPressEnd || event is FlPanEndEvent || event is FlTapUpEvent || event is FlTapUpEvent) {
                           ref.read(mapCursorProvider.notifier).clear();
                         }
-                      }
+                      },
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipItems: (touchedBarSpots) {
+                          return [
+                            for (final spot in touchedBarSpots)
+                              LineTooltipItem(
+                                '${spots[spot.spotIndex].y.toStringAsFixed(0)} m',
+                                theme.textTheme.labelLarge!,
+                              ),
+                          ];
+                        }
+                      ),
                     ),
                     gridData: const FlGridData(show: false),
                     borderData: FlBorderData(show: false),
                     titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(),
-                        rightTitles: const AxisTitles(),
-                        leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 65,
-                                // TODO add units to settings
-                                getTitlesWidget: (yVal, meta) {
-                                  return Text("${yVal.round().toString()} m");
-                                },
-                                interval: 50
-                            )
-                        ),
-                        bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (xVal, meta) {
-                                  final offInterval = (xVal % meta.appliedInterval);
-                                  final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
-                                  return isRegInterval ? Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text("${xVal.toStringRemoveTrailing(1)} mi"),
-                                  ) : Container();
-                                },
-                                interval: interval
-                            )
+                      topTitles: const AxisTitles(),
+                      rightTitles: const AxisTitles(),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 65,
+                            // TODO add units to settings
+                            getTitlesWidget: (yVal, meta) {
+                              return Text("${yVal.round().toString()} m");
+                            },
+                            interval: 50
                         )
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (xVal, meta) {
+                            final offInterval = (xVal % meta.appliedInterval);
+                            final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+                            return isRegInterval ? Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text("${(xVal/1000).toStringRemoveTrailing(1)} km"),
+                            ) : Container();
+                          },
+                          interval: interval
+                        )
+                      ),
                     )
                 ),
               ),

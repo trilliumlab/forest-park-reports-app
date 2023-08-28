@@ -147,6 +147,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         },
         maxZoom: 22,
       ),
+      //TODO attribution, this one looks off
+      // nonRotatedChildren: const [
+      //   SimpleAttributionWidget(
+      //       source: Text('OpenStreetMap contributors')
+      //   ),
+      // ],
       children: [
         TileLayer(
           tileProvider: FMTC.instance('forestPark').getTileProvider(),
@@ -199,13 +205,6 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         ),
         const CursorMarkerLayer(),
       ],
-      //TODO attribution, this one looks off
-      // nonRotatedChildren: [
-      //   AttributionWidget.defaultWidget(
-      //     source: 'OpenStreetMap contributors',
-      //     onSourceTapped: null,
-      //   ),
-      // ],
     );
   }
 }
