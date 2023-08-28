@@ -82,7 +82,7 @@ class Trails extends _$Trails {
       final geometry = trail.geometry;
       for (int i=0; i<geometry.length; i++) {
         final dist = _squareDist(loc, geometry[i]);
-        if (squareDist == null || dist < squareDist!) {
+        if (squareDist == null || dist < squareDist) {
           squareDist = dist;
           closestTrail = trail.id;
           closestLatLng = geometry[i];

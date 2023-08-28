@@ -10,6 +10,7 @@ import 'package:forest_park_reports/pages/home_screen/panel_page.dart';
 import 'package:forest_park_reports/providers/map_cursor_provider.dart';
 import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:forest_park_reports/util/fl_latlng_spot.dart';
+import 'package:forest_park_reports/util/math.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
@@ -274,6 +275,8 @@ class TrailElevationGraph extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    print("Rebuilt");
+
     final theme = Theme.of(context);
 
     // Gets the relation with relationID
@@ -290,21 +293,15 @@ class TrailElevationGraph extends ConsumerWidget {
     final activeHazards = ref.watch(activeHazardProvider)
         .valueOrNull?.where((h) => relation.members.contains(h.location.trail)) ?? [];
 
-    // Construct the geometry of the entire relation
-    final geometry = [
-      for (final trail in trails)
-        ...trail.geometry
-    ];
-
     // Create a distance list for the entire relation
     final distances = [];
     // Store the cumulative distance of all previous trails
-    var cumDistance = 0.0;
+    var cumulativeDistance = 0.0;
     for (final trail in trails) {
       for (final (i, distance) in trail.distances.indexed) {
-        distances.add(distance+cumDistance);
+        distances.add(distance+cumulativeDistance);
         if (i == trail.distances.length-1) {
-          cumDistance += distance;
+          cumulativeDistance += distance;
         }
       }
     }
@@ -312,17 +309,32 @@ class TrailElevationGraph extends ConsumerWidget {
     final maxElevation = trails.map((t) => t.maxElevation).reduce(max);
     final minElevation = trails.map((t) => t.minElevation).reduce(min);
 
-    final Map<double, HazardModel?> hazardsMap = {};
     final List<FlCoordinateSpot> spots = [];
-    final filterInterval = max((geometry.length/kElevationMaxEntries).round(), 1);
-    for (final (i, coord) in geometry.indexed) {
-      if (i % filterInterval == 0) {
-        final distance = distances[i];
-        spots.add(FlCoordinateSpot(distance, coord.elevation, coord));
-        hazardsMap[distance] =
-            activeHazards.firstWhereOrNull((h) => h.location.node == i);
+    final filterInterval = max((trails.map((t) => t.geometry.length).reduce(sum)/kElevationMaxEntries).round(), 1);
+    int i = 0;
+    for (final trail in trails) {
+      for (final (j, coord) in trail.geometry.indexed) {
+        final cumulativeI = i+j;
+        if (cumulativeI % filterInterval == 0) {
+          final distance = distances[cumulativeI];
+          spots.add(FlCoordinateSpot(
+            distance,
+            coord.elevation,
+            coord,
+            activeHazards.firstWhereOrNull((hazard) {
+              if (hazard.location.trail != trail.id) {
+                return false;
+              }
+              final difference = hazard.location.node - j;
+              final halfFilter = (filterInterval*0.5);
+              return -halfFilter < difference && difference <= halfFilter;
+            })
+          ));
+        }
       }
+      i += trail.geometry.length;
     }
+
     final maxInterval = distances.last/5;
     final interval = maxInterval-maxInterval/20;
     return Column(
@@ -346,83 +358,87 @@ class TrailElevationGraph extends ConsumerWidget {
             height: height,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-              child: LineChart(
-                LineChartData(
-                    maxY: (maxElevation/50).ceil() * 50.0,
-                    minY: (minElevation/50).floor() * 50.0,
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: spots,
-                        isCurved: true,
-                        dotData: FlDotData(
-                            checkToShowDot: (s, d) => hazardsMap[s.x] != null,
-                            getDotPainter: (a, b, c, d) => FlDotCirclePainter(
-                              color: CupertinoDynamicColor.resolve(CupertinoColors.destructiveRed, context),
-                              radius: 5,
-                            )
-                        ),
-                      ),
-                    ],
-                    lineTouchData: LineTouchData(
-                      touchCallback: (event, ltr) {
-                        // This is used to update the map cursor
-                        // When the graph is dragged, we update the cursor
-                        // When it is released, we clear it.
-                        if (event is FlPanDownEvent || event is FlPanUpdateEvent || event is FlLongPressMoveUpdate) {
-                          final lineTouch = ltr?.lineBarSpots?.firstOrNull;
-                          if (lineTouch != null) {
-                            final spot = spots[lineTouch.spotIndex];
-                            ref.read(mapCursorProvider.notifier).set(spot.position);
-                          }
-                        }
-                        if (event is FlLongPressEnd || event is FlPanEndEvent || event is FlTapUpEvent || event is FlTapUpEvent) {
-                          ref.read(mapCursorProvider.notifier).clear();
-                        }
-                      },
-                      touchTooltipData: LineTouchTooltipData(
-                        getTooltipItems: (touchedBarSpots) {
-                          return [
-                            for (final spot in touchedBarSpots)
-                              LineTooltipItem(
-                                '${spots[spot.spotIndex].y.toStringAsFixed(0)} m',
-                                theme.textTheme.labelLarge!,
-                              ),
-                          ];
-                        }
-                      ),
-                    ),
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(),
-                      rightTitles: const AxisTitles(),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 65,
-                            // TODO add units to settings
-                            getTitlesWidget: (yVal, meta) {
-                              return Text("${yVal.round().toString()} m");
-                            },
-                            interval: 50
-                        )
-                      ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (xVal, meta) {
-                            final offInterval = (xVal % meta.appliedInterval);
-                            final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
-                            return isRegInterval ? Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text("${(xVal/1000).toStringRemoveTrailing(1)} km"),
-                            ) : Container();
+              child: Builder(
+                builder: (context) {
+                  return LineChart(
+                    LineChartData(
+                        maxY: (maxElevation/50).ceil() * 50.0,
+                        minY: (minElevation/50).floor() * 50.0,
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: spots,
+                            isCurved: true,
+                            dotData: FlDotData(
+                              checkToShowDot: (s, d) => s is FlCoordinateSpot ? s.hazard != null : false,
+                              getDotPainter: (a, b, c, d) => FlDotCirclePainter(
+                                color: Colors.red,
+                                radius: 5,
+                              )
+                            ),
+                          ),
+                        ],
+                        lineTouchData: LineTouchData(
+                          touchCallback: (event, ltr) {
+                            // This is used to update the map cursor
+                            // When the graph is dragged, we update the cursor
+                            // When it is released, we clear it.
+                            if (event is FlPanDownEvent || event is FlPanUpdateEvent || event is FlLongPressMoveUpdate) {
+                              final lineTouch = ltr?.lineBarSpots?.firstOrNull;
+                              if (lineTouch != null) {
+                                final spot = spots[lineTouch.spotIndex];
+                                ref.read(mapCursorProvider.notifier).set(spot.position);
+                              }
+                            }
+                            if (event is FlLongPressEnd || event is FlPanEndEvent || event is FlTapUpEvent || event is FlTapUpEvent) {
+                              ref.read(mapCursorProvider.notifier).clear();
+                            }
                           },
-                          interval: interval
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipItems: (touchedBarSpots) {
+                              return [
+                                for (final spot in touchedBarSpots)
+                                  LineTooltipItem(
+                                    '${spots[spot.spotIndex].y.toStringAsFixed(0)} m',
+                                    theme.textTheme.labelLarge!,
+                                  ),
+                              ];
+                            }
+                          ),
+                        ),
+                        gridData: const FlGridData(show: false),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(),
+                          rightTitles: const AxisTitles(),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 65,
+                                // TODO add units to settings
+                                getTitlesWidget: (yVal, meta) {
+                                  return Text("${yVal.round().toString()} m");
+                                },
+                                interval: 50
+                            )
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (xVal, meta) {
+                                final offInterval = (xVal % meta.appliedInterval);
+                                final isRegInterval = (offInterval < 0.01 || offInterval > meta.appliedInterval - 0.01);
+                                return isRegInterval ? Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text("${(xVal/1000).toStringRemoveTrailing(1)} km"),
+                                ) : Container();
+                              },
+                              interval: interval
+                            )
+                          ),
                         )
-                      ),
-                    )
-                ),
+                    ),
+                  );
+                }
               ),
             ),
           ),
