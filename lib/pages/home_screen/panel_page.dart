@@ -4,9 +4,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/models/hazard_update.dart';
+import 'package:forest_park_reports/models/relation.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
+import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
@@ -30,10 +32,10 @@ class PanelPage extends ConsumerStatefulWidget {
 class _PanelPageState extends ConsumerState<PanelPage> {
   @override
   Widget build(BuildContext context) {
-    final selectedTrailID = ref.watch(selectedTrailProvider);
-    final selectedTrail = selectedTrailID == null ? null : ref.watch(trailsProvider).value?.get(selectedTrailID);
+    final selectedRelationID = ref.watch(selectedRelationProvider);
+    final selectedRelation = selectedRelationID == null ? null : ref.watch(relationsProvider).value?.get(selectedRelationID);
     final selectedHazard = ref.watch(selectedHazardProvider.select((h) => h.hazard));
-    final hazardTrail = selectedHazard == null ? null : ref.read(trailsProvider).value?.get(selectedHazard.location.trail);
+    final hazardRelation = selectedHazard == null ? null : ref.read(relationsProvider).value?.forTrail(selectedHazard.location.trail);
 
     HazardUpdateList? hazardUpdates;
     String? lastImage;
@@ -48,7 +50,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
         scrollController: widget.scrollController,
         panelController: widget.panelController,
         // TODO fetch trail name
-        title: "${selectedHazard.hazard.displayName} on ${hazardTrail!.tags["name"]}",
+        title: "${selectedHazard.hazard.displayName} on ${hazardRelation!.tags["name"]}",
         bottomWidget: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -142,18 +144,18 @@ class _PanelPageState extends ConsumerState<PanelPage> {
       ):
 
       // panel for when a trail is selected
-      selectedTrail != null ? TrailInfoWidget(
+      selectedRelation != null ? TrailInfoWidget(
         scrollController: widget.scrollController,
         panelController: widget.panelController,
         // TODO show real name
-        title: selectedTrail.tags["name"],
+        title: selectedRelation.tags["name"],
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Opacity(
               opacity: widget.panelController.snapWidgetOpacity,
               child: TrailElevationGraph(
-                trailID: selectedTrail.id,
+                relationID: selectedRelation.id,
                 height: widget.panelController.panelSnapHeight*0.6,
               ),
             ),
@@ -163,7 +165,7 @@ class _PanelPageState extends ConsumerState<PanelPage> {
             child: Opacity(
               opacity: widget.panelController.fullWidgetOpacity,
               child: TrailHazardsWidget(
-                  trail: selectedTrail.id
+                  relationID: selectedRelation.id
               ),
             ),
           ),

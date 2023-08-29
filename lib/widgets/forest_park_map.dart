@@ -4,7 +4,6 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -13,10 +12,13 @@ import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/models/hazard.dart';
+import 'package:forest_park_reports/models/relation.dart';
 import 'package:forest_park_reports/pages/home_screen.dart';
 import 'package:forest_park_reports/providers/hazard_provider.dart';
 import 'package:forest_park_reports/providers/location_provider.dart';
+import 'package:forest_park_reports/providers/map_cursor_provider.dart';
 import 'package:forest_park_reports/providers/panel_position_provider.dart';
+import 'package:forest_park_reports/providers/relation_provider.dart';
 import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/util/extensions.dart';
 import 'package:forest_park_reports/util/outline_box_shadow.dart';
@@ -85,38 +87,38 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       }
     });
 
-    final markers = ref.watch(activeHazardProvider).map((hazard) {
+    final markers = (ref.watch(activeHazardProvider).valueOrNull??[]).map((hazard) {
       late final HazardMarker marker;
       marker = HazardMarker(
         hazard: hazard,
         rotate: true,
         rotateOrigin: const Offset(15, 15),
         builder: (_) =>
-            GestureDetector(
-              onTap: () {
-                ref.read(selectedTrailProvider.notifier).deselect();
-                if (hazard == ref.read(selectedHazardProvider).hazard) {
-                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
-                  ref.read(selectedHazardProvider.notifier).deselect();
-                  _popupController.hideAllPopups();
-                } else {
-                  if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
-                    ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
-                  }
-                  ref.read(selectedHazardProvider.notifier).select(hazard);
-                  _popupController.showPopupsOnlyFor([marker]);
+          GestureDetector(
+            onTap: () {
+              ref.read(selectedRelationProvider.notifier).deselect();
+              if (hazard == ref.read(selectedHazardProvider).hazard) {
+                ref.read(panelPositionProvider.notifier).move(PanelPositionState.closed);
+                ref.read(selectedHazardProvider.notifier).deselect();
+                _popupController.hideAllPopups();
+              } else {
+                if (ref.read(panelPositionProvider).position == PanelPositionState.closed) {
+                  ref.read(panelPositionProvider.notifier).move(PanelPositionState.snapped);
                 }
-              },
-              child: Icon(
-                  Icons.warning_rounded,
-                  color: isMaterial(context)
-                      ? Theme
-                      .of(context)
-                      .colorScheme.error
-                      : CupertinoDynamicColor.resolve(
-                      CupertinoColors.destructiveRed, context)
-              ),
+                ref.read(selectedHazardProvider.notifier).select(hazard);
+                _popupController.showPopupsOnlyFor([marker]);
+              }
+            },
+            child: Icon(
+              Icons.warning_rounded,
+              color: isMaterial(context)
+                  ? Theme
+                  .of(context)
+                  .colorScheme.error
+                  : CupertinoDynamicColor.resolve(
+                  CupertinoColors.destructiveRed, context)
             ),
+          ),
       );
       return marker;
     }).toList();
@@ -150,6 +152,12 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         },
         maxZoom: 22,
       ),
+      //TODO attribution, this one looks off
+      // nonRotatedChildren: const [
+      //   SimpleAttributionWidget(
+      //       source: Text('OpenStreetMap contributors')
+      //   ),
+      // ],
       children: [
         TileLayer(
           tileProvider: FMTC.instance('forestPark').getTileProvider(),
@@ -157,13 +165,15 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
           // lightMode
           //     ? const Color(0xfff7f7f2)
           //     : const Color(0xff36475c),
-          urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
+          urlTemplate: "https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga",
+          //urlTemplate: "https://api.mapbox.com/styles/v1/ethemoose/cl5d12wdh009817p8igv5ippy/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
           // urlTemplate: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}@2x",
-          // urlTemplate: true
+          // urlTemplate: false
           //         ? "https://api.mapbox.com/styles/v1/ethemoose/cl55mcv4b004u15sbw36oqa8p/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}"
           //         : "https://api.mapbox.com/styles/v1/ethemoose/cl548b3a4000s15tkf8bbw2pt/tiles/512/{z}/{x}/{y}@2x?access_token=${dotenv.env["MAPBOX_KEY"]}",
-          maxNativeZoom: 22,
-          maxZoom: 22,
+          maxNativeZoom: 22-1,
+          maxZoom: 22-1,
+          retinaMode: true,
         ),
         // TODO render on top of everything (currently breaks tappable polyline)
         // we'll probably need to handle taps ourselves, shouldn't be too bad
@@ -199,42 +209,69 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
               )
           ),
         ),
+        const CursorMarkerLayer(),
       ],
-      //TODO attribution, this one looks off
-      // nonRotatedChildren: [
-      //   AttributionWidget.defaultWidget(
-      //     source: 'OpenStreetMap contributors',
-      //     onSourceTapped: null,
-      //   ),
-      // ],
     );
   }
 }
 
+class CursorMarkerLayer extends ConsumerWidget {
+  const CursorMarkerLayer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cursor = ref.watch(mapCursorProvider);
+    if (cursor == null) {
+      return Container();
+    } else {
+      return MarkerLayer(
+        markers: [
+          Marker(
+            point: cursor,
+            builder: (_) => const Icon(
+              Icons.circle,
+              color: Colors.grey,
+              size: 14.0,
+            ),
+          ),
+        ],
+      );
+    }
+  }
+}
 
 class TrailEndsMarkerLayer extends ConsumerWidget {
   const TrailEndsMarkerLayer({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trailID = ref.watch(selectedTrailProvider);
-    if (trailID == null) {
+    final relationID = ref.watch(selectedRelationProvider);
+    if (relationID == null) {
       return Container();
     }
 
-    final trail = ref.watch(trailsProvider).value?.get(trailID);
-    if (trail == null) {
+    final relation = ref.watch(relationsProvider).value?.get(relationID);
+    final trails = ref.watch(trailsProvider).value;
+
+    if (relation == null || trails == null) {
       return Container();
     }
 
-    final prevPoint = trail.geometry[trail.geometry.length-2];
-    final bearing = trail.geometry.last.bearingTo(prevPoint);
+    final firstTrail = trails.get(relation.members.first);
+    final lastTrail = trails.get(relation.members.last);
+
+    if (firstTrail == null || lastTrail == null) {
+      return Container();
+    }
+
+    final prevPoint = lastTrail.geometry[lastTrail.geometry.length-2];
+    final bearing = lastTrail.geometry.last.bearingTo(prevPoint);
 
     return MarkerLayer(
       markers: [
         // End marker
         Marker(
-          point: trail.geometry.last,
+          point: lastTrail.geometry.last,
           builder: (_) => RotationTransition(
             turns: AlwaysStoppedAnimation(bearing/(2*pi)),
             child: const Icon(
@@ -246,7 +283,7 @@ class TrailEndsMarkerLayer extends ConsumerWidget {
         ),
         // Start marker
         Marker(
-          point: trail.geometry.first,
+          point: firstTrail.geometry.first,
           builder: (_) => const Icon(
             Icons.circle,
             color: Colors.green,
@@ -263,13 +300,15 @@ class TrailPolylineLayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedTrail = ref.watch(selectedTrailProvider);
+    final selectedRelationID = ref.watch(selectedRelationProvider);
+    final relations = ref.watch(relationsProvider.select((value) => value.value));
     final trails = ref.watch(trailsProvider).value;
-    final polylineResolution = ref.watch(polylineResolutionProvider);
-
-    if (trails == null) {
+    if (relations == null || trails == null) {
       return Container();
     }
+    final selectedRelation = selectedRelationID == null ? null
+        : relations.get(selectedRelationID);
+    final polylineResolution = ref.watch(polylineResolutionProvider);
 
     return TappablePolylineLayer(
       // Will only render visible polylines, increasing performance
@@ -277,7 +316,7 @@ class TrailPolylineLayer extends ConsumerWidget {
       polylines: trails.map((trail) {
         final geometry = trail.getPath(polylineResolution);
 
-        return selectedTrail == trail.id ? TaggedPolyline(
+        return selectedRelation?.members.contains(trail.id) ?? false ? TaggedPolyline(
           tag: trail.id.toString(),
           points: geometry,
           strokeWidth: 1.0,
@@ -292,16 +331,16 @@ class TrailPolylineLayer extends ConsumerWidget {
         );
       }).whereNotNull().toList()..sort((a, b) {
         // sorts the list to have selected polylines at the top
-        return (a.tag == selectedTrail?.toString() ? 1 : 0) -
-            (b.tag == selectedTrail?.toString() ? 1 : 0);
+        return (selectedRelation?.members.contains(int.parse(a.tag ?? "-1")) ?? false ? 1 : 0) -
+            (selectedRelation?.members.contains(int.parse(b.tag ?? "-1")) ?? false ? 1 : 0);
       }),
       onTap: (polylines, tapPosition) {
         // deselect hazards
         ref.read(selectedHazardProvider.notifier).deselect();
 
         // select polyline
-        final tag = polylines.first.tag;
-        if (tag == selectedTrail?.toString()) {
+        final tag = int.parse(polylines.first.tag ?? "-1");
+        if (selectedRelation?.members.contains(tag) ?? false) {
           if (ref
               .read(panelPositionProvider)
               .position == PanelPositionState.open
@@ -310,13 +349,13 @@ class TrailPolylineLayer extends ConsumerWidget {
                 PanelPositionState.snapped);
           } else {
             ref.read(selectedHazardProvider.notifier).deselect();
-            ref.read(selectedTrailProvider.notifier).deselect();
+            ref.read(selectedRelationProvider.notifier).deselect();
             ref.read(panelPositionProvider.notifier).move(
                 PanelPositionState.closed);
           }
         } else {
-          ref.read(selectedTrailProvider.notifier)
-              .select(trails.firstWhere((e) => e.id.toString() == tag).id);
+          ref.read(selectedRelationProvider.notifier)
+              .select(relations.firstWhere((r) => r.members.contains(tag)).id);
           if (ref
               .read(panelPositionProvider)
               .position == PanelPositionState.closed) {
@@ -333,7 +372,7 @@ class TrailPolylineLayer extends ConsumerWidget {
               PanelPositionState.snapped);
         } else {
           ref.read(selectedHazardProvider.notifier).deselect();
-          ref.read(selectedTrailProvider.notifier).deselect();
+          ref.read(selectedRelationProvider.notifier).deselect();
           ref.read(panelPositionProvider.notifier).move(
               PanelPositionState.closed);
         }

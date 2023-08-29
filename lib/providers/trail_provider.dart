@@ -25,7 +25,7 @@ class PolylineResolution extends _$PolylineResolution {
 
 @riverpod
 class Trails extends _$Trails {
-  static final store = StoreRef<int, Blob>("trail_data");
+  static final store = StoreRef<int, Blob>("trails");
 
   @override
   Future<TrailList> build() async {
@@ -82,7 +82,7 @@ class Trails extends _$Trails {
       final geometry = trail.geometry;
       for (int i=0; i<geometry.length; i++) {
         final dist = _squareDist(loc, geometry[i]);
-        if (squareDist == null || dist < squareDist!) {
+        if (squareDist == null || dist < squareDist) {
           squareDist = dist;
           closestTrail = trail.id;
           closestLatLng = geometry[i];
@@ -98,47 +98,4 @@ class Trails extends _$Trails {
   double _squareDist(LatLng p1, LatLng p2) {
     return pow(p1.latitude-p2.latitude, 2) + pow(p1.longitude-p2.longitude, 2) as double;
   }
-}
-
-// @riverpod
-// class Trail extends _$Trail {
-//   static final store = StoreRef<int, Blob>("trail_data");
-//
-//   @override
-//   Future<TrailModel> build(int id) async {
-//     final db = await ref.watch(forestParkDatabaseProvider.future);
-//     final trailBlob = await store.record(id).get(db);
-//     if (trailBlob == null) {
-//       return await _fetch();
-//     }
-//     refresh();
-//     return TrailModel.decode(trailBlob.bytes);
-//   }
-//
-//   Future<TrailModel> _fetch() async {
-//     final res = await ref.read(dioProvider).get(
-//       "/trail/$id",
-//       options: Options(
-//           responseType: ResponseType.bytes
-//       ),
-//     );
-//
-//     final db = await ref.read(forestParkDatabaseProvider.future);
-//     store.record(id).add(db, Blob(res.data));
-//
-//     return TrailModel.decode(res.data);
-//   }
-//
-//   Future<void> refresh() async {
-//     state = AsyncData(await _fetch());
-//   }
-// }
-
-@riverpod
-class SelectedTrail extends _$SelectedTrail {
-  @override
-  int? build() => null;
-
-  void deselect() => state = null;
-  void select(int? selection) => state = selection;
 }

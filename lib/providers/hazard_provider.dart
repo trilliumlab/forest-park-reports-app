@@ -7,29 +7,72 @@ import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:forest_park_reports/models/hazard.dart';
 import 'package:forest_park_reports/models/hazard_update.dart';
+import 'package:forest_park_reports/providers/database_provider.dart';
 import 'package:forest_park_reports/providers/dio_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sembast/sembast.dart';
 
 part 'hazard_provider.g.dart';
 
 @riverpod
 class ActiveHazard extends _$ActiveHazard {
+  static final store = StoreRef<String, Map<String, dynamic>>("hazards");
+
   @override
-  List<HazardModel> build() {
-    refresh();
+  Future<List<HazardModel>> build() async {
+    final db = await ref.watch(forestParkDatabaseProvider.future);
+
+    final hazards = [
+      for (final hazard in await store.find(db))
+        HazardModel.fromJson(hazard.value)
+    ];
+
     Timer.periodic(
       const Duration(seconds: 10),
           (_) => refresh(),
     );
-    return [];
+
+    if (hazards.isNotEmpty) {
+      refresh();
+      return hazards;
+    }
+    return await _fetch();
   }
-  Future refresh() async {
+
+  Future<List<HazardModel>> _fetch() async {
     final res = await ref.read(dioProvider).get("/hazard/active");
-    state = [
-      for (final val in res.data)
-        HazardModel.fromJson(val)
+
+    final hazards = [
+      for (final hazard in res.data)
+        HazardModel.fromJson(hazard)
     ];
+
+    final db = await ref.read(forestParkDatabaseProvider.future);
+    for (final hazard in hazards) {
+      store.record(hazard.uuid).add(db, hazard.toJson());
+    }
+
+    return hazards;
   }
+
+  Future<void> refresh() async {
+    state = AsyncData(await _fetch());
+  }
+
+  Future<void> create(HazardRequestModel request) async {
+    final res = await ref.read(dioProvider).post("/hazard/new", data: request.toJson());
+    final hazard = HazardModel.fromJson(res.data);
+
+    state = AsyncData([
+      if (state.hasValue)
+        ...state.requireValue,
+      hazard
+    ]);
+
+    final db = await ref.read(forestParkDatabaseProvider.future);
+    store.record(hazard.uuid).add(db, hazard.toJson());
+  }
+
   Future<String?> uploadImage(XFile file, {void Function(int, int)? onSendProgress}) async {
     final image = await FlutterImageCompress.compressWithFile(
         file.path,
@@ -50,10 +93,6 @@ class ActiveHazard extends _$ActiveHazard {
         onSendProgress: onSendProgress
     );
     return res.data['uuid'];
-  }
-  Future create(HazardRequestModel request) async {
-    final res = await ref.read(dioProvider).post("/hazard/new", data: request.toJson());
-    state = [...state, HazardModel.fromJson(res.data)];
   }
 }
 
