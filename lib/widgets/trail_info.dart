@@ -275,8 +275,6 @@ class TrailElevationGraph extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print("Rebuilt");
-
     final theme = Theme.of(context);
 
     // Gets the relation with relationID
@@ -369,7 +367,11 @@ class TrailElevationGraph extends ConsumerWidget {
                             spots: spots,
                             isCurved: true,
                             dotData: FlDotData(
-                              checkToShowDot: (s, d) => s is FlCoordinateSpot ? s.hazard != null : false,
+                              checkToShowDot: (s, d) {
+                                final coordSpot = s is FlCoordinateSpot
+                                    ? s : spots[d.spots.indexOf(s)];
+                                return coordSpot.hazard != null;
+                              },
                               getDotPainter: (a, b, c, d) => FlDotCirclePainter(
                                 color: Colors.red,
                                 radius: 5,
