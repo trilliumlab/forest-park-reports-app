@@ -203,36 +203,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     },
                     child: PlatformWidget(
-                      cupertino: (_, __) {
-                        IconData iconData;
-                        Color iconColor;
+                      cupertino: (_, __) => Icon(
                         switch (followOnLocationTarget) {
-                          case FollowOnLocationTargetState.currentLocation:
-                            iconData = CupertinoIcons.location_fill;
-                            break;
-                          case FollowOnLocationTargetState.none:
-                            iconData = CupertinoIcons.location;
-                            break;
-                          case FollowOnLocationTargetState.forestPark:
-                            iconData = CupertinoIcons.arrow_branch;
-                            break;
-                          default:
-                            iconData = const IconData(
-                              0xf6ee,
-                              fontFamily: CupertinoIcons.iconFont,
-                              fontPackage: CupertinoIcons.iconFontPackage,
-                            );
-                        }
-                        return Icon(
-                          iconData,
-                          color: Color.fromARGB(255, 99, 99, 102),
-                        );
-                      },
+                          FollowOnLocationTargetState.currentLocation =>
+                            CupertinoIcons.location_fill,
+                          FollowOnLocationTargetState.none =>
+                            CupertinoIcons.location,
+                          FollowOnLocationTargetState.forestPark =>
+                            Icons.park,
+                        },
+                        color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
+                            ? CupertinoColors.systemGrey.highContrastColor
+                            : CupertinoColors.systemGrey.darkHighContrastColor
+                      ),
                       material: (_, __) => Icon(
-                        Icons.my_location_rounded,
-                        color: followOnLocationTarget == FollowOnLocationTargetState.currentLocation && followOnLocationTarget == FollowOnLocationTargetState.none && followOnLocationTarget == FollowOnLocationTargetState.forestPark
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onBackground,
+                        followOnLocationTarget == FollowOnLocationTargetState.forestPark
+                            ? Icons.park
+                            : Icons.my_location_rounded,
+                        color: followOnLocationTarget == FollowOnLocationTargetState.none
+                            ? theme.colorScheme.onBackground
+                            : theme.colorScheme.primary,
                       ),
                     ),
                   );
