@@ -223,9 +223,9 @@ class CursorMarkerLayer extends ConsumerWidget {
           Marker(
             point: cursor,
             builder: (_) => const Icon(
-              Icons.star,
-              color: Colors.purple,
-              size: 16.0,
+              Icons.circle,
+              color: Colors.grey,
+              size: 14.0,
             ),
           ),
         ],
