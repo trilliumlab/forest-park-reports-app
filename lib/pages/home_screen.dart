@@ -23,6 +23,7 @@ import 'package:forest_park_reports/providers/trail_provider.dart';
 import 'package:forest_park_reports/widgets/forest_park_map.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
+import '../providers/follow_on_location_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -30,13 +31,6 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
-// this stores whether camera follows the gps location. This will be set to
-// false by panning the camera. when not stickied, pressing the sticky button
-// will animate the camera to the current gps location and set sticky to true
-final followOnLocationProvider = StateProvider<FollowOnLocationUpdate>(
-    (ref) => FollowOnLocationUpdate.never
-);
 
 class ScreenPanelController extends PanelController {
   // utility functions
@@ -167,10 +161,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: PlatformWidget(
                         cupertino: (_, __) => Icon(
                           // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                          CupertinoIcons.add,
-                          color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
-                              ? CupertinoColors.systemGrey.highContrastColor
-                              : CupertinoColors.systemGrey.darkHighContrastColor
+                            CupertinoIcons.add,
+                            color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
+                                ? CupertinoColors.systemGrey.highContrastColor
+                                : CupertinoColors.systemGrey.darkHighContrastColor
                         ),
                         material: (_, __) => Icon(
                           Icons.add,
@@ -186,37 +180,49 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: (isCupertino(context) ? _panelController.panelHeight - 18 : _panelController.panelHeight) + 80,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final followOnLocation = ref.watch(followOnLocationProvider);
+                  final followOnLocationTarget = ref.watch(followOnLocationTargetProvider);
                   return PlatformFAB(
                     onPressed: () async {
                       final status = await ref.read(locationPermissionStatusProvider.notifier).checkPermission();
                       if (!mounted) return;
                       if (status.permission.authorized) {
-                        ref.read(followOnLocationProvider.notifier)
-                            .update((state) => FollowOnLocationUpdate.always);
+                        switch (followOnLocationTarget) {
+                          case FollowOnLocationTargetState.none:
+                            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.currentLocation);
+                          case FollowOnLocationTargetState.currentLocation:
+                            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.forestPark);
+                          case FollowOnLocationTargetState.forestPark:
+                            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.currentLocation);
+                        }
                       } else {
                         showMissingPermissionDialog(
-                            context,
-                            'Location Required',
-                            'Location permission is required to jump to current location'
+                          context,
+                          'Location Required',
+                          'Location permission is required to jump to the current location',
                         );
                       }
                     },
                     child: PlatformWidget(
                       cupertino: (_, __) => Icon(
-                        // Fix for bug in cupertino_icons package, should be CupertinoIcons.location
-                        followOnLocation == FollowOnLocationUpdate.always
-                            ? CupertinoIcons.location_fill
-                            : const IconData(0xf6ee, fontFamily: CupertinoIcons.iconFont, fontPackage: CupertinoIcons.iconFontPackage),
+                        switch (followOnLocationTarget) {
+                          FollowOnLocationTargetState.currentLocation =>
+                            CupertinoIcons.location_fill,
+                          FollowOnLocationTargetState.none =>
+                            CupertinoIcons.location,
+                          FollowOnLocationTargetState.forestPark =>
+                            Icons.park,
+                        },
                         color: View.of(context).platformDispatcher.platformBrightness == Brightness.light
                             ? CupertinoColors.systemGrey.highContrastColor
                             : CupertinoColors.systemGrey.darkHighContrastColor
                       ),
                       material: (_, __) => Icon(
-                        Icons.my_location_rounded,
-                        color: followOnLocation == FollowOnLocationUpdate.always
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onBackground
+                        followOnLocationTarget == FollowOnLocationTargetState.forestPark
+                            ? Icons.park
+                            : Icons.my_location_rounded,
+                        color: followOnLocationTarget == FollowOnLocationTargetState.none
+                            ? theme.colorScheme.onBackground
+                            : theme.colorScheme.primary,
                       ),
                     ),
                   );
@@ -229,7 +235,6 @@ class _HomeScreenState extends State<HomeScreen> {
             top: kIosStatusBarHeight + kFabPadding,
             child: Consumer(
                 builder: (context, ref, child) {
-                  final followOnLocation = ref.watch(followOnLocationProvider);
                   return PlatformFAB(
                     onPressed: () async {
                       final db = await ref.read(forestParkDatabaseProvider.future);
@@ -244,8 +249,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               : CupertinoColors.systemGrey.darkHighContrastColor
                       ),
                       material: (_, __) => Icon(
-                          Icons.settings,
-                          color: theme.colorScheme.onBackground,
+                        Icons.settings,
+                        color: theme.colorScheme.onBackground,
                       ),
                     ),
                   );

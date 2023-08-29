@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:flutter_map_tappable_polyline/flutter_map_tappable_polyline.dart';
@@ -24,6 +25,7 @@ import 'package:forest_park_reports/util/outline_box_shadow.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
+import '../providers/follow_on_location_provider.dart';
 
 class ForestParkMap extends ConsumerStatefulWidget {
   const ForestParkMap({Key? key}) : super(key: key);
@@ -32,25 +34,29 @@ class ForestParkMap extends ConsumerStatefulWidget {
   ConsumerState<ForestParkMap> createState() => _ForestParkMapState();
 }
 
-class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver {
+class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindingObserver, TickerProviderStateMixin{
   // TODO add satallite map style
-  late final MapController _mapController;
   late final PopupController _popupController;
   late StreamController<double?> _followCurrentLocationStreamController;
+  late final AnimatedMapController _animatedMapController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _mapController = MapController();
     _popupController = PopupController();
     _followCurrentLocationStreamController = StreamController<double?>();
+    _animatedMapController = AnimatedMapController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _mapController.dispose();
+    _animatedMapController.mapController.dispose();
     _followCurrentLocationStreamController.close();
     super.dispose();
   }
@@ -74,11 +80,10 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
     // the provider is updated
     // final parkTrails = ref.watch(parkTrailsProvider);
     final locationStatus = ref.watch(locationPermissionStatusProvider);
-
-    final followOnLocation = ref.watch(followOnLocationProvider);
-    ref.listen(followOnLocationProvider, (prev, next) {
-      if (next != prev && next != FollowOnLocationUpdate.never) {
+    ref.listen(followOnLocationTargetProvider, (prev, next) {
+      if (next==FollowOnLocationTargetState.forestPark){
         _followCurrentLocationStreamController.add(null);
+        _animatedMapController.centerOnPoint(kHomeCameraPosition.center, zoom: kHomeCameraPosition.zoom);
       }
     });
 
@@ -124,13 +129,13 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
       } else {
         _popupController.showPopupsOnlyFor(markers.where((e) => e.hazard == next.hazard).toList());
         if (next.moveCamera) {
-          _mapController.move(next.hazard!.location, _mapController.zoom);
+          _animatedMapController.centerOnPoint(next.hazard!.location);
         }
       }
     });
 
     return FlutterMap(
-      mapController: _mapController,
+      mapController: _animatedMapController.mapController,
       options: MapOptions(
         center: kHomeCameraPosition.center,
         zoom: kHomeCameraPosition.zoom,
@@ -142,7 +147,7 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
                     .updateZoom(position.zoom!));
           }
           if (hasGesture) {
-            ref.read(followOnLocationProvider.notifier).update((state) => FollowOnLocationUpdate.never);
+            ref.read(followOnLocationTargetProvider.notifier).update(FollowOnLocationTargetState.none);
           }
         },
         maxZoom: 22,
@@ -174,33 +179,34 @@ class _ForestParkMapState extends ConsumerState<ForestParkMap> with WidgetsBindi
         // we'll probably need to handle taps ourselves, shouldn't be too bad
         if (locationStatus.permission.authorized)
           Consumer(
-            builder: (context, ref, _) {
-              final positionStream = ref.watch(locationProvider.stream);
-              return CurrentLocationLayer(
-                followCurrentLocationStream: _followCurrentLocationStreamController.stream,
-                followOnLocationUpdate: followOnLocation,
-                positionStream: positionStream.map((p) => p.locationMarkerPosition()),
-                // Only enable heading on mobile
-                // headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
-                headingStream: positionStream.map((p) => p.locationMarkerHeading()),
-              );
-            }
+              builder: (context, ref, _) {
+                final positionStream = ref.watch(locationProvider.stream);
+                final followOnLocationTarget = ref.watch(followOnLocationTargetProvider);
+                return CurrentLocationLayer(
+                  followCurrentLocationStream: _followCurrentLocationStreamController.stream,
+                  followOnLocationUpdate: followOnLocationTarget.update,
+                  positionStream: positionStream.map((p) => p.locationMarkerPosition()),
+                  // Only enable heading on mobile
+                  // headingStream: (Platform.isAndroid || Platform.isIOS) ? null : const Stream.empty(),
+                  headingStream: positionStream.map((p) => p.locationMarkerHeading()),
+                );
+              }
           ),
         const TrailPolylineLayer(),
         const TrailEndsMarkerLayer(),
         PopupMarkerLayer(
           options: PopupMarkerLayerOptions(
-            popupController: _popupController,
-            markers: markers,
-            popupDisplayOptions: PopupDisplayOptions(
-              builder: (_, marker) {
-                if (marker is HazardMarker) {
-                  return HazardInfoPopup(hazard: marker.hazard);
-                }
-                return Container();
-              },
-              animation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
-            )
+              popupController: _popupController,
+              markers: markers,
+              popupDisplayOptions: PopupDisplayOptions(
+                builder: (_, marker) {
+                  if (marker is HazardMarker) {
+                    return HazardInfoPopup(hazard: marker.hazard);
+                  }
+                  return Container();
+                },
+                animation: const PopupAnimation.fade(duration: Duration(milliseconds: 100)),
+              )
           ),
         ),
         const CursorMarkerLayer(),
