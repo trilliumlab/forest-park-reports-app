@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 //const kApiUrl = "https://forestpark.elliotnash.org/api/v1";
-//const kApiUrl = "https://forestpark-staging.elliotnash.org/api/v1";
+const kApiUrl = "https://forestpark.cecs.pdx.edu/staging/v1";
 //const kApiUrl = "http://192.168.0.102:8000/api/v1";
-const kApiUrl = "http://localhost:8000/";
+//const kApiUrl = "http://localhost:8000/";
 
 // This is for development only and needs to be set to null before a release
 // TODO Maybe move this over to the settings page or only set on debug
