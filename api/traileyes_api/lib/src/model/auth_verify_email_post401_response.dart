@@ -3,9 +3,9 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:openapi/src/model/auth_session_meta_get401_response.dart';
 import 'package:built_collection/built_collection.dart';
-import 'package:openapi/src/model/auth_login_post401_response.dart';
+import 'package:traileyes_api/src/model/auth_session_meta_get401_response.dart';
+import 'package:traileyes_api/src/model/auth_login_post401_response.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:one_of/one_of.dart';
@@ -89,7 +89,7 @@ class _$AuthVerifyEmailPost401ResponseSerializer
 }
 
 class AuthVerifyEmailPost401ResponseStatusCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'401')
+  @BuiltValueEnumConst(wireName: r'401', fallback: true)
   static const AuthVerifyEmailPost401ResponseStatusCodeEnum n401 =
       _$authVerifyEmailPost401ResponseStatusCodeEnum_n401;
 
@@ -107,7 +107,7 @@ class AuthVerifyEmailPost401ResponseStatusCodeEnum extends EnumClass {
 }
 
 class AuthVerifyEmailPost401ResponseErrorEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'Unauthorized')
+  @BuiltValueEnumConst(wireName: r'Unauthorized', fallback: true)
   static const AuthVerifyEmailPost401ResponseErrorEnum unauthorized =
       _$authVerifyEmailPost401ResponseErrorEnum_unauthorized;
 
@@ -123,7 +123,7 @@ class AuthVerifyEmailPost401ResponseErrorEnum extends EnumClass {
 }
 
 class AuthVerifyEmailPost401ResponseCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'INVALID_CREDENTIALS')
+  @BuiltValueEnumConst(wireName: r'INVALID_CREDENTIALS', fallback: true)
   static const AuthVerifyEmailPost401ResponseCodeEnum INVALID_CREDENTIALS =
       _$authVerifyEmailPost401ResponseCodeEnum_INVALID_CREDENTIALS;
 

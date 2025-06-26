@@ -1,8 +1,8 @@
-# openapi.model.AuthVerifyEmailPostRequest
+# traileyes_api.model.AuthVerifyEmailPostRequest
 
 ## Load the model package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 ## Properties

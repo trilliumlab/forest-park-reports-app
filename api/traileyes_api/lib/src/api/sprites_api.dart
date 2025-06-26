@@ -9,9 +9,9 @@ import 'package:dio/dio.dart';
 
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/json_object.dart';
-import 'package:openapi/src/api_util.dart';
-import 'package:openapi/src/model/auth_session_meta_get500_response.dart';
-import 'package:openapi/src/model/sprites_path_json_get200_response_value.dart';
+import 'package:traileyes_api/src/api_util.dart';
+import 'package:traileyes_api/src/model/auth_session_meta_get500_response.dart';
+import 'package:traileyes_api/src/model/sprites_path_json_get200_response_value.dart';
 
 class SpritesApi {
   final Dio _dio;

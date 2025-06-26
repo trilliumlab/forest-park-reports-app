@@ -1,8 +1,8 @@
-# openapi.api.SpritesApi
+# traileyes_api.api.SpritesApi
 
 ## Load the API package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 All URIs are relative to *http://localhost*
@@ -20,9 +20,9 @@ Get a sprite
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getSpritesApi();
+final api = TraileyesApi().getSpritesApi();
 final String path = path_example; // String | 
 
 try {
@@ -61,9 +61,9 @@ Get a sprite
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getSpritesApi();
+final api = TraileyesApi().getSpritesApi();
 final String path = path_example; // String | 
 
 try {

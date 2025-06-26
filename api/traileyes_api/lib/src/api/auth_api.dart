@@ -8,17 +8,17 @@ import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:openapi/src/model/auth_get_verification_meta_get200_response.dart';
-import 'package:openapi/src/model/auth_login_post200_response.dart';
-import 'package:openapi/src/model/auth_login_post401_response.dart';
-import 'package:openapi/src/model/auth_login_post_request.dart';
-import 'package:openapi/src/model/auth_register_post409_response.dart';
-import 'package:openapi/src/model/auth_register_post_request.dart';
-import 'package:openapi/src/model/auth_session_meta_get200_response.dart';
-import 'package:openapi/src/model/auth_session_meta_get401_response.dart';
-import 'package:openapi/src/model/auth_session_meta_get500_response.dart';
-import 'package:openapi/src/model/auth_verify_email_post401_response.dart';
-import 'package:openapi/src/model/auth_verify_email_post_request.dart';
+import 'package:traileyes_api/src/model/auth_get_verification_meta_get200_response.dart';
+import 'package:traileyes_api/src/model/auth_login_post200_response.dart';
+import 'package:traileyes_api/src/model/auth_login_post401_response.dart';
+import 'package:traileyes_api/src/model/auth_login_post_request.dart';
+import 'package:traileyes_api/src/model/auth_register_post409_response.dart';
+import 'package:traileyes_api/src/model/auth_register_post_request.dart';
+import 'package:traileyes_api/src/model/auth_session_meta_get200_response.dart';
+import 'package:traileyes_api/src/model/auth_session_meta_get401_response.dart';
+import 'package:traileyes_api/src/model/auth_session_meta_get500_response.dart';
+import 'package:traileyes_api/src/model/auth_verify_email_post401_response.dart';
+import 'package:traileyes_api/src/model/auth_verify_email_post_request.dart';
 
 class AuthApi {
   final Dio _dio;

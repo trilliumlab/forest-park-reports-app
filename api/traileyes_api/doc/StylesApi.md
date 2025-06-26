@@ -1,8 +1,8 @@
-# openapi.api.StylesApi
+# traileyes_api.api.StylesApi
 
 ## Load the API package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 All URIs are relative to *http://localhost*
@@ -20,9 +20,9 @@ Get dark style
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getStylesApi();
+final api = TraileyesApi().getStylesApi();
 final String key = key_example; // String | 
 final bool mobile = true; // bool | 
 
@@ -63,9 +63,9 @@ Get light style
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getStylesApi();
+final api = TraileyesApi().getStylesApi();
 final String key = key_example; // String | 
 final bool mobile = true; // bool | 
 

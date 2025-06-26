@@ -173,7 +173,7 @@ class _$AuthSessionMetaGet401ResponseSerializer
 }
 
 class AuthSessionMetaGet401ResponseStatusCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'401')
+  @BuiltValueEnumConst(wireName: r'401', fallback: true)
   static const AuthSessionMetaGet401ResponseStatusCodeEnum n401 =
       _$authSessionMetaGet401ResponseStatusCodeEnum_n401;
 
@@ -190,7 +190,7 @@ class AuthSessionMetaGet401ResponseStatusCodeEnum extends EnumClass {
 }
 
 class AuthSessionMetaGet401ResponseErrorEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'Unauthorized')
+  @BuiltValueEnumConst(wireName: r'Unauthorized', fallback: true)
   static const AuthSessionMetaGet401ResponseErrorEnum unauthorized =
       _$authSessionMetaGet401ResponseErrorEnum_unauthorized;
 
@@ -206,7 +206,7 @@ class AuthSessionMetaGet401ResponseErrorEnum extends EnumClass {
 }
 
 class AuthSessionMetaGet401ResponseCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'INVALID_SESSION')
+  @BuiltValueEnumConst(wireName: r'INVALID_SESSION', fallback: true)
   static const AuthSessionMetaGet401ResponseCodeEnum INVALID_SESSION =
       _$authSessionMetaGet401ResponseCodeEnum_INVALID_SESSION;
 

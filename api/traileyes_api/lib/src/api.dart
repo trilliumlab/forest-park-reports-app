@@ -4,23 +4,23 @@
 
 import 'package:dio/dio.dart';
 import 'package:built_value/serializer.dart';
-import 'package:openapi/src/serializers.dart';
-import 'package:openapi/src/auth/api_key_auth.dart';
-import 'package:openapi/src/auth/basic_auth.dart';
-import 'package:openapi/src/auth/bearer_auth.dart';
-import 'package:openapi/src/auth/oauth.dart';
-import 'package:openapi/src/api/auth_api.dart';
-import 'package:openapi/src/api/geojson_api.dart';
-import 'package:openapi/src/api/sprites_api.dart';
-import 'package:openapi/src/api/styles_api.dart';
+import 'package:traileyes_api/src/serializers.dart';
+import 'package:traileyes_api/src/auth/api_key_auth.dart';
+import 'package:traileyes_api/src/auth/basic_auth.dart';
+import 'package:traileyes_api/src/auth/bearer_auth.dart';
+import 'package:traileyes_api/src/auth/oauth.dart';
+import 'package:traileyes_api/src/api/auth_api.dart';
+import 'package:traileyes_api/src/api/geojson_api.dart';
+import 'package:traileyes_api/src/api/sprites_api.dart';
+import 'package:traileyes_api/src/api/styles_api.dart';
 
-class Openapi {
+class TraileyesApi {
   static const String basePath = r'http://localhost';
 
   final Dio dio;
   final Serializers serializers;
 
-  Openapi({
+  TraileyesApi({
     Dio? dio,
     Serializers? serializers,
     String? basePathOverride,

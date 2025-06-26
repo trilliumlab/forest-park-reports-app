@@ -1,8 +1,8 @@
-# openapi.api.AuthApi
+# traileyes_api.api.AuthApi
 
 ## Load the API package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 All URIs are relative to *http://localhost*
@@ -25,9 +25,9 @@ Get enabled second factors
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 
 try {
     final response = api.authEnabledSecondFactorsGet();
@@ -62,9 +62,9 @@ Get verification metadata
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 
 try {
     final response = api.authGetVerificationMetaGet();
@@ -99,9 +99,9 @@ Login a user
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 final AuthLoginPostRequest authLoginPostRequest = ; // AuthLoginPostRequest | Body
 
 try {
@@ -140,9 +140,9 @@ Register a new user
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 final AuthRegisterPostRequest authRegisterPostRequest = ; // AuthRegisterPostRequest | Body
 
 try {
@@ -182,9 +182,9 @@ Sends a verification email to the user's email address. If a code has been sent 
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 
 try {
     final response = api.authSendVerificationPost();
@@ -219,9 +219,9 @@ Get session metadata
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 
 try {
     final response = api.authSessionMetaGet();
@@ -256,9 +256,9 @@ Verify email
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getAuthApi();
+final api = TraileyesApi().getAuthApi();
 final AuthVerifyEmailPostRequest authVerifyEmailPostRequest = ; // AuthVerifyEmailPostRequest | Body
 
 try {

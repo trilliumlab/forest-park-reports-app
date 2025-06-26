@@ -1,8 +1,8 @@
-# openapi.model.AuthRegisterPostRequest
+# traileyes_api.model.AuthRegisterPostRequest
 
 ## Load the model package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 ## Properties

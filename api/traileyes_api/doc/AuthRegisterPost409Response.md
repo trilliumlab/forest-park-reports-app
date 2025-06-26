@@ -1,8 +1,8 @@
-# openapi.model.AuthRegisterPost409Response
+# traileyes_api.model.AuthRegisterPost409Response
 
 ## Load the model package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 ## Properties

@@ -1,8 +1,8 @@
-# openapi.model.AuthSessionMetaGet401Response
+# traileyes_api.model.AuthSessionMetaGet401Response
 
 ## Load the model package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 ## Properties

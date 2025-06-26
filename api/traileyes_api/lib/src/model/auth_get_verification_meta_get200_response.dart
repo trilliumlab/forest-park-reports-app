@@ -3,8 +3,8 @@
 //
 
 // ignore_for_file: unused_element
-import 'package:openapi/src/model/auth_get_verification_meta_get200_response_one_of1.dart';
-import 'package:openapi/src/model/auth_get_verification_meta_get200_response_one_of.dart';
+import 'package:traileyes_api/src/model/auth_get_verification_meta_get200_response_one_of.dart';
+import 'package:traileyes_api/src/model/auth_get_verification_meta_get200_response_one_of1.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 import 'package:one_of/one_of.dart';

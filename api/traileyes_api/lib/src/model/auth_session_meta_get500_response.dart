@@ -173,7 +173,7 @@ class _$AuthSessionMetaGet500ResponseSerializer
 }
 
 class AuthSessionMetaGet500ResponseStatusCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'500')
+  @BuiltValueEnumConst(wireName: r'500', fallback: true)
   static const AuthSessionMetaGet500ResponseStatusCodeEnum n500 =
       _$authSessionMetaGet500ResponseStatusCodeEnum_n500;
 
@@ -190,7 +190,7 @@ class AuthSessionMetaGet500ResponseStatusCodeEnum extends EnumClass {
 }
 
 class AuthSessionMetaGet500ResponseErrorEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'Internal Server Error')
+  @BuiltValueEnumConst(wireName: r'Internal Server Error', fallback: true)
   static const AuthSessionMetaGet500ResponseErrorEnum internalServerError =
       _$authSessionMetaGet500ResponseErrorEnum_internalServerError;
 

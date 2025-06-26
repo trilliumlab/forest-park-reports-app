@@ -1,8 +1,8 @@
-# openapi.model.SpritesPathJsonGet200ResponseValue
+# traileyes_api.model.SpritesPathJsonGet200ResponseValue
 
 ## Load the model package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 ## Properties

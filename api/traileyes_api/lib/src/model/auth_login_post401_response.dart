@@ -169,7 +169,7 @@ class _$AuthLoginPost401ResponseSerializer
 }
 
 class AuthLoginPost401ResponseStatusCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'401')
+  @BuiltValueEnumConst(wireName: r'401', fallback: true)
   static const AuthLoginPost401ResponseStatusCodeEnum n401 =
       _$authLoginPost401ResponseStatusCodeEnum_n401;
 
@@ -185,7 +185,7 @@ class AuthLoginPost401ResponseStatusCodeEnum extends EnumClass {
 }
 
 class AuthLoginPost401ResponseErrorEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'Unauthorized')
+  @BuiltValueEnumConst(wireName: r'Unauthorized', fallback: true)
   static const AuthLoginPost401ResponseErrorEnum unauthorized =
       _$authLoginPost401ResponseErrorEnum_unauthorized;
 
@@ -201,7 +201,7 @@ class AuthLoginPost401ResponseErrorEnum extends EnumClass {
 }
 
 class AuthLoginPost401ResponseCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'INVALID_CREDENTIALS')
+  @BuiltValueEnumConst(wireName: r'INVALID_CREDENTIALS', fallback: true)
   static const AuthLoginPost401ResponseCodeEnum INVALID_CREDENTIALS =
       _$authLoginPost401ResponseCodeEnum_INVALID_CREDENTIALS;
 

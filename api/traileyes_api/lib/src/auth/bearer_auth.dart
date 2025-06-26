@@ -3,7 +3,7 @@
 //
 
 import 'package:dio/dio.dart';
-import 'package:openapi/src/auth/auth.dart';
+import 'package:traileyes_api/src/auth/auth.dart';
 
 class BearerAuthInterceptor extends AuthInterceptor {
   final Map<String, String> tokens = {};

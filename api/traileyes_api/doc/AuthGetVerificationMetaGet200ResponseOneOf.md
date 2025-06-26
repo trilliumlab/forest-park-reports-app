@@ -1,8 +1,8 @@
-# openapi.model.AuthGetVerificationMetaGet200ResponseOneOf
+# traileyes_api.model.AuthGetVerificationMetaGet200ResponseOneOf
 
 ## Load the model package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 ## Properties

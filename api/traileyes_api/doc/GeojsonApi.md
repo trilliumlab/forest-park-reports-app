@@ -1,8 +1,8 @@
-# openapi.api.GeojsonApi
+# traileyes_api.api.GeojsonApi
 
 ## Load the API package
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 ```
 
 All URIs are relative to *http://localhost*
@@ -20,9 +20,9 @@ Get all routes as GeoJSON
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getGeojsonApi();
+final api = TraileyesApi().getGeojsonApi();
 
 try {
     final response = api.geojsonRoutesJsonGet();
@@ -57,9 +57,9 @@ Get start markers as GeoJSON
 
 ### Example
 ```dart
-import 'package:openapi/api.dart';
+import 'package:traileyes_api/api.dart';
 
-final api = Openapi().getGeojsonApi();
+final api = TraileyesApi().getGeojsonApi();
 
 try {
     final response = api.geojsonStartMarkersJsonGet();

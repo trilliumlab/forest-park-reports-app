@@ -309,7 +309,7 @@ class SpritesPathJsonGet200ResponseValueTextFitWidthEnum extends EnumClass {
   @BuiltValueEnumConst(wireName: r'stretchOnly')
   static const SpritesPathJsonGet200ResponseValueTextFitWidthEnum stretchOnly =
       _$spritesPathJsonGet200ResponseValueTextFitWidthEnum_stretchOnly;
-  @BuiltValueEnumConst(wireName: r'proportional')
+  @BuiltValueEnumConst(wireName: r'proportional', fallback: true)
   static const SpritesPathJsonGet200ResponseValueTextFitWidthEnum proportional =
       _$spritesPathJsonGet200ResponseValueTextFitWidthEnum_proportional;
 
@@ -335,7 +335,7 @@ class SpritesPathJsonGet200ResponseValueTextFitHeightEnum extends EnumClass {
   @BuiltValueEnumConst(wireName: r'stretchOnly')
   static const SpritesPathJsonGet200ResponseValueTextFitHeightEnum stretchOnly =
       _$spritesPathJsonGet200ResponseValueTextFitHeightEnum_stretchOnly;
-  @BuiltValueEnumConst(wireName: r'proportional')
+  @BuiltValueEnumConst(wireName: r'proportional', fallback: true)
   static const SpritesPathJsonGet200ResponseValueTextFitHeightEnum
       proportional =
       _$spritesPathJsonGet200ResponseValueTextFitHeightEnum_proportional;

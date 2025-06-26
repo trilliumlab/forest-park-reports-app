@@ -169,7 +169,7 @@ class _$AuthRegisterPost409ResponseSerializer
 }
 
 class AuthRegisterPost409ResponseStatusCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'409')
+  @BuiltValueEnumConst(wireName: r'409', fallback: true)
   static const AuthRegisterPost409ResponseStatusCodeEnum n409 =
       _$authRegisterPost409ResponseStatusCodeEnum_n409;
 
@@ -185,7 +185,7 @@ class AuthRegisterPost409ResponseStatusCodeEnum extends EnumClass {
 }
 
 class AuthRegisterPost409ResponseErrorEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'Conflict')
+  @BuiltValueEnumConst(wireName: r'Conflict', fallback: true)
   static const AuthRegisterPost409ResponseErrorEnum conflict =
       _$authRegisterPost409ResponseErrorEnum_conflict;
 
@@ -201,7 +201,7 @@ class AuthRegisterPost409ResponseErrorEnum extends EnumClass {
 }
 
 class AuthRegisterPost409ResponseCodeEnum extends EnumClass {
-  @BuiltValueEnumConst(wireName: r'REGISTRATION_CONFLICT')
+  @BuiltValueEnumConst(wireName: r'REGISTRATION_CONFLICT', fallback: true)
   static const AuthRegisterPost409ResponseCodeEnum REGISTRATION_CONFLICT =
       _$authRegisterPost409ResponseCodeEnum_REGISTRATION_CONFLICT;
 

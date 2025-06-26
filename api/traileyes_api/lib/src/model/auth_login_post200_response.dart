@@ -156,7 +156,7 @@ class AuthLoginPost200ResponseEnabledSecondFactorsEnum extends EnumClass {
   @BuiltValueEnumConst(wireName: r'email')
   static const AuthLoginPost200ResponseEnabledSecondFactorsEnum email =
       _$authLoginPost200ResponseEnabledSecondFactorsEnum_email;
-  @BuiltValueEnumConst(wireName: r'totp')
+  @BuiltValueEnumConst(wireName: r'totp', fallback: true)
   static const AuthLoginPost200ResponseEnabledSecondFactorsEnum totp =
       _$authLoginPost200ResponseEnabledSecondFactorsEnum_totp;
 
