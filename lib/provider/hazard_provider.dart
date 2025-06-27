@@ -26,7 +26,7 @@ class ActiveHazard extends _$ActiveHazard {
   @override
   Future<List<HazardModel>> build() async {
     final db = ref.watch(databaseProvider);
-    
+
     final hazards = await db.select(db.hazardsTable).get();
 
     Timer.periodic(
@@ -45,12 +45,12 @@ class ActiveHazard extends _$ActiveHazard {
     final res = await ref.read(dioProvider).get("/hazard/active");
 
     final hazards = [
-      for (final hazard in res.data)
-        HazardModel.fromJson(hazard)
+      for (final hazard in res.data) HazardModel.fromJson(hazard)
     ];
 
     final db = ref.read(databaseProvider);
-    await (db.delete(db.hazardsTable)..where((t) => t.offline.equals(false))).go();
+    await (db.delete(db.hazardsTable)..where((t) => t.offline.equals(false)))
+        .go();
     await db.batch((batch) {
       batch.insertAllOnConflictUpdate(db.hazardsTable, hazards);
     });
@@ -64,22 +64,21 @@ class ActiveHazard extends _$ActiveHazard {
     state = AsyncData([
       if (state.hasValue)
         for (final hazard in state.value!)
-          if (hazard.offline && !newUuids.contains(hazard.uuid))
-            hazard,
+          if (hazard.offline && !newUuids.contains(hazard.uuid)) hazard,
       ...newHazards,
     ]);
   }
 
-  Future<void> createHazard({
-    required String uuid,
-    required HazardType hazard,
-    required SnappedLatLng location,
-    XFile? imageFile
-  }) async {
+  Future<void> createHazard(
+      {required String uuid,
+      required HazardType hazard,
+      required SnappedLatLng location,
+      XFile? imageFile}) async {
     // Show alert that upload queued
     showAlertBanner(
       key: Key(uuid),
-      child: const Text("Your report has been queued", key: Key("Your report has been queued")),
+      child: const Text("Your report has been queued",
+          key: Key("Your report has been queued")),
       color: Colors.grey,
     );
 
@@ -116,7 +115,8 @@ class ActiveHazard extends _$ActiveHazard {
       return;
     }
     // Compress and save image to file.
-    final imageDir = (await ref.read(directoryProvider(kImageDirectory).future))!;
+    final imageDir =
+        (await ref.read(directoryProvider(kImageDirectory).future))!;
     final imagePath = join(imageDir.path, "${hazardRequest.image!}.jpeg");
     await image.compressToFile(filePath: imagePath);
 
@@ -135,14 +135,16 @@ class ActiveHazard extends _$ActiveHazard {
     // Show success notification
     showAlertBanner(
       key: Key(response.hazard.uuid),
-      child: const Text("Report uploaded successfully", key: Key("Report uploaded successfully")),
+      child: const Text("Report uploaded successfully",
+          key: Key("Report uploaded successfully")),
       color: Colors.green,
     );
 
     _addHazard(response.hazard);
 
     // Add new update to hazard updates
-    final updatesNotifier = ref.read(hazardUpdatesProvider(response.hazard.uuid).notifier);
+    final updatesNotifier =
+        ref.read(hazardUpdatesProvider(response.hazard.uuid).notifier);
     for (final update in response.updates) {
       await updatesNotifier.addHazardUpdate(update);
     }
@@ -153,24 +155,23 @@ class ActiveHazard extends _$ActiveHazard {
     state = AsyncData([
       if (state.hasValue)
         for (final HazardModel existing in state.value ?? [])
-          if (existing.uuid != hazard.uuid)
-            existing,
+          if (existing.uuid != hazard.uuid) existing,
       hazard,
     ]);
     final db = ref.read(databaseProvider);
     await db.into(db.hazardsTable).insertOnConflictUpdate(hazard);
   }
 
-  Future updateHazard({
-    required String uuid,
-    required String hazard,
-    required bool active,
-    XFile? imageFile
-  }) async {
+  Future updateHazard(
+      {required String uuid,
+      required String hazard,
+      required bool active,
+      XFile? imageFile}) async {
     // Show alert that update queued
     showAlertBanner(
       key: Key(uuid),
-      child: const Text("Your report has been queued", key: Key("Your report has been queued")),
+      child: const Text("Your report has been queued",
+          key: Key("Your report has been queued")),
       color: Colors.green,
     );
 
@@ -191,15 +192,15 @@ class ActiveHazard extends _$ActiveHazard {
     );
 
     // Add offline hazard update to app
-    await ref.read(hazardUpdatesProvider(hazard).notifier)
+    await ref
+        .read(hazardUpdatesProvider(hazard).notifier)
         .addHazardUpdate(hazardUpdateRequest);
     // If it's a cleared report, remove hazard
     if (!active) {
       state = AsyncData([
         if (state.hasValue)
           for (final HazardModel existing in state.value ?? [])
-            if (existing.uuid != hazard)
-              existing,
+            if (existing.uuid != hazard) existing,
       ]);
     }
 
@@ -217,7 +218,8 @@ class ActiveHazard extends _$ActiveHazard {
       return;
     }
     // Compress and save image to file.
-    final imageDir = (await ref.read(directoryProvider(kImageDirectory).future))!;
+    final imageDir =
+        (await ref.read(directoryProvider(kImageDirectory).future))!;
     final imagePath = join(imageDir.path, "${hazardUpdateRequest.image!}.jpeg");
     await image.compressToFile(filePath: imagePath);
 
@@ -236,12 +238,14 @@ class ActiveHazard extends _$ActiveHazard {
     // Show success notification
     showAlertBanner(
       key: Key(hazardUpdate.uuid),
-      child: const Text("Report uploaded successfully", key: Key("Report uploaded successfully")),
+      child: const Text("Report uploaded successfully",
+          key: Key("Report uploaded successfully")),
       color: Colors.green,
     );
 
     // Add new update to hazard updates
-    await ref.read(hazardUpdatesProvider(hazardUpdate.hazard).notifier)
+    await ref
+        .read(hazardUpdatesProvider(hazardUpdate.hazard).notifier)
         .addHazardUpdate(hazardUpdate);
   }
 }
@@ -251,7 +255,8 @@ class HazardUpdates extends _$HazardUpdates {
   @override
   Future<HazardUpdateList> build(String hazard) async {
     final db = ref.watch(databaseProvider);
-    final hazardUpdates = HazardUpdateList(await db.select(db.hazardUpdatesTable).get());
+    final hazardUpdates =
+        HazardUpdateList(await db.select(db.hazardUpdatesTable).get());
     if (hazardUpdates.isNotEmpty) {
       refresh();
       return hazardUpdates;
@@ -262,7 +267,8 @@ class HazardUpdates extends _$HazardUpdates {
   Future<HazardUpdateList> _fetch() async {
     final res = await ref.read(dioProvider).get("/hazard/$hazard");
     final updates = HazardUpdateList.fromJson(res.data);
-    updates.sort((a, b) => a.time.millisecondsSinceEpoch - b.time.millisecondsSinceEpoch);
+    updates.sort((a, b) =>
+        a.time.millisecondsSinceEpoch - b.time.millisecondsSinceEpoch);
 
     final db = ref.read(databaseProvider);
     await db.delete(db.hazardUpdatesTable).go();
@@ -282,8 +288,7 @@ class HazardUpdates extends _$HazardUpdates {
     state = AsyncData(HazardUpdateList([
       if (state.hasValue)
         for (final HazardUpdateModel existing in state.value ?? [])
-          if (existing.uuid != hazardUpdate.uuid)
-            existing,
+          if (existing.uuid != hazardUpdate.uuid) existing,
       hazardUpdate,
     ]));
     final db = ref.read(databaseProvider);
@@ -305,9 +310,11 @@ class SelectedHazard extends _$SelectedHazard {
   void selectAndMove(HazardModel hazard) {
     state = SelectedHazardState(true, hazard);
   }
+
   void select(HazardModel hazard) {
     state = SelectedHazardState(false, hazard);
   }
+
   void deselect() {
     state = SelectedHazardState(false);
   }

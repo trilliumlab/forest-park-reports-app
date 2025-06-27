@@ -32,8 +32,8 @@ if (flutterVersionName == null) {
 android {
     namespace 'edu.pdx.cecs.forestpark'
 
-    compileSdkVersion 34
-    ndkVersion "26.1.10909125"
+    compileSdkVersion 36
+    ndkVersion "27.0.12077973"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

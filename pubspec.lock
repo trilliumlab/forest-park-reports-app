@@ -512,11 +512,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: update-to-dart-3
-      resolved-ref: "819307ee2f112c00146ff45b6051607d9e28142c"
-      url: "https://github.com/orestesgaolin/flutter_uploader.git"
+      ref: main
+      resolved-ref: c0787f3664b4152cc279dd2793ddf80d1c1af857
+      url: "https://github.com/indaband/flutter_uploader.git"
     source: git
-    version: "3.0.0-beta.5"
+    version: "3.0.0-beta.4"
   flutter_web_plugins:
     dependency: transitive
     description: flutter

@@ -5,10 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 
-// const kApiUrl = "https://forestpark.cecs.pdx.edu/prod/v1";
-// const kApiUrl = "https://forestpark.cecs.pdx.edu/staging/v1";
 // const kApiUrl = "http://192.168.0.247:8000";
-const kApiUrl = "http://localhost:8000/";
+// const kApiUrl = "http://localhost:8000";
+const kApiUrl = "https://legacy.traileyes.net";
 
 final kMaterialAppPrimaryColor = Colors.green.shade700;
 
