@@ -27,7 +27,7 @@ jobs:
       - run: cp -r build/ios/iphoneos/Runner.app Payload
       - run: zip -r -X forest_park_reports.ipa Payload
       - run: ls
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: forest_park_reports.ipa
           path: forest_park_reports.ipa
@@ -55,11 +55,11 @@ jobs:
       - run: mv build/app/outputs/flutter-apk/app-release.apk forest_park_reports.apk
       - run: flutter build appbundle
       - run: mv build/app/outputs/bundle/release/app-release.aab forest_park_reports.aab
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: forest_park_reports.apk
           path: forest_park_reports.apk
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: forest_park_reports.aab
           path: forest_park_reports.aab
