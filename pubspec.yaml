@@ -69,9 +69,13 @@ dependencies:
   #   git:
   #     url: https://github.com/orestesgaolin/flutter_uploader.git
   #     ref: update-to-dart-3
+  # flutter_uploader:
+  #   git:
+  #     url: https://github.com/indaband/flutter_uploader.git
+  #     ref: main
   flutter_uploader:
     git:
-      url: https://github.com/indaband/flutter_uploader.git
+      url: https://github.com/hayatkhan67/flutter_uploader_test.git
       ref: main
 
 dependency_overrides:
