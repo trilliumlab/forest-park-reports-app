@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/env.dart';
-import 'package:forest_park_reports/provider/settings_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'dart:convert';
@@ -42,8 +41,8 @@ class _MapPageState extends ConsumerState<MapPage> {
       styleString:
           '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true',
       initialCameraPosition: const CameraPosition(
-        target: LatLng(45.5231, -122.6765),
-        zoom: 12,
+        target: LatLng(45.5475, -122.755),
+        zoom: 10.75,
       ),
       onMapCreated: _onMapCreated,
       onStyleLoadedCallback: _onStyleLoaded,
@@ -52,15 +51,13 @@ class _MapPageState extends ConsumerState<MapPage> {
       // TODO: Use custom attribution button/popup
       attributionButtonPosition: AttributionButtonPosition.bottomLeft,
       attributionButtonMargins: const Point(10, 10),
+      myLocationEnabled: true,
+      myLocationRenderMode: MyLocationRenderMode.compass,
     );
   }
 
   Future<void> _onMapCreated(MapLibreMapController controller) async {
     _controller = controller;
-
-    _controller?.moveCamera(
-      CameraUpdate.newLatLngZoom(LatLng(45.5335, -122.7331), 14),
-    );
 
     _controller?.onFeatureTapped.add((tappedFeature, pos, coords, layer) async {
       // tappedFeature is the ID of the feature that was tapped.
