@@ -65,6 +65,7 @@ dependencies:
   http: ^1.2.1
   flutter_map_compass: ^1.0.3
   flutter_svg: ^2.0.10+1
+  maplibre_gl: ^0.22.0
   # flutter_uploader:
   #   git:
   #     url: https://github.com/orestesgaolin/flutter_uploader.git
