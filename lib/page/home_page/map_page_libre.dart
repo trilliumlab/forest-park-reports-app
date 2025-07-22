@@ -48,11 +48,19 @@ class _MapPageState extends ConsumerState<MapPage> {
       onMapCreated: _onMapCreated,
       onStyleLoadedCallback: _onStyleLoaded,
       onMapClick: _onMapClick,
+      compassViewMargins: const Point(13, 100),
+      // TODO: Use custom attribution button/popup
+      attributionButtonPosition: AttributionButtonPosition.bottomLeft,
+      attributionButtonMargins: const Point(10, 10),
     );
   }
 
   Future<void> _onMapCreated(MapLibreMapController controller) async {
     _controller = controller;
+
+    _controller?.moveCamera(
+      CameraUpdate.newLatLngZoom(LatLng(45.5335, -122.7331), 14),
+    );
 
     _controller?.onFeatureTapped.add((tappedFeature, pos, coords, layer) async {
       // tappedFeature is the ID of the feature that was tapped.
@@ -154,7 +162,7 @@ class _MapPageState extends ConsumerState<MapPage> {
           "start-markers",
           "start-markers-layer",
           const CircleLayerProperties(
-            circleColor: '#FF0000',
+            circleColor: '#00FF00',
             circleRadius: 6,
             circleOpacity: 0.8,
             circleStrokeWidth: 1,
@@ -166,10 +174,6 @@ class _MapPageState extends ConsumerState<MapPage> {
         debugPrint("Error adding start-markers source/layer: $e");
       }
     }
-
-    _controller?.moveCamera(
-      CameraUpdate.newLatLngZoom(LatLng(45.5335, -122.7331), 14),
-    );
   }
 
   // Since clicks on routes aren't passed through, any call to this function
