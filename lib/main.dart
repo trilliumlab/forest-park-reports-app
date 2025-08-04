@@ -14,10 +14,11 @@ final GlobalKey homeKey = GlobalKey();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // Initialize in parallel
   await Future.wait([
-    dotenv.load(),
+    //dotenv.load(),
     // Run consecutively.
     () async {
       await FMTCObjectBoxBackend().initialise();

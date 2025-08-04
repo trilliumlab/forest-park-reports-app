@@ -5,6 +5,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Renders the main map.
 ///
@@ -24,8 +25,14 @@ class _MapPageState extends ConsumerState<MapPage> {
   @override
   void initState() {
     super.initState();
+    printEnv();
   }
 
+  @override
+  void printEnv() {
+  print('Backend URL: ${dotenv.env["BACKEND_URL"]}');
+  print('Proto API Key: ${dotenv.env["PROTO_API_KEY"]}');
+  }
   @override
   void dispose() {
     _controller = null;
@@ -34,7 +41,10 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("mappage is loading");
     final lightMode = Theme.of(context).brightness == Brightness.light;
+    final styleUrl = '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true';
+    debugPrint('STYLE URL: $styleUrl');
 
     return MapLibreMap(
       rotateGesturesEnabled: true,
@@ -171,6 +181,46 @@ class _MapPageState extends ConsumerState<MapPage> {
         debugPrint("Error adding start-markers source/layer: $e");
       }
     }
+
+    //hazard markers
+    final hazardMarkersUrl = '$kBackendUrl/geojson/reports.json';
+    final hazardMarkersResponse = await http.get(Uri.parse(hazardMarkersUrl));
+
+    if (hazardMarkersResponse.statusCode == 200) {
+      final rawGeoJson = json.decode(hazardMarkersResponse.body);
+
+      for (final feature in rawGeoJson['features']) {
+        final coords = feature['geometry']['coordinates'];
+        if (coords is List && coords.length >= 2) {
+          final lon = coords[0];
+          final lat = coords[1];
+          feature['geometry']['coordinates'] = [lon, lat];
+        }
+      }
+
+      try {
+        _controller?.addSource(
+          "hazard-markers",
+          GeojsonSourceProperties(data: rawGeoJson),
+        );
+        _controller?.addCircleLayer(
+          "hazard-markers",
+          "hazard-markers-layer",
+          const CircleLayerProperties(
+            circleColor: '#FF0000',
+            circleRadius: 6,
+            circleStrokeWidth: 1,
+            circleOpacity: 0.8,
+            circleStrokeColor: '#000000',
+          ),
+        );
+      } catch (e) {
+        debugPrint("Error adding hazard markers: $e");
+      }
+    } else {
+      debugPrint("Failed to fetch hazard markers: ${hazardMarkersResponse.statusCode}");
+    }
+
   }
 
   // Since clicks on routes aren't passed through, any call to this function
