@@ -30,9 +30,10 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   @override
   void printEnv() {
-  print('Backend URL: ${dotenv.env["BACKEND_URL"]}');
-  print('Proto API Key: ${dotenv.env["PROTO_API_KEY"]}');
+    print('Backend URL: ${dotenv.env["BACKEND_URL"]}');
+    print('Proto API Key: ${dotenv.env["PROTO_API_KEY"]}');
   }
+
   @override
   void dispose() {
     _controller = null;
@@ -41,10 +42,11 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-   // debugPrint("mappage is loading");
+    // debugPrint("mappage is loading");
     final lightMode = Theme.of(context).brightness == Brightness.light;
-    final styleUrl = '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true';
-   // debugPrint('STYLE URL: $styleUrl');
+    final styleUrl =
+        '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true';
+    // debugPrint('STYLE URL: $styleUrl');
 
     return MapLibreMap(
       rotateGesturesEnabled: true,
@@ -69,8 +71,57 @@ class _MapPageState extends ConsumerState<MapPage> {
   Future<void> _onMapCreated(MapLibreMapController controller) async {
     _controller = controller;
 
-    
-    
+    _controller?.onFeatureTapped.add((tappedFeature, pos, coords, layer) async {
+      if (layer == "routes-layer") {
+        // tappedFeature is the ID of the feature that was tapped.
+        // Since our only features are the routes, one of the IDs will match.
+        for (final feature in _routesGeoJson!['features']) {
+          final featureId = feature['id'].toString();
+          //  debugPrint("Checking feature ID: $featureId against tapped: $cleanFeatureId");
+
+          if (featureId == tappedFeature) {
+            //  debugPrint("Feature matched: $featureId");
+            setState(() {
+              _selectedFeature = feature;
+            });
+            break;
+          }
+        }
+        await _removeHighlightLayer();
+
+        try {
+          await _controller!.addSource(
+            'highlight-source',
+            GeojsonSourceProperties(
+              data: {
+                "type": "FeatureCollection",
+                "features": [_selectedFeature],
+              },
+            ),
+          );
+        } catch (e) {
+          debugPrint("Highlight source already exists or error: $e");
+        }
+
+        try {
+          await _controller!.addLineLayer(
+              'highlight-source',
+              'highlight-layer',
+              const LineLayerProperties(
+                lineColor: '#FFFF33', // highlight color (blue)
+                lineWidth: 6,
+                lineJoin: 'round',
+                lineCap: 'round',
+              ),
+              enableInteraction: true);
+        } catch (e) {
+          debugPrint("Highlight layer already exists or error: $e");
+        }
+      } else {
+        debugPrint(
+            "Tapped feature ${tappedFeature.toString()} in unhandled layer `$layer`");
+      }
+    });
   }
 
   Future<void> _onStyleLoaded() async {
@@ -162,72 +213,21 @@ class _MapPageState extends ConsumerState<MapPage> {
           "hazard-markers",
           GeojsonSourceProperties(data: rawGeoJson),
         );
-        _controller?.addCircleLayer(
+        _controller?.addSymbolLayer(
           "hazard-markers",
           "hazard-markers-layer",
-          const CircleLayerProperties(
-            circleColor: '#FF0000',
-            circleRadius: 6,
-            circleStrokeWidth: 1,
-            circleOpacity: 0.8,
-            circleStrokeColor: '#000000',
+          const SymbolLayerProperties(
+            iconImage: 'report_active',
           ),
+          enableInteraction: false,
         );
       } catch (e) {
         debugPrint("Error adding hazard markers: $e");
       }
     } else {
-      debugPrint("Failed to fetch hazard markers: ${hazardMarkersResponse.statusCode}");
+      debugPrint(
+          "Failed to fetch hazard markers: ${hazardMarkersResponse.statusCode}");
     }
-    _controller?.onFeatureTapped.add((tappedFeature, pos, coords, layer) async {
-
-      // tappedFeature is the ID of the feature that was tapped.
-      // Since our only features are the routes, one of the IDs will match.
-       final cleanFeatureId = tappedFeature.toString().split('.').last;
-        for (final feature in _routesGeoJson!['features']) {
-          final featureId = feature['id'].toString();
-        //  debugPrint("Checking feature ID: $featureId against tapped: $cleanFeatureId");
-
-          if (featureId == cleanFeatureId) {
-          //  debugPrint("Feature matched: $featureId");
-            setState(() {
-              _selectedFeature = feature;
-            });
-            break;
-          }
-        }
-      await _removeHighlightLayer();
-
-      try {
-        await _controller!.addSource(
-          'highlight-source',
-          GeojsonSourceProperties(
-            data: {
-              "type": "FeatureCollection",
-              "features": [_selectedFeature],
-            },
-          ),
-        );
-      } catch (e) {
-        debugPrint("Highlight source already exists or error: $e");
-      }
-
-      try {
-        await _controller!.addLineLayer(
-          'highlight-source',
-          'highlight-layer',
-          const LineLayerProperties(
-            lineColor: '#FFFF33', // highlight color (blue)
-            lineWidth: 6,
-            lineJoin: 'round',
-            lineCap: 'round',
-          ),
-          enableInteraction: true
-        );
-      } catch (e) {
-        debugPrint("Highlight layer already exists or error: $e");
-      }
-    });
   }
 
   // Since clicks on routes aren't passed through, any call to this function

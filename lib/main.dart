@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:forest_park_reports/env.dart';
 import 'package:forest_park_reports/provider/settings_provider.dart';
 import 'package:forest_park_reports/util/offline_uploader.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -14,12 +13,11 @@ final GlobalKey homeKey = GlobalKey();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
 
   // Initialize in parallel
   await Future.wait([
-    //dotenv.load(),
     // Run consecutively.
+    dotenv.load(),
     () async {
       await FMTCObjectBoxBackend().initialise();
       await const FMTCStore('forestPark').manage.create();
