@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:forest_park_reports/provider/selected_trail_provider.dart';
+
 
 /// Renders the main map.
 ///
@@ -19,7 +21,7 @@ class MapPage extends ConsumerStatefulWidget {
 
 class _MapPageState extends ConsumerState<MapPage> {
   MapLibreMapController? _controller;
-  Map<String, dynamic>? _selectedFeature;
+  //Map<String, dynamic>? _selectedFeature;
   Map<String, dynamic>? _routesGeoJson;
 
   @override
@@ -91,7 +93,7 @@ class _MapPageState extends ConsumerState<MapPage> {
           "routes-layer",
           const LineLayerProperties(
             lineColor: ['get', 'stroke'],
-            lineWidth: 3,
+            lineWidth: 5,
             lineJoin: "round",
             lineCap: "round",
           ),
@@ -190,9 +192,12 @@ class _MapPageState extends ConsumerState<MapPage> {
 
           if (featureId == cleanFeatureId) {
           //  debugPrint("Feature matched: $featureId");
+            /*
             setState(() {
               _selectedFeature = feature;
             });
+            */
+            ref.read(selectedTrailProvider.notifier).select(feature);
             break;
           }
         }
@@ -204,7 +209,8 @@ class _MapPageState extends ConsumerState<MapPage> {
           GeojsonSourceProperties(
             data: {
               "type": "FeatureCollection",
-              "features": [_selectedFeature],
+            //  "features": [_selectedFeature],
+            "features": [ref.read(selectedTrailProvider)],
             },
           ),
         );
@@ -233,9 +239,11 @@ class _MapPageState extends ConsumerState<MapPage> {
   // Since clicks on routes aren't passed through, any call to this function
   // means the user clicked outside of a route and we should remove the highlight.
   Future<void> _onMapClick(Point<double> point, LatLng coordinates) async {
-    setState(() {
-      _selectedFeature = null;
-    });
+    
+    //setState(() {
+      //_selectedFeature = null;
+    //});
+    ref.read(selectedTrailProvider.notifier).clear();
     await _removeHighlightLayer();
   }
 
