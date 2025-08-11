@@ -8,26 +8,20 @@ import 'package:built_value/serializer.dart';
 import 'package:dio/dio.dart';
 
 import 'package:built_collection/built_collection.dart';
-import 'package:traileyes_api/src/model/auth_get_verification_meta_get200_response.dart';
-import 'package:traileyes_api/src/model/auth_login_post200_response.dart';
-import 'package:traileyes_api/src/model/auth_login_post401_response.dart';
-import 'package:traileyes_api/src/model/auth_login_post_request.dart';
-import 'package:traileyes_api/src/model/auth_register_post409_response.dart';
-import 'package:traileyes_api/src/model/auth_register_post_request.dart';
-import 'package:traileyes_api/src/model/auth_session_meta_get200_response.dart';
-import 'package:traileyes_api/src/model/auth_session_meta_get401_response.dart';
-import 'package:traileyes_api/src/model/auth_session_meta_get500_response.dart';
-import 'package:traileyes_api/src/model/auth_verify_email_post401_response.dart';
-import 'package:traileyes_api/src/model/auth_verify_email_post_request.dart';
+import 'package:built_value/json_object.dart';
+import 'package:traileyes_api/src/api_util.dart';
+import 'package:traileyes_api/src/model/reports_post_report200_response.dart';
+import 'package:traileyes_api/src/model/reports_post_report_request.dart';
+import 'package:traileyes_api/src/model/sprites_get_sprite200_response.dart';
 
-class AuthApi {
+class DefaultApi {
   final Dio _dio;
 
   final Serializers _serializers;
 
-  const AuthApi(this._dio, this._serializers);
+  const DefaultApi(this._dio, this._serializers);
 
-  /// Get enabled second factors
+  /// Get all reports as GeoJSON
   ///
   ///
   /// Parameters:
@@ -38,9 +32,9 @@ class AuthApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [BuiltList<String>] as data
+  /// Returns a [Future] containing a [Response] with a [BuiltMap<String, JsonObject>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<String>>> authEnabledSecondFactorsGet({
+  Future<Response<BuiltMap<String, JsonObject>>> geojsonGetReports({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -48,7 +42,7 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/enabled-second-factors';
+    final _path = r'/geojson/reports.json';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -69,7 +63,7 @@ class AuthApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    BuiltList<String>? _responseData;
+    BuiltMap<String, JsonObject>? _responseData;
 
     try {
       final rawResponse = _response.data;
@@ -77,8 +71,9 @@ class AuthApi {
           ? null
           : _serializers.deserialize(
               rawResponse,
-              specifiedType: const FullType(BuiltList, [FullType(String)]),
-            ) as BuiltList<String>;
+              specifiedType: const FullType(
+                  BuiltMap, [FullType(String), FullType(JsonObject)]),
+            ) as BuiltMap<String, JsonObject>;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -89,7 +84,7 @@ class AuthApi {
       );
     }
 
-    return Response<BuiltList<String>>(
+    return Response<BuiltMap<String, JsonObject>>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -101,7 +96,7 @@ class AuthApi {
     );
   }
 
-  /// Get verification metadata
+  /// Get all routes as GeoJSON
   ///
   ///
   /// Parameters:
@@ -112,10 +107,9 @@ class AuthApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [AuthGetVerificationMetaGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [BuiltMap<String, JsonObject>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AuthGetVerificationMetaGet200Response>>
-      authGetVerificationMetaGet({
+  Future<Response<BuiltMap<String, JsonObject>>> geojsonGetRoutes({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -123,7 +117,7 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/get-verification-meta';
+    final _path = r'/geojson/routes.json';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -144,7 +138,7 @@ class AuthApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    AuthGetVerificationMetaGet200Response? _responseData;
+    BuiltMap<String, JsonObject>? _responseData;
 
     try {
       final rawResponse = _response.data;
@@ -152,9 +146,9 @@ class AuthApi {
           ? null
           : _serializers.deserialize(
               rawResponse,
-              specifiedType:
-                  const FullType(AuthGetVerificationMetaGet200Response),
-            ) as AuthGetVerificationMetaGet200Response;
+              specifiedType: const FullType(
+                  BuiltMap, [FullType(String), FullType(JsonObject)]),
+            ) as BuiltMap<String, JsonObject>;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -165,7 +159,7 @@ class AuthApi {
       );
     }
 
-    return Response<AuthGetVerificationMetaGet200Response>(
+    return Response<BuiltMap<String, JsonObject>>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -177,11 +171,10 @@ class AuthApi {
     );
   }
 
-  /// Login a user
+  /// Get all start markers as GeoJSON
   ///
   ///
   /// Parameters:
-  /// * [authLoginPostRequest] - Body
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -189,10 +182,9 @@ class AuthApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [AuthLoginPost200Response] as data
+  /// Returns a [Future] containing a [Response] with a [BuiltMap<String, JsonObject>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<AuthLoginPost200Response>> authLoginPost({
-    AuthLoginPostRequest? authLoginPostRequest,
+  Future<Response<BuiltMap<String, JsonObject>>> geojsonGetStartMarkers({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -200,7 +192,84 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/login';
+    final _path = r'/geojson/start-markers.json';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    BuiltMap<String, JsonObject>? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(
+                  BuiltMap, [FullType(String), FullType(JsonObject)]),
+            ) as BuiltMap<String, JsonObject>;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<BuiltMap<String, JsonObject>>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Submit a new report
+  ///
+  ///
+  /// Parameters:
+  /// * [reportsPostReportRequest]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [ReportsPostReport200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<ReportsPostReport200Response>> reportsPostReport({
+    required ReportsPostReportRequest reportsPostReportRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/reports/report';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{
@@ -217,10 +286,9 @@ class AuthApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(AuthLoginPostRequest);
-      _bodyData = authLoginPostRequest == null
-          ? null
-          : _serializers.serialize(authLoginPostRequest, specifiedType: _type);
+      const _type = FullType(ReportsPostReportRequest);
+      _bodyData = _serializers.serialize(reportsPostReportRequest,
+          specifiedType: _type);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _options.compose(
@@ -242,7 +310,7 @@ class AuthApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    AuthLoginPost200Response? _responseData;
+    ReportsPostReport200Response? _responseData;
 
     try {
       final rawResponse = _response.data;
@@ -250,8 +318,8 @@ class AuthApi {
           ? null
           : _serializers.deserialize(
               rawResponse,
-              specifiedType: const FullType(AuthLoginPost200Response),
-            ) as AuthLoginPost200Response;
+              specifiedType: const FullType(ReportsPostReport200Response),
+            ) as ReportsPostReport200Response;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -262,7 +330,7 @@ class AuthApi {
       );
     }
 
-    return Response<AuthLoginPost200Response>(
+    return Response<ReportsPostReport200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -274,11 +342,11 @@ class AuthApi {
     );
   }
 
-  /// Register a new user
+  /// Get a sprite JSON/PNG
   ///
   ///
   /// Parameters:
-  /// * [authRegisterPostRequest] - Body
+  /// * [path]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -286,10 +354,10 @@ class AuthApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future]
+  /// Returns a [Future] containing a [Response] with a [SpritesGetSprite200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> authRegisterPost({
-    AuthRegisterPostRequest? authRegisterPostRequest,
+  Future<Response<SpritesGetSprite200Response>> spritesGetSprite({
+    required JsonObject path,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -297,150 +365,10 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/register';
-    final _options = Options(
-      method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
-        ...?extra,
-      },
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(AuthRegisterPostRequest);
-      _bodyData = authRegisterPostRequest == null
-          ? null
-          : _serializers.serialize(authRegisterPostRequest,
-              specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    return _response;
-  }
-
-  /// Send verification email
-  /// Sends a verification email to the user&#39;s email address. If a code has been sent in the last 90 seconds, no action is taken.
-  ///
-  /// Parameters:
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [AuthGetVerificationMetaGet200Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<AuthGetVerificationMetaGet200Response>>
-      authSendVerificationPost({
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/auth/send-verification';
-    final _options = Options(
-      method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
-        ...?extra,
-      },
-      validateStatus: validateStatus,
-    );
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    AuthGetVerificationMetaGet200Response? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType:
-                  const FullType(AuthGetVerificationMetaGet200Response),
-            ) as AuthGetVerificationMetaGet200Response;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<AuthGetVerificationMetaGet200Response>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// Get session metadata
-  ///
-  ///
-  /// Parameters:
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [AuthSessionMetaGet200Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<AuthSessionMetaGet200Response>> authSessionMetaGet({
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/auth/session-meta';
+    final _path = r'/sprites/{path}'.replaceAll(
+        '{' r'path' '}',
+        encodeQueryParameter(_serializers, path, const FullType(JsonObject))
+            .toString());
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{
@@ -461,7 +389,7 @@ class AuthApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    AuthSessionMetaGet200Response? _responseData;
+    SpritesGetSprite200Response? _responseData;
 
     try {
       final rawResponse = _response.data;
@@ -469,8 +397,8 @@ class AuthApi {
           ? null
           : _serializers.deserialize(
               rawResponse,
-              specifiedType: const FullType(AuthSessionMetaGet200Response),
-            ) as AuthSessionMetaGet200Response;
+              specifiedType: const FullType(SpritesGetSprite200Response),
+            ) as SpritesGetSprite200Response;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -481,7 +409,7 @@ class AuthApi {
       );
     }
 
-    return Response<AuthSessionMetaGet200Response>(
+    return Response<SpritesGetSprite200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -493,11 +421,12 @@ class AuthApi {
     );
   }
 
-  /// Verify email
+  /// Get dark style
   ///
   ///
   /// Parameters:
-  /// * [authVerifyEmailPostRequest] - Body
+  /// * [key]
+  /// * [mobile]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -505,10 +434,11 @@ class AuthApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future]
+  /// Returns a [Future] containing a [Response] with a [BuiltMap<String, JsonObject>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> authVerifyEmailPost({
-    AuthVerifyEmailPostRequest? authVerifyEmailPostRequest,
+  Future<Response<BuiltMap<String, JsonObject>>> stylesGetDarkStyle({
+    required JsonObject key,
+    JsonObject? mobile = false,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -516,9 +446,9 @@ class AuthApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/auth/verify-email';
+    final _path = r'/styles/dark.json';
     final _options = Options(
-      method: r'POST',
+      method: r'GET',
       headers: <String, dynamic>{
         ...?headers,
       },
@@ -526,39 +456,143 @@ class AuthApi {
         'secure': <Map<String, String>>[],
         ...?extra,
       },
-      contentType: 'application/json',
       validateStatus: validateStatus,
     );
 
-    dynamic _bodyData;
+    final _queryParameters = <String, dynamic>{
+      r'key':
+          encodeQueryParameter(_serializers, key, const FullType(JsonObject)),
+      if (mobile != null)
+        r'mobile': encodeQueryParameter(
+            _serializers, mobile, const FullType(JsonObject)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    BuiltMap<String, JsonObject>? _responseData;
 
     try {
-      const _type = FullType(AuthVerifyEmailPostRequest);
-      _bodyData = authVerifyEmailPostRequest == null
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
           ? null
-          : _serializers.serialize(authVerifyEmailPostRequest,
-              specifiedType: _type);
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(
+                  BuiltMap, [FullType(String), FullType(JsonObject)]),
+            ) as BuiltMap<String, JsonObject>;
     } catch (error, stackTrace) {
       throw DioException(
-        requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _response.requestOptions,
+        response: _response,
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
       );
     }
 
+    return Response<BuiltMap<String, JsonObject>>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Get light style
+  ///
+  ///
+  /// Parameters:
+  /// * [key]
+  /// * [mobile]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [BuiltMap<String, JsonObject>] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<BuiltMap<String, JsonObject>>> stylesGetLightStyle({
+    String? key,
+    JsonObject? mobile = false,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/styles/light.json';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      r'key': encodeQueryParameter(_serializers, key, const FullType(String)),
+      if (mobile != null)
+        r'mobile': encodeQueryParameter(
+            _serializers, mobile, const FullType(JsonObject)),
+    };
+
     final _response = await _dio.request<Object>(
       _path,
-      data: _bodyData,
       options: _options,
+      queryParameters: _queryParameters,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
     );
 
-    return _response;
+    BuiltMap<String, JsonObject>? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(
+                  BuiltMap, [FullType(String), FullType(JsonObject)]),
+            ) as BuiltMap<String, JsonObject>;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<BuiltMap<String, JsonObject>>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
   }
 }

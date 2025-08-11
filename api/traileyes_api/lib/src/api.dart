@@ -9,13 +9,10 @@ import 'package:traileyes_api/src/auth/api_key_auth.dart';
 import 'package:traileyes_api/src/auth/basic_auth.dart';
 import 'package:traileyes_api/src/auth/bearer_auth.dart';
 import 'package:traileyes_api/src/auth/oauth.dart';
-import 'package:traileyes_api/src/api/auth_api.dart';
-import 'package:traileyes_api/src/api/geojson_api.dart';
-import 'package:traileyes_api/src/api/sprites_api.dart';
-import 'package:traileyes_api/src/api/styles_api.dart';
+import 'package:traileyes_api/src/api/default_api.dart';
 
 class TraileyesApi {
-  static const String basePath = r'http://localhost';
+  static const String basePath = r'http://localhost:8000';
 
   final Dio dio;
   final Serializers serializers;
@@ -79,27 +76,9 @@ class TraileyesApi {
     }
   }
 
-  /// Get AuthApi instance, base route and serializer can be overridden by a given but be careful,
+  /// Get DefaultApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
-  AuthApi getAuthApi() {
-    return AuthApi(dio, serializers);
-  }
-
-  /// Get GeojsonApi instance, base route and serializer can be overridden by a given but be careful,
-  /// by doing that all interceptors will not be executed
-  GeojsonApi getGeojsonApi() {
-    return GeojsonApi(dio, serializers);
-  }
-
-  /// Get SpritesApi instance, base route and serializer can be overridden by a given but be careful,
-  /// by doing that all interceptors will not be executed
-  SpritesApi getSpritesApi() {
-    return SpritesApi(dio, serializers);
-  }
-
-  /// Get StylesApi instance, base route and serializer can be overridden by a given but be careful,
-  /// by doing that all interceptors will not be executed
-  StylesApi getStylesApi() {
-    return StylesApi(dio, serializers);
+  DefaultApi getDefaultApi() {
+    return DefaultApi(dio, serializers);
   }
 }

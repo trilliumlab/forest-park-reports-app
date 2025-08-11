@@ -219,7 +219,7 @@ class _MapPageState extends ConsumerState<MapPage> {
           const SymbolLayerProperties(
             iconImage: 'report_active',
           ),
-          enableInteraction: false,
+          enableInteraction: true,
         );
       } catch (e) {
         debugPrint("Error adding hazard markers: $e");

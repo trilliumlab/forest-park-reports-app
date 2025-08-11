@@ -1,33 +1,33 @@
 import 'package:test/test.dart';
-import 'package:openapi/openapi.dart';
+import 'package:traileyes_api/traileyes_api.dart';
 
-// tests for SpritesPathJsonGet200ResponseValue
+// tests for SpritesGetSprite200ResponseAnyOfValue
 void main() {
-  final instance = SpritesPathJsonGet200ResponseValueBuilder();
+  final instance = SpritesGetSprite200ResponseAnyOfValueBuilder();
   // TODO add properties to the builder and call build()
 
-  group(SpritesPathJsonGet200ResponseValue, () {
-    // num height
+  group(SpritesGetSprite200ResponseAnyOfValue, () {
+    // JsonObject height
     test('to test the property `height`', () async {
       // TODO
     });
 
-    // num width
+    // JsonObject width
     test('to test the property `width`', () async {
       // TODO
     });
 
-    // num x
+    // JsonObject x
     test('to test the property `x`', () async {
       // TODO
     });
 
-    // num y
+    // JsonObject y
     test('to test the property `y`', () async {
       // TODO
     });
 
-    // num pixelRatio
+    // JsonObject pixelRatio
     test('to test the property `pixelRatio`', () async {
       // TODO
     });
@@ -37,27 +37,27 @@ void main() {
       // TODO
     });
 
-    // BuiltList<JsonObject> stretchX
+    // JsonObject stretchX
     test('to test the property `stretchX`', () async {
       // TODO
     });
 
-    // BuiltList<JsonObject> stretchY
+    // JsonObject stretchY
     test('to test the property `stretchY`', () async {
       // TODO
     });
 
-    // bool sdf
+    // JsonObject sdf
     test('to test the property `sdf`', () async {
       // TODO
     });
 
-    // String textFitWidth
+    // JsonObject textFitWidth
     test('to test the property `textFitWidth`', () async {
       // TODO
     });
 
-    // String textFitHeight
+    // JsonObject textFitHeight
     test('to test the property `textFitHeight`', () async {
       // TODO
     });
