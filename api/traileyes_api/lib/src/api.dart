@@ -12,7 +12,7 @@ import 'package:traileyes_api/src/auth/oauth.dart';
 import 'package:traileyes_api/src/api/default_api.dart';
 
 class TraileyesApi {
-  static const String basePath = r'http://localhost:8000';
+  static const String basePath = r'http://api.nightly.traileyes.net';
 
   final Dio dio;
   final Serializers serializers;

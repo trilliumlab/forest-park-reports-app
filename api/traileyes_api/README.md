@@ -59,7 +59,7 @@ try {
 
 ## Documentation for API Endpoints
 
-All URIs are relative to *http://localhost:8000*
+All URIs are relative to *http://api.nightly.traileyes.net*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------

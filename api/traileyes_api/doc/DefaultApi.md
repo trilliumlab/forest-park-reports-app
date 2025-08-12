@@ -5,7 +5,7 @@
 import 'package:traileyes_api/api.dart';
 ```
 
-All URIs are relative to *http://localhost:8000*
+All URIs are relative to *http://api.nightly.traileyes.net*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
