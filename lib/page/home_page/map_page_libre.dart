@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:forest_park_reports/env.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
+import 'package:forest_park_reports/provider/geojson_provider.dart';
 
 /// Renders the main map.
 ///
@@ -43,7 +42,7 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    // debugPrint("mappage is loading");
+    // TODO: Cache style/tiles
     final lightMode = Theme.of(context).brightness == Brightness.light;
     final styleUrl =
         '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true';
@@ -127,11 +126,10 @@ class _MapPageState extends ConsumerState<MapPage> {
   }
 
   Future<void> _onStyleLoaded() async {
-    final routeUrl = '$kBackendUrl/geojson/routes.json';
-    final routeResponse = await http.get(Uri.parse(routeUrl));
-
-    if (routeResponse.statusCode == 200) {
-      final geoJson = json.decode(routeResponse.body);
+    try {
+      // Use the route provider to get the parsed GeoJSON data
+      final routesData = await ref.read(routeProviderProvider.future);
+      final geoJson = routesData.toJson();
       _routesGeoJson = geoJson; // Save for manual hit test
 
       try {
@@ -144,7 +142,7 @@ class _MapPageState extends ConsumerState<MapPage> {
           "routes-layer",
           const LineLayerProperties(
             lineColor: ['get', 'stroke'],
-            lineWidth: 5,
+            lineWidth: 3,
             lineJoin: "round",
             lineCap: "round",
           ),
@@ -155,15 +153,18 @@ class _MapPageState extends ConsumerState<MapPage> {
       } catch (e) {
         debugPrint("Error adding routes source/layer: $e");
       }
+    } catch (e) {
+      debugPrint("Error fetching routes: $e");
     }
 
-    final startMarkerUrl = '$kBackendUrl/geojson/start-markers.json';
-    final startMarkerResponse = await http.get(Uri.parse(startMarkerUrl));
+    try {
+      // Use the start marker provider to get the parsed GeoJSON data
+      final startMarkersData =
+          await ref.read(startMarkerProviderProvider.future);
+      final geoJson = startMarkersData.toJson();
 
-    if (startMarkerResponse.statusCode == 200) {
-      final rawGeoJson = json.decode(startMarkerResponse.body);
-
-      for (final feature in rawGeoJson['features']) {
+      // Process coordinates if needed (the provider should handle this)
+      for (final feature in geoJson['features']) {
         final coords = feature['geometry']['coordinates'];
         if (coords is List && coords.length >= 2) {
           final lon = coords[0];
@@ -175,7 +176,7 @@ class _MapPageState extends ConsumerState<MapPage> {
       try {
         _controller?.addSource(
           "start-markers",
-          GeojsonSourceProperties(data: rawGeoJson),
+          GeojsonSourceProperties(data: geoJson),
         );
         _controller?.addCircleLayer(
           "start-markers",
@@ -192,43 +193,39 @@ class _MapPageState extends ConsumerState<MapPage> {
       } catch (e) {
         debugPrint("Error adding start-markers source/layer: $e");
       }
+    } catch (e) {
+      debugPrint("Error fetching start markers: $e");
     }
 
-    //hazard markers
-    final hazardMarkersUrl = '$kBackendUrl/geojson/reports.json';
-    final hazardMarkersResponse = await http.get(Uri.parse(hazardMarkersUrl));
+    // Use the report provider to get the parsed GeoJSON data
+    final reportsData = await ref.read(reportProviderProvider.future);
+    final geoJson = reportsData.toJson();
 
-    if (hazardMarkersResponse.statusCode == 200) {
-      final rawGeoJson = json.decode(hazardMarkersResponse.body);
-
-      for (final feature in rawGeoJson['features']) {
-        final coords = feature['geometry']['coordinates'];
-        if (coords is List && coords.length >= 2) {
-          final lon = coords[0];
-          final lat = coords[1];
-          feature['geometry']['coordinates'] = [lon, lat];
-        }
+    // Process coordinates if needed (the provider should handle this)
+    for (final feature in geoJson['features']) {
+      final coords = feature['geometry']['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        final lon = coords[0];
+        final lat = coords[1];
+        feature['geometry']['coordinates'] = [lon, lat];
       }
+    }
 
-      try {
-        _controller?.addSource(
-          "hazard-markers",
-          GeojsonSourceProperties(data: rawGeoJson),
-        );
-        _controller?.addSymbolLayer(
-          "hazard-markers",
-          "hazard-markers-layer",
-          const SymbolLayerProperties(
-            iconImage: 'report_active',
-          ),
-          enableInteraction: true,
-        );
-      } catch (e) {
-        debugPrint("Error adding hazard markers: $e");
-      }
-    } else {
-      debugPrint(
-          "Failed to fetch hazard markers: ${hazardMarkersResponse.statusCode}");
+    try {
+      _controller?.addSource(
+        "hazard-markers",
+        GeojsonSourceProperties(data: geoJson),
+      );
+      _controller?.addSymbolLayer(
+        "hazard-markers",
+        "hazard-markers-layer",
+        const SymbolLayerProperties(
+          iconImage: 'report_active',
+        ),
+        enableInteraction: true,
+      );
+    } catch (e) {
+      debugPrint("Error adding hazard markers: $e");
     }
   }
 
