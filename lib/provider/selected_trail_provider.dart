@@ -1,13 +1,14 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:turf/turf.dart';
 
 part 'selected_trail_provider.g.dart'; // This must match the file name exactly
 
 @Riverpod(keepAlive: true)
 class SelectedTrail extends _$SelectedTrail {
   @override
-  Map<String, dynamic>? build() => null;
+  Feature? build() => null;
 
-  void select(Map<String, dynamic> trail) {
+  void select(Feature trail) {
     state = trail;
   }
 

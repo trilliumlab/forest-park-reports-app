@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/env.dart';
+import 'package:forest_park_reports/provider/panel_position_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'dart:math';
+import 'package:turf/turf.dart' show Feature;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
@@ -40,6 +43,62 @@ class _MapPageState extends ConsumerState<MapPage> {
     super.dispose();
   }
 
+  Future<void> _selectTrail(Feature trail) async {
+    // We clicked a polyline
+
+    // deselect hazards
+    // ref.read(selectedHazardProvider.notifier).deselect();
+
+    ref.read(selectedTrailProvider.notifier).select(trail);
+    if (ref.read(panelPositionProvider).position.index <=
+        PanelState.COLLAPSED.index) {
+      ref.read(panelPositionProvider.notifier).move(PanelState.SNAPPED);
+    }
+
+    await _removeHighlightLayer();
+
+    try {
+      await _controller!.addSource(
+        'highlight-source',
+        GeojsonSourceProperties(
+          data: {
+            "type": "FeatureCollection",
+            "features": [trail.toJson()],
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint("Highlight source already exists or error: $e");
+    }
+
+    try {
+      await _controller!.addLineLayer(
+          'highlight-source',
+          'highlight-layer',
+          const LineLayerProperties(
+            lineColor: '#FFFF33', // highlight color (blue)
+            lineWidth: 6,
+            lineJoin: 'round',
+            lineCap: 'round',
+          ),
+          enableInteraction: true);
+    } catch (e) {
+      debugPrint("Highlight layer already exists or error: $e");
+    }
+  }
+
+  Future<void> _deselectTrail() async {
+    // We clicked somewhere that is not a polyline nor hazard.
+    // Deselect both
+    if (ref.read(panelPositionProvider).position == PanelState.OPEN) {
+      ref.read(panelPositionProvider.notifier).move(PanelState.SNAPPED);
+    } else {
+      ref.read(selectedTrailProvider.notifier).clear();
+      await _removeHighlightLayer();
+      ref.read(panelPositionProvider.notifier).move(PanelState.HIDDEN);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: Cache style/tiles
@@ -72,55 +131,30 @@ class _MapPageState extends ConsumerState<MapPage> {
     _controller = controller;
 
     _controller?.onFeatureTapped.add((tappedFeature, pos, coords, layer) async {
-      if (layer == "routes-layer") {
-        // tappedFeature is the ID of the feature that was tapped.
-        // Since our only features are the routes, one of the IDs will match.
-        for (final feature in _routesGeoJson!['features']) {
-          final featureId = feature['id'].toString();
-          //  debugPrint("Checking feature ID: $featureId against tapped: $cleanFeatureId");
+      switch (layer) {
+        case "routes-layer":
 
-          if (featureId == tappedFeature) {
-            //  debugPrint("Feature matched: $featureId");
-            // setState(() {
-            //   _selectedFeature = feature;
-            // });
-            ref.read(selectedTrailProvider.notifier).select(feature);
-            break;
+          // tappedFeature is the ID of the feature that was tapped.
+          // Since our only features are the routes, one of the IDs will match.
+          for (final feature in _routesGeoJson!['features']) {
+            final featureId = feature['id'].toString();
+            //  debugPrint("Checking feature ID: $featureId against tapped: $cleanFeatureId");
+
+            if (featureId == tappedFeature) {
+              await _selectTrail(Feature.fromJson(feature));
+
+              break;
+            }
           }
-        }
-        await _removeHighlightLayer();
 
-        try {
-          await _controller!.addSource(
-            'highlight-source',
-            GeojsonSourceProperties(
-              data: {
-                "type": "FeatureCollection",
-                "features": [ref.read(selectedTrailProvider)],
-              },
-            ),
-          );
-        } catch (e) {
-          debugPrint("Highlight source already exists or error: $e");
-        }
+        case "highlight-layer":
 
-        try {
-          await _controller!.addLineLayer(
-              'highlight-source',
-              'highlight-layer',
-              const LineLayerProperties(
-                lineColor: '#FFFF33', // highlight color (blue)
-                lineWidth: 6,
-                lineJoin: 'round',
-                lineCap: 'round',
-              ),
-              enableInteraction: true);
-        } catch (e) {
-          debugPrint("Highlight layer already exists or error: $e");
-        }
-      } else {
-        debugPrint(
-            "Tapped feature ${tappedFeature.toString()} in unhandled layer `$layer`");
+          // Selected trail was tapped, deselect it
+          await _deselectTrail();
+
+        default:
+          debugPrint(
+              "Tapped feature ${tappedFeature.toString()} in unhandled layer `$layer`");
       }
     });
   }
@@ -232,11 +266,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   // Since clicks on routes aren't passed through, any call to this function
   // means the user clicked outside of a route and we should remove the highlight.
   Future<void> _onMapClick(Point<double> point, LatLng coordinates) async {
-    //setState(() {
-    //_selectedFeature = null;
-    //});
-    ref.read(selectedTrailProvider.notifier).clear();
-    await _removeHighlightLayer();
+    await _deselectTrail();
   }
 
   Future<void> _removeHighlightLayer() async {
