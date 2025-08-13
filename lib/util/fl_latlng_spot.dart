@@ -1,10 +1,10 @@
 import 'package:fl_chart/fl_chart.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:turf/turf.dart';
 
 import '../model/hazard.dart';
 
 class FlCoordinateSpot extends FlSpot {
-  final LatLng position;
+  final Position position;
   final HazardModel? hazard;
   const FlCoordinateSpot(super.x, super.y, this.position, [this.hazard]);
 }

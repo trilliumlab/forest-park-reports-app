@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 minHeight: PanelValues.collapsedHeight(context),
                 snapHeight: PanelValues.snapHeight(context),
                 defaultPanelState: PanelState.HIDDEN,
-                body: MapPage(),
+                body: const MapPage(),
                 controller: _panelController,
                 scrollController: _scrollController,
                 panelBuilder: () => PanelPage(

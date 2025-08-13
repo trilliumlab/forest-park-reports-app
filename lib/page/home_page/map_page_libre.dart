@@ -109,6 +109,7 @@ class _MapPageState extends ConsumerState<MapPage> {
 
     return MapLibreMap(
       rotateGesturesEnabled: true,
+      // FIXME
       styleString:
           '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true',
       initialCameraPosition: const CameraPosition(
@@ -165,6 +166,8 @@ class _MapPageState extends ConsumerState<MapPage> {
       final routesData = await ref.read(routeProviderProvider.future);
       final geoJson = routesData.toJson();
       _routesGeoJson = geoJson; // Save for manual hit test
+
+      print("Calling _onStyleLoaded");
 
       try {
         _controller?.addSource(
