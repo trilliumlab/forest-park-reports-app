@@ -1,7 +1,9 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/page/common/hazard_update_modal.dart';
+import 'package:forest_park_reports/provider/geojson_provider.dart';
 import 'package:forest_park_reports/provider/panel_position_provider.dart';
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:forest_park_reports/util/panel_values.dart';
@@ -30,19 +32,17 @@ class PanelPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedRelationID = ref.watch(selectedRelationProvider);
-    final selectedRelation = selectedRelationID == null
-        ? null
-        : ref.watch(relationsProvider).value?.get(selectedRelationID);
     final selectedTrail = ref.watch(selectedTrailProvider);
+    final selectedReport = ref.watch(selectedReportProvider);
+    final reportRoute = ref
+        .read(routeProvider)
+        .valueOrNull
+        ?.features
+        .firstWhereOrNull((route) =>
+            route.id.toString() ==
+            selectedReport?.properties?["route"].toString());
     final selectedHazard =
         ref.watch(selectedHazardProvider.select((h) => h.hazard));
-    final hazardRelation = selectedHazard == null
-        ? null
-        : ref
-            .read(relationsProvider)
-            .value
-            ?.forTrail(selectedHazard.location.trail);
 
     HazardUpdateList? hazardUpdates;
     String? lastImage;
@@ -54,13 +54,13 @@ class PanelPage extends ConsumerWidget {
 
     return Panel(
       // panel for when a hazard is selected
-      child: selectedHazard != null
+      child: selectedReport != null
           ? TrailInfoWidget(
               scrollController: scrollController,
               panelController: panelController,
               // TODO fetch trail name
               title:
-                  "${selectedHazard.hazard.displayName} on ${hazardRelation!.tags["name"] ?? "Unnamed Trail"}",
+                  "${selectedReport.properties?["category"]} on ${reportRoute?.properties?["title"] ?? "Unnamed Trail"}",
               bottomWidget: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -72,8 +72,8 @@ class PanelPage extends ConsumerWidget {
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.COLLAPSED);
-                          await createHazardUpdateModal(
-                              context, selectedHazard, false);
+                          // await createHazardUpdateModal(
+                          //     context, selectedHazard, false);
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.SNAPPED);
@@ -94,8 +94,8 @@ class PanelPage extends ConsumerWidget {
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.COLLAPSED);
-                          await createHazardUpdateModal(
-                              context, selectedHazard, true);
+                          // await createHazardUpdateModal(
+                          //     context, selectedHazard, true);
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.SNAPPED);

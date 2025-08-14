@@ -7,7 +7,7 @@ import 'package:turf/turf.dart';
 part 'geojson_provider.g.dart';
 
 @Riverpod(keepAlive: true)
-Future<FeatureCollection> routeProvider(Ref ref) async {
+Future<FeatureCollection> route(Ref ref) async {
   final dio = ref.read(dioProvider);
 
   // Use the backend URL from env.dart for the routes endpoint
@@ -25,7 +25,7 @@ Future<FeatureCollection> routeProvider(Ref ref) async {
 }
 
 @Riverpod(keepAlive: true)
-Future<FeatureCollection> startMarkerProvider(Ref ref) async {
+Future<FeatureCollection> startMarker(Ref ref) async {
   final dio = ref.read(dioProvider);
 
   // Use the backend URL from env.dart for the start markers endpoint
@@ -43,7 +43,7 @@ Future<FeatureCollection> startMarkerProvider(Ref ref) async {
 }
 
 @Riverpod(keepAlive: true)
-Future<FeatureCollection> reportProvider(Ref ref) async {
+Future<FeatureCollection> report(Ref ref) async {
   final dio = ref.read(dioProvider);
 
   // Use the backend URL from env.dart for the reports endpoint

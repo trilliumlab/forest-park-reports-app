@@ -350,7 +350,7 @@ class ReportsPostReportRequestCategoryEnum extends EnumClass {
   @BuiltValueEnumConst(wireName: r'damagedSign')
   static const ReportsPostReportRequestCategoryEnum damagedSign =
       _$reportsPostReportRequestCategoryEnum_damagedSign;
-  @BuiltValueEnumConst(wireName: r'seasonal', fallback: true)
+  @BuiltValueEnumConst(wireName: r'seasonal')
   static const ReportsPostReportRequestCategoryEnum seasonal =
       _$reportsPostReportRequestCategoryEnum_seasonal;
 
@@ -375,7 +375,7 @@ class ReportsPostReportRequestStatusEnum extends EnumClass {
   @BuiltValueEnumConst(wireName: r'inProgress')
   static const ReportsPostReportRequestStatusEnum inProgress =
       _$reportsPostReportRequestStatusEnum_inProgress;
-  @BuiltValueEnumConst(wireName: r'closed', fallback: true)
+  @BuiltValueEnumConst(wireName: r'closed')
   static const ReportsPostReportRequestStatusEnum closed =
       _$reportsPostReportRequestStatusEnum_closed;
 

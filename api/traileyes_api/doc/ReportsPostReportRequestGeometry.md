@@ -8,7 +8,7 @@ import 'package:traileyes_api/api.dart';
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**coordinates** | [**JsonObject**](.md) |  | 
+**coordinates** | [**BuiltList&lt;JsonObject&gt;**](JsonObject.md) |  | 
 **type** | [**JsonObject**](.md) |  | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

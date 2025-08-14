@@ -47,7 +47,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     // We clicked a polyline
 
     // deselect hazards
-    // ref.read(selectedHazardProvider.notifier).deselect();
+    ref.read(selectedReportProvider.notifier).clear();
 
     ref.read(selectedTrailProvider.notifier).select(trail);
     if (ref.read(panelPositionProvider).position.index <=
@@ -87,13 +87,27 @@ class _MapPageState extends ConsumerState<MapPage> {
     }
   }
 
-  Future<void> _deselectTrail() async {
+  Future<void> _selectReport(Feature report) async {
+    // deselect trail
+    ref.read(selectedTrailProvider.notifier).clear();
+
+    ref.read(selectedReportProvider.notifier).select(report);
+    if (ref.read(panelPositionProvider).position.index <=
+        PanelState.COLLAPSED.index) {
+      ref.read(panelPositionProvider.notifier).move(PanelState.SNAPPED);
+    }
+
+    await _removeHighlightLayer();
+  }
+
+  Future<void> _deselect() async {
     // We clicked somewhere that is not a polyline nor hazard.
     // Deselect both
     if (ref.read(panelPositionProvider).position == PanelState.OPEN) {
       ref.read(panelPositionProvider.notifier).move(PanelState.SNAPPED);
     } else {
       ref.read(selectedTrailProvider.notifier).clear();
+      ref.read(selectedReportProvider.notifier).clear();
       await _removeHighlightLayer();
       ref.read(panelPositionProvider.notifier).move(PanelState.HIDDEN);
     }
@@ -134,24 +148,36 @@ class _MapPageState extends ConsumerState<MapPage> {
     _controller?.onFeatureTapped.add((tappedFeature, pos, coords, layer) async {
       switch (layer) {
         case "routes-layer":
-
           // tappedFeature is the ID of the feature that was tapped.
           // Since our only features are the routes, one of the IDs will match.
-          for (final feature in _routesGeoJson!['features']) {
-            final featureId = feature['id'].toString();
-            //  debugPrint("Checking feature ID: $featureId against tapped: $cleanFeatureId");
-
-            if (featureId == tappedFeature) {
-              await _selectTrail(Feature.fromJson(feature));
-
+          final routes = await ref.read(routeProvider.future);
+          for (final route in routes.features) {
+            if (route.id.toString() == tappedFeature) {
+              // We do not need to check if the route is already selected since
+              // The tap would go to the highlight layer instead.
+              await _selectTrail(route);
               break;
             }
           }
 
         case "highlight-layer":
-
           // Selected trail was tapped, deselect it
-          await _deselectTrail();
+          await _deselect();
+
+        case "reports-layer":
+          final reports = await ref.read(reportProvider.future);
+          for (final report in reports.features) {
+            if (report.id.toString() == tappedFeature) {
+              if (ref.read(selectedReportProvider)?.id == report.id) {
+                // We tapped the selected report, deselect it
+                await _deselect();
+              } else {
+                // We tapped a different report, select it
+                await _selectReport(report);
+              }
+              break;
+            }
+          }
 
         default:
           debugPrint(
@@ -163,7 +189,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   Future<void> _onStyleLoaded() async {
     try {
       // Use the route provider to get the parsed GeoJSON data
-      final routesData = await ref.read(routeProviderProvider.future);
+      final routesData = await ref.read(routeProvider.future);
       final geoJson = routesData.toJson();
       _routesGeoJson = geoJson; // Save for manual hit test
 
@@ -196,8 +222,7 @@ class _MapPageState extends ConsumerState<MapPage> {
 
     try {
       // Use the start marker provider to get the parsed GeoJSON data
-      final startMarkersData =
-          await ref.read(startMarkerProviderProvider.future);
+      final startMarkersData = await ref.read(startMarkerProvider.future);
       final geoJson = startMarkersData.toJson();
 
       // Process coordinates if needed (the provider should handle this)
@@ -235,7 +260,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     }
 
     // Use the report provider to get the parsed GeoJSON data
-    final reportsData = await ref.read(reportProviderProvider.future);
+    final reportsData = await ref.read(reportProvider.future);
     final geoJson = reportsData.toJson();
 
     // Process coordinates if needed (the provider should handle this)
@@ -250,12 +275,12 @@ class _MapPageState extends ConsumerState<MapPage> {
 
     try {
       _controller?.addSource(
-        "hazard-markers",
+        "reports",
         GeojsonSourceProperties(data: geoJson),
       );
       _controller?.addSymbolLayer(
-        "hazard-markers",
-        "hazard-markers-layer",
+        "reports",
+        "reports-layer",
         const SymbolLayerProperties(
           iconImage: 'report_active',
         ),
@@ -269,7 +294,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   // Since clicks on routes aren't passed through, any call to this function
   // means the user clicked outside of a route and we should remove the highlight.
   Future<void> _onMapClick(Point<double> point, LatLng coordinates) async {
-    await _deselectTrail();
+    await _deselect();
   }
 
   Future<void> _removeHighlightLayer() async {

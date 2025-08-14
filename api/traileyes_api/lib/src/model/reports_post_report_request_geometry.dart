@@ -3,6 +3,7 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:built_collection/built_collection.dart';
 import 'package:built_value/json_object.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
@@ -20,7 +21,7 @@ abstract class ReportsPostReportRequestGeometry
         Built<ReportsPostReportRequestGeometry,
             ReportsPostReportRequestGeometryBuilder> {
   @BuiltValueField(wireName: r'coordinates')
-  JsonObject? get coordinates;
+  BuiltList<JsonObject?> get coordinates;
 
   @BuiltValueField(wireName: r'type')
   JsonObject? get type;
@@ -56,12 +57,10 @@ class _$ReportsPostReportRequestGeometrySerializer
     FullType specifiedType = FullType.unspecified,
   }) sync* {
     yield r'coordinates';
-    yield object.coordinates == null
-        ? null
-        : serializers.serialize(
-            object.coordinates,
-            specifiedType: const FullType.nullable(JsonObject),
-          );
+    yield serializers.serialize(
+      object.coordinates,
+      specifiedType: const FullType(BuiltList, [FullType.nullable(JsonObject)]),
+    );
     yield r'type';
     yield object.type == null
         ? null
@@ -97,10 +96,10 @@ class _$ReportsPostReportRequestGeometrySerializer
         case r'coordinates':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType.nullable(JsonObject),
-          ) as JsonObject?;
-          if (valueDes == null) continue;
-          result.coordinates = valueDes;
+            specifiedType:
+                const FullType(BuiltList, [FullType.nullable(JsonObject)]),
+          ) as BuiltList<JsonObject?>;
+          result.coordinates.replace(valueDes);
           break;
         case r'type':
           final valueDes = serializers.deserialize(

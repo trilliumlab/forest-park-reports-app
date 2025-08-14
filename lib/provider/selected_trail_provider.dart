@@ -16,3 +16,17 @@ class SelectedTrail extends _$SelectedTrail {
     state = null;
   }
 }
+
+@Riverpod(keepAlive: true)
+class SelectedReport extends _$SelectedReport {
+  @override
+  Feature? build() => null;
+
+  void select(Feature? report) {
+    state = report;
+  }
+
+  void clear() {
+    state = null;
+  }
+}
