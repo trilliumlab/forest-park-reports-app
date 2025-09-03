@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/page/common/permissions_dialog.dart';
-import 'package:forest_park_reports/page/home_page/panel_page.dart';
+
 import 'package:forest_park_reports/provider/location_provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -15,7 +15,7 @@ class HazardModal<T> extends ConsumerStatefulWidget {
   final Map<T, Widget>? options;
   final T? initialOption;
   final FutureOr<bool>? Function(BuildContext context, WidgetRef ref,
-      XFile? image, String uuid, T? option)? onSubmit;
+      XFile? image, String uuid, T? option, String? comments)? onSubmit;
 
   HazardModal(
       {super.key,
@@ -34,6 +34,7 @@ class HazardModal<T> extends ConsumerStatefulWidget {
 
 class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
   final _picker = ImagePicker();
+  final _commentsController = TextEditingController();
   final String _uuid = kUuidGen.v1();
   T? _selectedOption;
   XFile? _image;
@@ -47,6 +48,12 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
     } else {
       _selectedOption = null;
     }
+  }
+
+  @override
+  void dispose() {
+    _commentsController.dispose();
+    super.dispose();
   }
 
   void _close() {
@@ -121,7 +128,14 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
     if (widget.onSubmit != null) {
       // A false result indicates a non-confirmation, while null or true represent confirmation
       if (await widget.onSubmit!(
-              context, ref, _image, _uuid, _selectedOption) ==
+              context,
+              ref,
+              _image,
+              _uuid,
+              _selectedOption,
+              _commentsController.text.trim().isEmpty
+                  ? null
+                  : _commentsController.text.trim()) ==
           false) {
         setState(() => _inProgress = false);
         return;
@@ -136,7 +150,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SizedBox(
-      height: 500,
+      height: 650,
       // height: PanelValues.snapHeight(context),
       child: Stack(
         fit: StackFit.expand,
@@ -154,61 +168,147 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
               if (widget.options != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
-                  child: SizedBox(
-                    height: 40,
-                    child: SegmentedButton(
-                      emptySelectionAllowed: true,
-                      showSelectedIcon: false,
-                      selected: {if (_selectedOption != null) _selectedOption},
-                      onSelectionChanged: (selection) {
-                        if (selection.length == 1) {
-                          setState(() => _selectedOption = selection.first);
-                        }
-                      },
-                      segments: [
-                        for (final option in widget.options!.entries)
-                          ButtonSegment(
-                            value: option.key,
-                            label: Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: option.value),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hazard Type:',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: theme.colorScheme.outline,
+                            width: 1,
                           ),
-                      ],
-                    ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<T>(
+                            value: _selectedOption,
+                            hint: const Text('Select hazard type'),
+                            isExpanded: true,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            borderRadius: BorderRadius.circular(12),
+                            dropdownColor: theme.colorScheme.surface,
+                            style: theme.textTheme.bodyMedium,
+                            icon: Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                            onChanged: (T? newValue) {
+                              setState(() {
+                                _selectedOption = newValue;
+                              });
+                            },
+                            items: widget.options!.entries.map((entry) {
+                              return DropdownMenuItem<T>(
+                                value: entry.key,
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8),
+                                  child: entry.value,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              Expanded(
-                  child: Padding(
-                padding: const EdgeInsets.only(left: 12, right: 12, top: 8),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(18)),
-                  child: FilledButton(
-                    style: ButtonStyle(
-                        shape: WidgetStatePropertyAll(RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18))),
-                        backgroundColor: WidgetStatePropertyAll(
-                            theme.colorScheme.surfaceContainer),
-                        padding:
-                            const WidgetStatePropertyAll(EdgeInsets.only())),
-                    onPressed: null,
-                    child: InkWell(
-                      onTap: _cameraSelect,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints.expand(),
-                        child: _image == null
-                            ? Icon(
-                                Icons.camera_alt_rounded,
-                                color: theme.colorScheme.primary,
-                              )
-                            : Image.file(
-                                File(_image!.path),
-                                fit: BoxFit.cover,
-                              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Additional Information (Optional):',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _commentsController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText:
+                            'Add any additional details about the hazard...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              )),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Photo:',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.outline,
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          onTap: _cameraSelect,
+                          child: _image == null
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: theme.colorScheme.primary,
+                                      size: 48,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Tap to take photo',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Image.file(
+                                  File(_image!.path),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(
                     left: 12, right: 12, top: 8, bottom: 28),
