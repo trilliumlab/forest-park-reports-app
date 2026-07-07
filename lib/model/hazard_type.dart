@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 enum HazardType {
   fallenTree("Fallen Tree", Icons.park_rounded),
-  flood("Drainage Issue", Icons.flood_rounded),
+  flood("Drainage Issue", Icons.water_rounded),
   erosion("Erosion Issue", Icons.landslide_rounded),
   structureFailure("Structure Failure", Icons.home_rounded),
   damagedSign("Damaged Sign", Icons.signpost_rounded),

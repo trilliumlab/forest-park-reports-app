@@ -227,7 +227,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Additional Information (Optional):',
+                      'Description:',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -237,8 +237,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                       controller: _commentsController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText:
-                            'Add any additional details about the hazard...',
+                        hintText: 'Description of the hazard...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

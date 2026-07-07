@@ -40,24 +40,22 @@ class UpdateInfoWidget extends StatelessWidget {
                     update.active ? "Reported Present" : "Reported Cleared",
                     style: theme.textTheme.titleLarge,
                   ),
-                  Text(
-                      update.timeString(),
-                      style: theme.textTheme.titleMedium
-                  )
+                  Text(update.timeString(), style: theme.textTheme.titleMedium)
                 ],
               ),
             ],
           ),
           SizedBox(
-            height: kImageHeight,
-            child: AspectRatio(
-              aspectRatio: 4/3,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(8)),
-                child: (update.image != null) ? HazardImage(update.image!, blurHash: update.blurHash) : Container(),
-              ),
-            )
-          ),
+              height: kImageHeight,
+              child: AspectRatio(
+                aspectRatio: 4 / 3,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  child: (update.image != null)
+                      ? HazardImage(update.image!, blurHash: update.blurHash)
+                      : Container(),
+                ),
+              )),
         ],
       ),
     );
