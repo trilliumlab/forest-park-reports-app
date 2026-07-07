@@ -9,57 +9,71 @@ on:
   push:
   pull_request:
 
-jobs:
-  build_ipa:
-    name: Build iOS
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v3
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          architecture: x64
-      - run: echo "${{ secrets.ENV_FILE }}" > .env
-      - run: dart pub get
-      - run: dart run build_runner build
-      - run: flutter build ios --release --no-codesign
-      - run: mkdir Payload
-      - run: cp -r build/ios/iphoneos/Runner.app Payload
-      - run: zip -r -X forest_park_reports.ipa Payload
-      - run: ls
-      - uses: actions/upload-artifact@v3
-        with:
-          name: forest_park_reports.ipa
-          path: forest_park_reports.ipa
+# Cancel older in-progress runs of this workflow on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+# TODO(interns): once Milestone 1 confirms which Flutter version the app builds on,
+# pin it here (e.g. FLUTTER_VERSION: "3.24.0") and swap `channel: stable` for
+# `flutter-version: ${{ env.FLUTTER_VERSION }}` in both jobs, so CI matches local.
+env:
+  FLUTTER_CHANNEL: stable
+
+jobs:
   build_apk:
     name: Build Android
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-          architecture: x64
-      - run: git config --global --add safe.directory /opt/hostedtoolcache/flutter/stable-3.10.6-x64
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
       - run: echo "${{ secrets.ENV_FILE }}" > .env
       - run: echo "${{ secrets.KEY_PROPERTIES_FILE }}" > android/key.properties
       - run: echo "${{ secrets.TRILLIUM_KEYSTORE }}" | base64 --decode > android/trillium-keystore.jks
-      - run: dart pub get
-      - run: dart run build_runner build
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter build apk
       - run: mv build/app/outputs/flutter-apk/app-release.apk forest_park_reports.apk
       - run: flutter build appbundle
       - run: mv build/app/outputs/bundle/release/app-release.aab forest_park_reports.aab
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: forest_park_reports.apk
           path: forest_park_reports.apk
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: forest_park_reports.aab
           path: forest_park_reports.aab
+
+  build_ipa:
+    name: Build iOS
+    runs-on: macos-14
+    # iOS is deferred this summer (needs a Mac + signing). This build is --no-codesign,
+    # so the artifact can't be installed on devices — it's a compile check only.
+    # continue-on-error keeps an iOS failure from failing the whole workflow; Android is
+    # the real gate. Remove this once iOS distribution is set up.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+      - run: echo "${{ secrets.ENV_FILE }}" > .env
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+      - run: flutter build ios --release --no-codesign
+      - run: mkdir Payload
+      - run: cp -r build/ios/iphoneos/Runner.app Payload
+      - run: zip -r -X forest_park_reports.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forest_park_reports.ipa
+          path: forest_park_reports.ipa
