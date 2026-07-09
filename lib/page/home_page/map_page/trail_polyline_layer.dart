@@ -15,13 +15,14 @@ class TrailPolylineLayer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRelationID = ref.watch(selectedRelationProvider);
-    final relations = ref.watch(relationsProvider.select((value) => value.value));
+    final relations =
+        ref.watch(relationsProvider.select((value) => value.value));
     final trails = ref.watch(trailsProvider).value;
     if (relations == null || trails == null) {
       return Container();
     }
-    final selectedRelation = selectedRelationID == null ? null
-        : relations.get(selectedRelationID);
+    final selectedRelation =
+        selectedRelationID == null ? null : relations.get(selectedRelationID);
 
     final LayerHitNotifier hitNotifier = ValueNotifier(null);
 
@@ -40,51 +41,60 @@ class TrailPolylineLayer extends ConsumerWidget {
             // select polyline
             final tag = hitResult.hitValues.first;
             if (selectedRelation?.members.contains(tag) ?? false) {
-              if (ref
-                  .read(panelPositionProvider)
-                  .position == PanelState.OPEN
-              ) {
-                ref.read(panelPositionProvider.notifier).move(
-                    PanelState.SNAPPED);
+              if (ref.read(panelPositionProvider).position == PanelState.OPEN) {
+                ref
+                    .read(panelPositionProvider.notifier)
+                    .move(PanelState.SNAPPED);
               } else {
                 ref.read(selectedHazardProvider.notifier).deselect();
                 ref.read(selectedRelationProvider.notifier).deselect();
-                ref.read(panelPositionProvider.notifier).move(
-                    PanelState.HIDDEN);
+                ref
+                    .read(panelPositionProvider.notifier)
+                    .move(PanelState.HIDDEN);
               }
             } else {
-              ref.read(selectedRelationProvider.notifier)
-                  .select(relations.firstWhere((r) => r.members.contains(tag)).id);
-              if (ref
-                  .read(panelPositionProvider)
-                  .position.index <= PanelState.COLLAPSED.index ) {
-                ref.read(panelPositionProvider.notifier).move(
-                    PanelState.SNAPPED);
+              ref.read(selectedRelationProvider.notifier).select(
+                  relations.firstWhere((r) => r.members.contains(tag)).id);
+              if (ref.read(panelPositionProvider).position.index <=
+                  PanelState.COLLAPSED.index) {
+                ref
+                    .read(panelPositionProvider.notifier)
+                    .move(PanelState.SNAPPED);
               }
             }
           }
         },
         child: PolylineLayer(
           hitNotifier: hitNotifier,
-          polylines: trails.map((trail) {
-            return selectedRelation?.members.contains(trail.id) ?? false ? Polyline(
-              hitValue: trail.id,
-              points: trail.geometry,
-              strokeWidth: 1.0,
-              borderColor: Colors.green.withAlpha(80),
-              borderStrokeWidth: 8.0,
-              color: Colors.green,
-            ) : Polyline(
-              hitValue: trail.id,
-              points: trail.geometry,
-              strokeWidth: 1.0,
-              color: Colors.orange,
-            );
-          }).whereNotNull().toList()..sort((a, b) {
-            // sorts the list to have selected polylines at the top
-            return (selectedRelation?.members.contains(a.hitValue) ?? false ? 1 : 0) -
-                (selectedRelation?.members.contains(b.hitValue) ?? false ? 1 : 0);
-          }),
+          polylines: trails
+              .map((trail) {
+                return selectedRelation?.members.contains(trail.id) ?? false
+                    ? Polyline(
+                        hitValue: trail.id,
+                        points: trail.geometry,
+                        strokeWidth: 1.0,
+                        borderColor: Colors.green.withAlpha(80),
+                        borderStrokeWidth: 8.0,
+                        color: Colors.green,
+                      )
+                    : Polyline(
+                        hitValue: trail.id,
+                        points: trail.geometry,
+                        strokeWidth: 1.0,
+                        color: Colors.orange,
+                      );
+              })
+              .whereNotNull()
+              .toList()
+            ..sort((a, b) {
+              // sorts the list to have selected polylines at the top
+              return (selectedRelation?.members.contains(a.hitValue) ?? false
+                      ? 1
+                      : 0) -
+                  (selectedRelation?.members.contains(b.hitValue) ?? false
+                      ? 1
+                      : 0);
+            }),
         ),
       ),
     );

@@ -16,8 +16,8 @@ Future<void> main() async {
 
   // Initialize in parallel
   await Future.wait([
-    dotenv.load(),
     // Run consecutively.
+    dotenv.load(),
     () async {
       await FMTCObjectBoxBackend().initialise();
       await const FMTCStore('forestPark').manage.create();
@@ -42,17 +42,20 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   // we listen to brightness changes (IE light to dark mode) and
   // rebuild the entire widget tree when it's changed
   // ignore: unused_field
-  Brightness _brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+  Brightness _brightness =
+      WidgetsBinding.instance.platformDispatcher.platformBrightness;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
   }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
+
   @override
   void didChangePlatformBrightness() {
     setState(() {
@@ -62,32 +65,20 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setPreferredOrientations(
-      [
-        DeviceOrientation.portraitUp
-      ]
-    );
-    // enable edge to edge mode on android
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light.copyWith(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-    ));
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
     final lightTheme = ThemeData.from(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: kMaterialAppPrimaryColor,
-          brightness: Brightness.light,
-          dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
-        )
-    );
+      seedColor: kMaterialAppPrimaryColor,
+      brightness: Brightness.light,
+      dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
+    ));
     final darkTheme = ThemeData.from(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: kMaterialAppPrimaryColor,
-          brightness: Brightness.dark,
-          dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
-        )
-    );
+      seedColor: kMaterialAppPrimaryColor,
+      brightness: Brightness.dark,
+      dynamicSchemeVariant: DynamicSchemeVariant.rainbow,
+    ));
 
     return MaterialApp(
       title: 'Trail Eyes',

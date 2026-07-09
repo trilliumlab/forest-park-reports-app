@@ -32,8 +32,8 @@ if (flutterVersionName == null) {
 android {
     namespace 'edu.pdx.cecs.forestpark'
 
-    compileSdkVersion 34
-    ndkVersion "26.1.10909125"
+    compileSdkVersion 36
+    ndkVersion "28.1.13356709"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -53,7 +53,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
         minSdkVersion 23
-        targetSdkVersion 33
+        targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -69,6 +69,7 @@ android {
 
     buildTypes {
         release {
+            manifestPlaceholders = [usesCleartextTraffic:"false"]
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
@@ -76,6 +77,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
+            manifestPlaceholders = [usesCleartextTraffic:"true"]
             signingConfig signingConfigs.release
         }
     }

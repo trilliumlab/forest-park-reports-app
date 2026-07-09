@@ -12,6 +12,10 @@ PODS:
     - Flutter
   - image_picker_ios (0.0.1):
     - Flutter
+  - MapLibre (6.14.0)
+  - maplibre_gl (0.0.1):
+    - Flutter
+    - MapLibre (= 6.14.0)
   - ObjectBox (2.0.0)
   - objectbox_flutter_libs (0.0.1):
     - Flutter
@@ -48,6 +52,7 @@ DEPENDENCIES:
   - flutter_uploader (from `.symlinks/plugins/flutter_uploader/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - maplibre_gl (from `.symlinks/plugins/maplibre_gl/ios`)
   - objectbox_flutter_libs (from `.symlinks/plugins/objectbox_flutter_libs/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -56,6 +61,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - Alamofire
+    - MapLibre
     - ObjectBox
     - sqlite3
 
@@ -72,6 +78,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/geolocator_apple/ios"
   image_picker_ios:
     :path: ".symlinks/plugins/image_picker_ios/ios"
+  maplibre_gl:
+    :path: ".symlinks/plugins/maplibre_gl/ios"
   objectbox_flutter_libs:
     :path: ".symlinks/plugins/objectbox_flutter_libs/ios"
   path_provider_foundation:
@@ -89,6 +97,8 @@ SPEC CHECKSUMS:
   flutter_uploader: 750fb6850a5a3c3403816a85dafa3e208fbe9039
   geolocator_apple: 6cbaf322953988e009e5ecb481f07efece75c450
   image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
+  MapLibre: 69e572367f4ef6287e18246cfafc39c80cdcabcd
+  maplibre_gl: 753f55d763a81cbdba087d02af02d12206e6f94e
   ObjectBox: f5319bd9ad2ea960796eff7227e86471867e9ef0
   objectbox_flutter_libs: c7748f6c6fda47d22f15c8062fb8208063fd948a
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
