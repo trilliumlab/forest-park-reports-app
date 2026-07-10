@@ -8,6 +8,7 @@ import 'package:forest_park_reports/provider/database_provider.dart';
 import 'package:forest_park_reports/provider/dio_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:forest_park_reports/provider/geojson_provider.dart';
 
 part 'trail_provider.g.dart';
 
@@ -51,6 +52,38 @@ class Trails extends _$Trails {
   // TODO we might need higher resolution here than the closest point
   // This function allows us to snap a location to the closest point on a path.
   Future<SnappedResult> snapLocation(LatLng loc) async {
+
+    final routes = await ref.read(routeProvider.future);
+
+    double? squareDist;
+    int? closestTrail;
+    LatLng? closestLatLng;
+    int index = 0;
+
+    for (final route in routes.features) {
+      final routeJson = route.toJson();
+      final routeId = int.tryParse(route.id.toString()) ?? 0;
+      final coordinates =
+          routeJson['geometry']['coordinates'] as List<dynamic>;
+
+      for (int i = 0; i < coordinates.length; i++) {
+        final coord = coordinates[i] as List<dynamic>;
+        final latLng = LatLng(
+          (coord[1] as num).toDouble(),
+          (coord[0] as num).toDouble(),
+        );
+
+        final dist = _squareDist(loc, latLng);
+        if (squareDist == null || dist < squareDist) {
+          squareDist = dist;
+          closestTrail = routeId;
+          closestLatLng = latLng;
+          index = i;
+        }
+      }
+    }
+
+      /* old version of the one up above
     final trailList = await future;
 
     // this technically won't get an accurate distance as as much
@@ -72,7 +105,7 @@ class Trails extends _$Trails {
         }
       }
     }
-
+*/
     final snappedLoc = SnappedLatLng(closestTrail!, index, closestLatLng!);
     final dist = const DistanceVincenty().as(LengthUnit.Meter, loc, snappedLoc);
     return SnappedResult(snappedLoc, dist);

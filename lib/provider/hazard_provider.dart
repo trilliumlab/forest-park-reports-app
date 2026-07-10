@@ -18,7 +18,7 @@ import 'package:forest_park_reports/provider/dio_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
+import 'package:latlong2/latlong.dart';
 part 'hazard_provider.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -42,10 +42,13 @@ class ActiveHazard extends _$ActiveHazard {
   }
 
   Future<List<HazardModel>> _fetch() async {
-    final res = await ref.read(dioProvider).get("/hazard/active");
+    final res = await ref.read(dioProvider).get("/geojson/reports.json");
+
+    final data = Map<String, dynamic>.from(res.data as Map);
+    final features = data["features"] as List? ?? [];
 
     final hazards = [
-      for (final hazard in res.data) HazardModel.fromJson(hazard)
+      for (final feature in features) _hazardFromGeoJsonFeature(feature),
     ];
 
     final db = ref.read(databaseProvider);
@@ -56,6 +59,39 @@ class ActiveHazard extends _$ActiveHazard {
     });
 
     return hazards;
+  }
+
+  HazardModel _hazardFromGeoJsonFeature(dynamic feature) {
+    final featureMap = Map<String, dynamic>.from(feature as Map);
+    final properties =
+        Map<String, dynamic>.from(featureMap["properties"] as Map);
+    final geometry = Map<String, dynamic>.from(featureMap["geometry"] as Map);
+    final coordinates = geometry["coordinates"] as List;
+
+    final category = properties["category"] as String? ?? "other";
+    final hazardType = category == "drainage"
+        ? HazardType.flood
+        : HazardType.values.firstWhere(
+            (type) => type.name == category,
+            orElse: () => HazardType.other,
+          );
+
+    return HazardModel(
+      uuid: properties["localId"] as String? ?? featureMap["id"].toString(),
+      time: DateTime.now().toUtc(),
+      hazard: hazardType,
+      location: SnappedLatLng(
+        (properties["route"] as num?)?.toInt() ?? 0,
+        (properties["trail"] as num?)?.toInt() ?? 0,
+        LatLng(
+          (coordinates[1] as num).toDouble(),
+          (coordinates[0] as num).toDouble(),
+        ),
+      ),
+      offline: false,
+      image: properties["image"] as String?,
+      blurHash: properties["blurHash"] as String?,
+    );
   }
 
   Future<void> refresh() async {
@@ -101,14 +137,29 @@ class ActiveHazard extends _$ActiveHazard {
     // Add offline hazard to app
     _addHazard(hazardRequest);
 
-    // Queue new hazard request.
-    OfflineUploader().enqueueJson(
-      method: UploadMethod.POST,
-      requestType: QueuedRequestType.newHazard,
-      associatedUuid: hazardRequest.uuid,
-      url: "$kApiUrl/hazard/new",
-      data: hazardRequest.toJson(),
+    await ref.read(dioProvider).post(
+      "/reports/report",
+      data: {
+        "localId": hazardRequest.uuid,
+        "creatorDeviceId": "flutter-dev",
+        "category": hazardRequest.hazard.name == "flood"
+            ? "drainage"
+            : hazardRequest.hazard.name,
+        "route": hazardRequest.location.trail,
+        "trail": hazardRequest.location.node,
+        "image": hazardRequest.image,
+        "blurHash": hazardRequest.blurHash,
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            hazardRequest.location.longitude,
+            hazardRequest.location.latitude,
+            0,
+          ],
+        },
+      },
     );
+
 
     // Now we try to upload the image if we have one
     if (image == null) {

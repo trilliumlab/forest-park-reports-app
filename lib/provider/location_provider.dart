@@ -5,10 +5,22 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'location_provider.g.dart';
 
+/*
 @riverpod
 Stream<Position> location(LocationRef ref) {
   ref.watch(locationPermissionStatusProvider);
   return Geolocator.getPositionStream();
+}
+*/
+
+@riverpod
+Stream<Position> location(LocationRef ref) async* {
+  ref.watch(locationPermissionStatusProvider);
+
+  final currentPosition = await Geolocator.getCurrentPosition();
+  yield currentPosition;
+
+  yield* Geolocator.getPositionStream();
 }
 
 class LocationPermissionStatusState {

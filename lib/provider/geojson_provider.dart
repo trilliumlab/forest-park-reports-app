@@ -24,6 +24,7 @@ Future<FeatureCollection> route(Ref ref) async {
   }
 }
 
+/*
 @Riverpod(keepAlive: true)
 Future<FeatureCollection> startMarker(Ref ref) async {
   final dio = ref.read(dioProvider);
@@ -34,6 +35,38 @@ Future<FeatureCollection> startMarker(Ref ref) async {
   if (response.statusCode == 200) {
     try {
       return FeatureCollection.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to parse start markers GeoJSON: $e');
+    }
+  } else {
+    throw Exception('Failed to fetch start markers: ${response.statusCode}');
+  }
+}
+*/
+
+//replacement of the one above to see if this works better
+@Riverpod(keepAlive: true)
+Future<FeatureCollection> startMarker(Ref ref) async {
+  final dio = ref.read(dioProvider);
+
+  final response = await dio.get('$kBackendUrl/geojson/start-markers.json');
+
+  if (response.statusCode == 200) {
+    try {
+      final data = Map<String, dynamic>.from(response.data as Map);
+
+      for (final feature in data['features'] as List) {
+        final featureMap = feature as Map;
+        final geometry = featureMap['geometry'] as Map;
+        final coords = geometry['coordinates'] as List;
+
+        geometry['coordinates'] = [
+          (coords[0] as num).toDouble(),
+          (coords[1] as num).toDouble(),
+        ];
+      }
+
+      return FeatureCollection.fromJson(data);
     } catch (e) {
       throw Exception('Failed to parse start markers GeoJSON: $e');
     }
