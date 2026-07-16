@@ -16,6 +16,7 @@ import 'package:forest_park_reports/model/hazard.dart';
 import 'package:forest_park_reports/model/hazard_update.dart';
 import 'package:forest_park_reports/provider/database_provider.dart';
 import 'package:forest_park_reports/provider/dio_provider.dart';
+import 'package:forest_park_reports/provider/geojson_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -160,6 +161,8 @@ class ActiveHazard extends _$ActiveHazard {
         },
       },
     );
+
+    ref.invalidate(reportProvider);
 
     // Now we try to upload the image if we have one
     if (image == null) {

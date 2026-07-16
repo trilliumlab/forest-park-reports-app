@@ -5,7 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'dart:math';
-import 'package:turf/turf.dart' show Feature;
+import 'package:turf/turf.dart' show Feature, FeatureCollection;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
@@ -24,6 +24,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   MapLibreMapController? _controller;
   //Map<String, dynamic>? _selectedFeature;
   Map<String, dynamic>? _routesGeoJson;
+  bool _reportsSourceLoaded = false;
 
   @override
   void initState() {
@@ -115,6 +116,24 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<FeatureCollection>>(reportProvider,
+        (previous, next) {
+      next.whenData((reportsData) async {
+        if (!_reportsSourceLoaded || _controller == null) {
+          return;
+        }
+
+        try {
+          await _controller!.setGeoJsonSource(
+            "reports",
+            _reportGeoJson(reportsData),
+          );
+        } catch (e) {
+          debugPrint("Error refreshing hazard markers: $e");
+        }
+      });
+    });
+
     // TODO: Cache style/tiles
     final lightMode = Theme.of(context).brightness == Brightness.light;
     final styleUrl =
@@ -259,19 +278,8 @@ class _MapPageState extends ConsumerState<MapPage> {
       debugPrint("Error fetching start markers: $e");
     }
 
-    // Use the report provider to get the parsed GeoJSON data
     final reportsData = await ref.read(reportProvider.future);
-    final geoJson = reportsData.toJson();
-
-    // Process coordinates if needed (the provider should handle this)
-    for (final feature in geoJson['features']) {
-      final coords = feature['geometry']['coordinates'];
-      if (coords is List && coords.length >= 2) {
-        final lon = coords[0];
-        final lat = coords[1];
-        feature['geometry']['coordinates'] = [lon, lat];
-      }
-    }
+    final geoJson = _reportGeoJson(reportsData);
 
     try {
       _controller?.addSource(
@@ -286,9 +294,28 @@ class _MapPageState extends ConsumerState<MapPage> {
         ),
         enableInteraction: true,
       );
+      _reportsSourceLoaded = true;
     } catch (e) {
       debugPrint("Error adding hazard markers: $e");
     }
+  }
+
+  Map<String, dynamic> _reportGeoJson(FeatureCollection reportsData) {
+    final geoJson = reportsData.toJson();
+
+    for (final feature in geoJson['features']) {
+      final coords = feature['geometry']['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        final lon = coords[0];
+        final lat = coords[1];
+        feature['geometry']['coordinates'] = [
+          (lon as num).toDouble(),
+          (lat as num).toDouble(),
+        ];
+      }
+    }
+
+    return geoJson;
   }
 
   // Since clicks on routes aren't passed through, any call to this function
