@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/model/hazard_new_response.dart';
@@ -160,7 +161,6 @@ class ActiveHazard extends _$ActiveHazard {
       },
     );
 
-
     // Now we try to upload the image if we have one
     if (image == null) {
       return;
@@ -171,14 +171,9 @@ class ActiveHazard extends _$ActiveHazard {
     final imagePath = join(imageDir.path, "${hazardRequest.image!}.jpeg");
     await image.compressToFile(filePath: imagePath);
 
-    // Queue image upload
-    await OfflineUploader().enqueueFile(
-      method: UploadMethod.PUT,
-      requestType: QueuedRequestType.imageUpload,
-      associatedUuid: hazardRequest.uuid,
-      url: "$kApiUrl/hazard/image/${hazardRequest.image!}",
-      multipart: true,
-      filePath: imagePath,
+    await _uploadReportImage(
+      imageUuid: hazardRequest.image!,
+      imagePath: imagePath,
     );
   }
 
@@ -199,6 +194,24 @@ class ActiveHazard extends _$ActiveHazard {
     for (final update in response.updates) {
       await updatesNotifier.addHazardUpdate(update);
     }
+  }
+
+  Future<void> _uploadReportImage({
+    required String imageUuid,
+    required String imagePath,
+  }) async {
+    final formData = FormData.fromMap({
+      "image": await MultipartFile.fromFile(
+        imagePath,
+        filename: "$imageUuid.jpeg",
+        contentType: DioMediaType("image", "jpeg"),
+      ),
+    });
+
+    await ref.read(dioProvider).post(
+          "/reports/image/$imageUuid",
+          data: formData,
+        );
   }
 
   Future<void> _addHazard(HazardModel hazard) async {
@@ -279,7 +292,8 @@ class ActiveHazard extends _$ActiveHazard {
       method: UploadMethod.PUT,
       requestType: QueuedRequestType.imageUpload,
       associatedUuid: hazardUpdateRequest.uuid,
-      url: "$kApiUrl/hazard/image/${hazardUpdateRequest.image!}",
+      url:
+          "$kApiUrl/reports/image/${hazardUpdateRequest.image!}", //update photo upload URLS
       multipart: true,
       filePath: imagePath,
     );

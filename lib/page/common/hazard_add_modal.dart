@@ -56,7 +56,14 @@ createHazardAddModal(BuildContext context) async {
               return false;
             }
 
-            final location = await Geolocator.getCurrentPosition();
+            final location = await Geolocator.getCurrentPosition()
+                .timeout(const Duration(seconds: 5), onTimeout: () async {
+              final lastKnown = await Geolocator.getLastKnownPosition();
+              if (lastKnown == null) {
+                throw Exception("No location available");
+              }
+              return lastKnown;
+            });
             final snappedLoc = await ref
                 .read(trailsProvider.notifier)
                 .snapLocation(location.latLng()!);

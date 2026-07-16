@@ -189,7 +189,12 @@ class OfflineUploader {
               method: method,
               url: url,
               headers: headers,
-              files: [FileItem(path: filePath)],
+              files: [
+                FileItem(
+                  path: filePath,
+                  field: "image",
+                )
+              ],
             )
           : RawUpload(
               method: method,

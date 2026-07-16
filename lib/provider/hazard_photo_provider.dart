@@ -42,7 +42,7 @@ class HazardPhoto extends _$HazardPhoto {
 
   Future<Uint8List?> _fetch(String uuid) async {
     final res = await ref.read(dioProvider).get<Uint8List>(
-      "/hazard/image/$uuid",
+      "/reports/image/$uuid", //update photo display
       options: Options(responseType: ResponseType.bytes),
     );
     final data = res.data;
