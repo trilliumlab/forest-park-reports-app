@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/env.dart';
 import 'package:forest_park_reports/provider/align_position_provider.dart';
+import 'package:forest_park_reports/provider/location_provider.dart';
 import 'package:forest_park_reports/provider/panel_position_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
@@ -117,6 +118,29 @@ class _MapPageState extends ConsumerState<MapPage> {
               kHomeCameraPosition.center.longitude),
           kHomeCameraPosition.zoom,
         ));
+      } else if (next == AlignPositionTargetState.currentLocation) {
+        final position = ref.read(locationProvider).valueOrNull;
+        if (position != null) {
+          _controller?.animateCamera(CameraUpdate.newLatLngZoom(
+            LatLng(position.latitude, position.longitude),
+            16,
+          ));
+        }
+      }
+    });
+    // MapLibre's native location-follow doesn't reliably pan the camera as
+    // new GPS fixes arrive (puck position/heading render fine, but the
+    // camera itself stays put even while the OS is delivering updates), so
+    // drive panning manually off our own geolocator-based location stream
+    // while follow mode is active.
+    ref.listen(locationProvider, (prev, next) {
+      final position = next.valueOrNull;
+      if (position != null &&
+          ref.read(alignPositionTargetProvider) ==
+              AlignPositionTargetState.currentLocation) {
+        _controller?.animateCamera(
+          CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+        );
       }
     });
 
