@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/env.dart';
+import 'package:forest_park_reports/provider/align_position_provider.dart';
 import 'package:forest_park_reports/provider/panel_position_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'dart:math';
 import 'package:turf/turf.dart' show Feature;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
 
@@ -24,18 +25,6 @@ class _MapPageState extends ConsumerState<MapPage> {
   MapLibreMapController? _controller;
   //Map<String, dynamic>? _selectedFeature;
   Map<String, dynamic>? _routesGeoJson;
-
-  @override
-  void initState() {
-    super.initState();
-    printEnv();
-  }
-
-  @override
-  void printEnv() {
-    print('Backend URL: ${dotenv.env["BACKEND_URL"]}');
-    print('Proto API Key: ${dotenv.env["PROTO_API_KEY"]}');
-  }
 
   @override
   void dispose() {
@@ -119,13 +108,21 @@ class _MapPageState extends ConsumerState<MapPage> {
     final lightMode = Theme.of(context).brightness == Brightness.light;
     final styleUrl =
         '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true';
-    // debugPrint('STYLE URL: $styleUrl');
+
+    final followTarget = ref.watch(alignPositionTargetProvider);
+    ref.listen(alignPositionTargetProvider, (prev, next) {
+      if (next == AlignPositionTargetState.forestPark) {
+        _controller?.animateCamera(CameraUpdate.newLatLngZoom(
+          LatLng(kHomeCameraPosition.center.latitude,
+              kHomeCameraPosition.center.longitude),
+          kHomeCameraPosition.zoom,
+        ));
+      }
+    });
 
     return MapLibreMap(
       rotateGesturesEnabled: true,
-      // FIXME
-      styleString:
-          '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true',
+      styleString: styleUrl,
       initialCameraPosition: const CameraPosition(
         target: LatLng(45.5475, -122.755),
         zoom: 10.75,
@@ -139,6 +136,20 @@ class _MapPageState extends ConsumerState<MapPage> {
       attributionButtonMargins: const Point(10, 10),
       myLocationEnabled: true,
       myLocationRenderMode: MyLocationRenderMode.compass,
+      myLocationTrackingMode: followTarget == AlignPositionTargetState.currentLocation
+          ? MyLocationTrackingMode.tracking
+          : MyLocationTrackingMode.none,
+      onCameraTrackingDismissed: () {
+        // Tracking mode also turns off (and this fires) when we switch to
+        // forestPark ourselves; only treat it as a user-initiated dismissal
+        // if we were actually following the current location.
+        if (ref.read(alignPositionTargetProvider) ==
+            AlignPositionTargetState.currentLocation) {
+          ref
+              .read(alignPositionTargetProvider.notifier)
+              .update(AlignPositionTargetState.none);
+        }
+      },
     );
   }
 
@@ -192,8 +203,6 @@ class _MapPageState extends ConsumerState<MapPage> {
       final routesData = await ref.read(routeProvider.future);
       final geoJson = routesData.toJson();
       _routesGeoJson = geoJson; // Save for manual hit test
-
-      print("Calling _onStyleLoaded");
 
       try {
         _controller?.addSource(
