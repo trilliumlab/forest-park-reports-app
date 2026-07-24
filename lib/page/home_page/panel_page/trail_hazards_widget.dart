@@ -1,24 +1,25 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:forest_park_reports/model/hazard.dart';
+import 'package:forest_park_reports/consts.dart';
+import 'package:forest_park_reports/model/hazard_type.dart';
 import 'package:forest_park_reports/page/home_page/panel_page/hazard_image.dart';
-import 'package:forest_park_reports/provider/hazard_provider.dart';
-import 'package:forest_park_reports/provider/relation_provider.dart';
+import 'package:forest_park_reports/provider/geojson_provider.dart';
+import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:turf/turf.dart' show Feature;
 
 /// A list of hazards on a given trail when that trail is clicked on
 class TrailHazardsWidget extends ConsumerWidget {
-  final int relationID;
-  const TrailHazardsWidget({super.key, required this.relationID});
+  final Object? routeId;
+  const TrailHazardsWidget({super.key, required this.routeId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final activeHazards = ref.watch(relationsProvider.selectAsync((relations) =>
-        relations.firstWhereOrNull((r) => r.id == relationID)))
-        .then((relation) => ref.watch(activeHazardProvider.select((hazards) =>
-        hazards.valueOrNull?.where((e) =>
-        relation?.members.contains(e.location.trail) ?? false))));
+    final reports = ref.watch(reportProvider);
+    final trailHazards = reports.valueOrNull?.features
+        .where((report) =>
+            report.properties?['route'].toString() == routeId.toString())
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -37,39 +38,50 @@ class TrailHazardsWidget extends ConsumerWidget {
           elevation: 1,
           shadowColor: Colors.transparent,
           margin: EdgeInsets.zero,
-          child: FutureBuilder(
-            future: activeHazards,
-            builder: (context, activeHazards) => activeHazards.data != null ? Column(
-              children: activeHazards.data!.map((hazard) =>
+          child: trailHazards != null ? Column(
+              children: trailHazards.map((report) =>
                   HazardInfoWidget(
-                    hazard: hazard,
+                    report: report,
                   )).toList(),
               ) : const Center(
                 child: CircularProgressIndicator(),
               ),
-          ),
         ),
       ],
     );
   }
 }
 
+/// Maps a new-backend report category string to the display metadata used
+/// throughout the app. The new backend uses "drainage" where the app's enum
+/// (carried over from the legacy hazard model) is named "flood".
+HazardType _hazardTypeForCategory(String? category) {
+  if (category == 'drainage') return HazardType.flood;
+  return HazardType.values
+      .firstWhere((t) => t.name == category, orElse: () => HazardType.other);
+}
+
 class HazardInfoWidget extends ConsumerWidget {
-  final HazardModel hazard;
-  const HazardInfoWidget({super.key, required this.hazard});
+  final Feature report;
+  const HazardInfoWidget({super.key, required this.report});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final hazardUpdates = ref.watch(hazardUpdatesProvider(hazard.uuid)).valueOrNull;
-    final lastImage = hazardUpdates?.lastImage;
-    final lastBlurHash = hazardUpdates?.lastBlurHash;
+    final hazardType =
+        _hazardTypeForCategory(report.properties?['category'] as String?);
+    final image = report.properties?['image'] as String?;
+    final blurHash = report.properties?['blurHash'] as String?;
+    final reportedAt = report.properties?['reportedAt'] as String?;
+    final reportedTime =
+        reportedAt != null ? DateTime.tryParse(reportedAt) : null;
+
     return Padding(
       padding: const EdgeInsets.only(left: 12, right: 8, top: 8, bottom: 8),
       child: TextButton(
         onPressed: () {
-          ref.read(selectedRelationProvider.notifier).deselect();
-          ref.read(selectedHazardProvider.notifier).selectAndMove(hazard);
+          ref.read(selectedTrailProvider.notifier).clear();
+          ref.read(selectedReportProvider.notifier).select(report);
         },
         style: ButtonStyle(
           shape: WidgetStateProperty.all(
@@ -85,23 +97,24 @@ class HazardInfoWidget extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  hazard.hazard.displayName,
+                  hazardType.displayName,
                   style: theme.textTheme.titleLarge,
                 ),
-                Text(
-                    hazard.timeString(),
-                    style: theme.textTheme.titleMedium
-                )
+                if (reportedTime != null)
+                  Text(
+                      kDisplayDateFormat.format(reportedTime.toLocal()),
+                      style: theme.textTheme.titleMedium
+                  )
               ],
             ),
-            if (lastImage != null)
+            if (image != null)
               SizedBox(
                   height: 80,
                   child: AspectRatio(
                     aspectRatio: 4/3,
                     child: ClipRRect(
                       borderRadius: const BorderRadius.all(Radius.circular(8)),
-                      child: HazardImage(lastImage, blurHash: lastBlurHash),
+                      child: HazardImage(image, blurHash: blurHash),
                     ),
                   )
               )

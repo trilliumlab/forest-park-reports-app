@@ -202,7 +202,7 @@ class PanelPage extends ConsumerWidget {
                                     PanelValues.snapFraction(context)) /
                                 (1 - PanelValues.snapFraction(context)))
                             .clamp(0, 1),
-                        child: TrailHazardsWidget(relationID: selectedTrail.id),
+                        child: TrailHazardsWidget(routeId: selectedTrail.id),
                       ),
                     ),
                   ],
