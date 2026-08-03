@@ -42,7 +42,10 @@ class PanelPage extends ConsumerWidget {
         ref.watch(selectedHazardProvider.select((h) => h.hazard));
 
     HazardUpdateList? hazardUpdates;
+    //lastImage can be removed if it is not needed
     String? lastImage;
+    final reportImage = selectedReport?.properties?["image"]?.toString();
+    final reportBlurHash = selectedReport?.properties?["blurHash"]?.toString();
     if (selectedHazard != null) {
       hazardUpdates =
           ref.watch(hazardUpdatesProvider(selectedHazard.uuid)).valueOrNull;
@@ -108,7 +111,7 @@ class PanelPage extends ConsumerWidget {
                 ],
               ),
               children: [
-                if (lastImage != null)
+                if (reportImage != null && reportImage.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Opacity(
@@ -126,10 +129,11 @@ class PanelPage extends ConsumerWidget {
                                 1.2 *
                                 PanelValues.snapHeight(context),
                         child: ClipRRect(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(8)),
-                          child: HazardImage(lastImage,
-                              blurHash: hazardUpdates?.lastBlurHash),
+                          borderRadius: const BorderRadius.all(Radius.circular(8)),
+                          child: HazardImage(
+                            reportImage,
+                            blurHash: reportBlurHash,
+                          ),
                         ),
                       ),
                     ),
