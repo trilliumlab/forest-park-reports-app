@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/env.dart';
+import 'package:forest_park_reports/provider/align_position_provider.dart';
+import 'package:forest_park_reports/provider/location_provider.dart';
 import 'package:forest_park_reports/provider/panel_position_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'dart:math';
 import 'package:turf/turf.dart' show Feature, FeatureCollection;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
 
@@ -24,19 +26,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   MapLibreMapController? _controller;
   //Map<String, dynamic>? _selectedFeature;
   Map<String, dynamic>? _routesGeoJson;
-  bool _reportsSourceLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    printEnv();
-  }
-
-  @override
-  void printEnv() {
-    print('Backend URL: ${dotenv.env["BACKEND_URL"]}');
-    print('Proto API Key: ${dotenv.env["PROTO_API_KEY"]}');
-  }
+  bool _reportsSourceReady = false;
 
   @override
   void dispose() {
@@ -116,35 +106,63 @@ class _MapPageState extends ConsumerState<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<FeatureCollection>>(reportProvider,
-        (previous, next) {
-      next.whenData((reportsData) async {
-        if (!_reportsSourceLoaded || _controller == null) {
-          return;
-        }
-
-        try {
-          await _controller!.setGeoJsonSource(
-            "reports",
-            _reportGeoJson(reportsData),
-          );
-        } catch (e) {
-          debugPrint("Error refreshing hazard markers: $e");
-        }
-      });
-    });
-
     // TODO: Cache style/tiles
     final lightMode = Theme.of(context).brightness == Brightness.light;
     final styleUrl =
         '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true';
-    // debugPrint('STYLE URL: $styleUrl');
+
+    final followTarget = ref.watch(alignPositionTargetProvider);
+    ref.listen(alignPositionTargetProvider, (prev, next) {
+      if (next == AlignPositionTargetState.forestPark) {
+        _controller?.animateCamera(CameraUpdate.newLatLngZoom(
+          LatLng(kHomeCameraPosition.center.latitude,
+              kHomeCameraPosition.center.longitude),
+          kHomeCameraPosition.zoom,
+        ));
+      } else if (next == AlignPositionTargetState.currentLocation) {
+        final position = ref.read(locationProvider).valueOrNull;
+        if (position != null) {
+          _controller?.animateCamera(CameraUpdate.newLatLngZoom(
+            LatLng(position.latitude, position.longitude),
+            16,
+          ));
+        }
+      }
+    });
+    // MapLibre's native location-follow doesn't reliably pan the camera as
+    // new GPS fixes arrive (puck position/heading render fine, but the
+    // camera itself stays put even while the OS is delivering updates), so
+    // drive panning manually off our own geolocator-based location stream
+    // while follow mode is active.
+    ref.listen(locationProvider, (prev, next) {
+      final position = next.valueOrNull;
+      if (position != null &&
+          ref.read(alignPositionTargetProvider) ==
+              AlignPositionTargetState.currentLocation) {
+        _controller?.animateCamera(
+          CameraUpdate.newLatLng(LatLng(position.latitude, position.longitude)),
+        );
+      }
+    });
+    // The "reports" source is only created once, in _onStyleLoaded. Without
+    // this, a newly-submitted report (or any other change to reportProvider,
+    // e.g. after invalidation post-submit) never reaches the already-loaded
+    // map until the app is restarted.
+    ref.listen(reportProvider, (prev, next) {
+      final reportsData = next.valueOrNull;
+      if (reportsData == null || !_reportsSourceReady) {
+        return;
+      }
+      try {
+        _controller?.setGeoJsonSource("reports", _reportsGeoJson(reportsData));
+      } catch (e) {
+        debugPrint("Error refreshing hazard markers: $e");
+      }
+    });
 
     return MapLibreMap(
       rotateGesturesEnabled: true,
-      // FIXME
-      styleString:
-          '$kBackendUrl/styles/${lightMode ? 'light' : 'dark'}.json?key=$kProtoApiKey&mobile=true',
+      styleString: styleUrl,
       initialCameraPosition: const CameraPosition(
         target: LatLng(45.5475, -122.755),
         zoom: 10.75,
@@ -158,6 +176,20 @@ class _MapPageState extends ConsumerState<MapPage> {
       attributionButtonMargins: const Point(10, 10),
       myLocationEnabled: true,
       myLocationRenderMode: MyLocationRenderMode.compass,
+      myLocationTrackingMode: followTarget == AlignPositionTargetState.currentLocation
+          ? MyLocationTrackingMode.tracking
+          : MyLocationTrackingMode.none,
+      onCameraTrackingDismissed: () {
+        // Tracking mode also turns off (and this fires) when we switch to
+        // forestPark ourselves; only treat it as a user-initiated dismissal
+        // if we were actually following the current location.
+        if (ref.read(alignPositionTargetProvider) ==
+            AlignPositionTargetState.currentLocation) {
+          ref
+              .read(alignPositionTargetProvider.notifier)
+              .update(AlignPositionTargetState.none);
+        }
+      },
     );
   }
 
@@ -205,14 +237,30 @@ class _MapPageState extends ConsumerState<MapPage> {
     });
   }
 
+  // Strips a report FeatureCollection's coordinates down to [lon, lat]
+  // pairs, dropping any additional dimensions (e.g. elevation).
+  Map<String, dynamic> _reportsGeoJson(FeatureCollection reportsData) {
+    final geoJson = reportsData.toJson();
+    for (final feature in geoJson['features']) {
+      final coords = feature['geometry']['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        final lon = coords[0];
+        final lat = coords[1];
+        feature['geometry']['coordinates'] = [
+          (lon as num).toDouble(),
+          (lat as num).toDouble(),
+        ];
+      }
+    }
+    return geoJson;
+  }
+
   Future<void> _onStyleLoaded() async {
     try {
       // Use the route provider to get the parsed GeoJSON data
       final routesData = await ref.read(routeProvider.future);
       final geoJson = routesData.toJson();
       _routesGeoJson = geoJson; // Save for manual hit test
-
-      print("Calling _onStyleLoaded");
 
       try {
         _controller?.addSource(
@@ -279,7 +327,7 @@ class _MapPageState extends ConsumerState<MapPage> {
     }
 
     final reportsData = await ref.read(reportProvider.future);
-    final geoJson = _reportGeoJson(reportsData);
+    final geoJson = _reportsGeoJson(reportsData);
 
     try {
       _controller?.addSource(
@@ -294,28 +342,10 @@ class _MapPageState extends ConsumerState<MapPage> {
         ),
         enableInteraction: true,
       );
-      _reportsSourceLoaded = true;
+      _reportsSourceReady = true;
     } catch (e) {
       debugPrint("Error adding hazard markers: $e");
     }
-  }
-
-  Map<String, dynamic> _reportGeoJson(FeatureCollection reportsData) {
-    final geoJson = reportsData.toJson();
-
-    for (final feature in geoJson['features']) {
-      final coords = feature['geometry']['coordinates'];
-      if (coords is List && coords.length >= 2) {
-        final lon = coords[0];
-        final lat = coords[1];
-        feature['geometry']['coordinates'] = [
-          (lon as num).toDouble(),
-          (lat as num).toDouble(),
-        ];
-      }
-    }
-
-    return geoJson;
   }
 
   // Since clicks on routes aren't passed through, any call to this function
