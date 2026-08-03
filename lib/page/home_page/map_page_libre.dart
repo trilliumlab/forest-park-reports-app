@@ -8,7 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'dart:math';
-import 'package:turf/turf.dart' show Feature;
+import 'package:turf/turf.dart' show Feature, FeatureCollection;
 import 'package:forest_park_reports/provider/selected_trail_provider.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
 
@@ -26,6 +26,7 @@ class _MapPageState extends ConsumerState<MapPage> {
   MapLibreMapController? _controller;
   //Map<String, dynamic>? _selectedFeature;
   Map<String, dynamic>? _routesGeoJson;
+  bool _reportsSourceReady = false;
 
   @override
   void dispose() {
@@ -143,6 +144,16 @@ class _MapPageState extends ConsumerState<MapPage> {
         );
       }
     });
+    // The "reports" source is only created once, in _onStyleLoaded. Without
+    // this, a newly-submitted report (or any other change to reportProvider,
+    // e.g. after invalidation post-submit) never reaches the already-loaded
+    // map until the app is restarted.
+    ref.listen(reportProvider, (prev, next) {
+      final reportsData = next.valueOrNull;
+      if (reportsData != null && _reportsSourceReady) {
+        _controller?.setGeoJsonSource("reports", _reportsGeoJson(reportsData));
+      }
+    });
 
     return MapLibreMap(
       rotateGesturesEnabled: true,
@@ -221,6 +232,21 @@ class _MapPageState extends ConsumerState<MapPage> {
     });
   }
 
+  // Strips a report FeatureCollection's coordinates down to [lon, lat]
+  // pairs, dropping any additional dimensions (e.g. elevation).
+  Map<String, dynamic> _reportsGeoJson(FeatureCollection reportsData) {
+    final geoJson = reportsData.toJson();
+    for (final feature in geoJson['features']) {
+      final coords = feature['geometry']['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        final lon = coords[0];
+        final lat = coords[1];
+        feature['geometry']['coordinates'] = [lon, lat];
+      }
+    }
+    return geoJson;
+  }
+
   Future<void> _onStyleLoaded() async {
     try {
       // Use the route provider to get the parsed GeoJSON data
@@ -294,17 +320,7 @@ class _MapPageState extends ConsumerState<MapPage> {
 
     // Use the report provider to get the parsed GeoJSON data
     final reportsData = await ref.read(reportProvider.future);
-    final geoJson = reportsData.toJson();
-
-    // Process coordinates if needed (the provider should handle this)
-    for (final feature in geoJson['features']) {
-      final coords = feature['geometry']['coordinates'];
-      if (coords is List && coords.length >= 2) {
-        final lon = coords[0];
-        final lat = coords[1];
-        feature['geometry']['coordinates'] = [lon, lat];
-      }
-    }
+    final geoJson = _reportsGeoJson(reportsData);
 
     try {
       _controller?.addSource(
@@ -319,6 +335,7 @@ class _MapPageState extends ConsumerState<MapPage> {
         ),
         enableInteraction: true,
       );
+      _reportsSourceReady = true;
     } catch (e) {
       debugPrint("Error adding hazard markers: $e");
     }

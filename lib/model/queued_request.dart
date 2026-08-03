@@ -35,7 +35,8 @@ class QueuedRequestModel
 enum QueuedRequestType {
   newHazard,
   imageUpload,
-  updateHazard;
+  updateHazard,
+  newReport;
 }
 
 @freezed

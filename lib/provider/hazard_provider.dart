@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/consts.dart';
+import 'package:forest_park_reports/env.dart';
 import 'package:forest_park_reports/model/hazard_new_response.dart';
 import 'package:forest_park_reports/model/hazard_type.dart';
 import 'package:forest_park_reports/model/queued_request.dart';
 import 'package:forest_park_reports/model/snapped_latlng.dart';
 import 'package:forest_park_reports/page/common/alert_banner.dart';
+import 'package:forest_park_reports/provider/device_id_provider.dart';
 import 'package:forest_park_reports/provider/directory_provider.dart';
 import 'package:forest_park_reports/util/image_extensions.dart';
 import 'package:forest_park_reports/util/offline_uploader.dart';
@@ -82,52 +84,41 @@ class ActiveHazard extends _$ActiveHazard {
       color: Colors.grey,
     );
 
-    // If we're passed an image, decode it.
-    img.Image? image;
-    if (imageFile != null) {
-      final cmd = img.Command()
-        ..decodeNamedImage(imageFile.path, await imageFile.readAsBytes());
-      image = await cmd.getImageThread();
-    }
-
+    // Keep a local optimistic copy around (used by legacy-era UI only, but
+    // cheap to maintain and useful if that UI comes back).
     final hazardRequest = HazardModel.create(
       uuid: uuid,
       hazard: hazard,
       location: location,
-      image: image != null ? kUuidGen.v1() : null,
-      blurHash: image != null ? await image.getBlurHash() : null,
     );
-
-    // Add offline hazard to app
     _addHazard(hazardRequest);
 
-    // Queue new hazard request.
+    final deviceId = await ref.read(deviceIdProvider.future);
+
+    // Photo upload isn't wired up against the new backend yet (no working
+    // postImage endpoint), so for now reports are submitted without images.
+    final reportRequest = {
+      "creatorDeviceId": deviceId,
+      "localId": uuid,
+      "category": hazard.category,
+      // The new backend has no OSM-relation-style grouping, so `route` and
+      // `trail` both just refer to the single route we snapped to.
+      "route": location.trail,
+      "trail": location.trail,
+      "geometry": {
+        "type": "Point",
+        // Elevation isn't threaded through from the snap result yet.
+        "coordinates": [location.longitude, location.latitude, 0.0],
+      },
+    };
+
+    // Queue new report request against the new backend.
     OfflineUploader().enqueueJson(
       method: UploadMethod.POST,
-      requestType: QueuedRequestType.newHazard,
-      associatedUuid: hazardRequest.uuid,
-      url: "$kApiUrl/hazard/new",
-      data: hazardRequest.toJson(),
-    );
-
-    // Now we try to upload the image if we have one
-    if (image == null) {
-      return;
-    }
-    // Compress and save image to file.
-    final imageDir =
-        (await ref.read(directoryProvider(kImageDirectory).future))!;
-    final imagePath = join(imageDir.path, "${hazardRequest.image!}.jpeg");
-    await image.compressToFile(filePath: imagePath);
-
-    // Queue image upload
-    await OfflineUploader().enqueueFile(
-      method: UploadMethod.PUT,
-      requestType: QueuedRequestType.imageUpload,
-      associatedUuid: hazardRequest.uuid,
-      url: "$kApiUrl/hazard/image/${hazardRequest.image!}",
-      multipart: true,
-      filePath: imagePath,
+      requestType: QueuedRequestType.newReport,
+      associatedUuid: uuid,
+      url: "$kBackendUrl/reports/report",
+      data: reportRequest,
     );
   }
 

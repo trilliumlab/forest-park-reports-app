@@ -12,6 +12,7 @@ import 'package:forest_park_reports/model/queued_request.dart';
 import 'package:forest_park_reports/provider/directory_provider.dart';
 import 'package:forest_park_reports/provider/database_provider.dart';
 import 'package:flutter_uploader/flutter_uploader.dart';
+import 'package:forest_park_reports/provider/geojson_provider.dart';
 import 'package:forest_park_reports/provider/hazard_provider.dart';
 import 'package:path/path.dart';
 export 'package:flutter_uploader/flutter_uploader.dart' show UploadMethod;
@@ -132,6 +133,13 @@ class OfflineUploader {
               .read(activeHazardProvider.notifier)
               .handleUpdateResponse(hazardUpdate);
         }
+        break;
+      case QueuedRequestType.newReport:
+        // The new backend's report-submission response isn't a stable
+        // typed shape we can parse yet; just refresh the map's report
+        // layer so a successful submission shows up without a manual
+        // refresh.
+        providerContainer.invalidate(reportProvider);
         break;
     }
   }

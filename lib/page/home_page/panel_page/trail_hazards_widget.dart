@@ -52,15 +52,6 @@ class TrailHazardsWidget extends ConsumerWidget {
   }
 }
 
-/// Maps a new-backend report category string to the display metadata used
-/// throughout the app. The new backend uses "drainage" where the app's enum
-/// (carried over from the legacy hazard model) is named "flood".
-HazardType _hazardTypeForCategory(String? category) {
-  if (category == 'drainage') return HazardType.flood;
-  return HazardType.values
-      .firstWhere((t) => t.name == category, orElse: () => HazardType.other);
-}
-
 class HazardInfoWidget extends ConsumerWidget {
   final Feature report;
   const HazardInfoWidget({super.key, required this.report});
@@ -69,7 +60,7 @@ class HazardInfoWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final hazardType =
-        _hazardTypeForCategory(report.properties?['category'] as String?);
+        HazardType.fromCategory(report.properties?['category'] as String?);
     final image = report.properties?['image'] as String?;
     final blurHash = report.properties?['blurHash'] as String?;
     final reportedAt = report.properties?['reportedAt'] as String?;

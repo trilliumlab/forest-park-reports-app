@@ -52,7 +52,7 @@ android {
         applicationId "edu.pdx.cecs.forestpark"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
-        minSdkVersion 23
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -78,7 +78,7 @@ android {
         }
         debug {
             manifestPlaceholders = [usesCleartextTraffic:"true"]
-            signingConfig signingConfigs.release
+            signingConfig signingConfigs.debug
         }
     }
 }
