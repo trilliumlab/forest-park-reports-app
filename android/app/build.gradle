@@ -78,6 +78,7 @@ android {
         }
         debug {
             manifestPlaceholders = [usesCleartextTraffic:"true"]
+            signingConfig signingConfigs.debug
         }
     }
 }
