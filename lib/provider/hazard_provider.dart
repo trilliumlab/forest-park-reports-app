@@ -302,6 +302,26 @@ class ActiveHazard extends _$ActiveHazard {
     );
   }
 
+//added this so it updates the report's status - REMOVE THIS IF IT DOESN'T WORK
+  Future<void> updateReportState({
+    required String localId,
+    required bool present,
+  }) async {
+    showAlertBanner(
+      key: Key(localId),
+      child: const Text("Your report update has been queued"),
+      color: Colors.green,
+    );
+
+    await ref.read(dioProvider).post(
+      "/reports/report/$localId/update",
+      data: {
+        "creatorDeviceId": "flutter-dev",
+        "state": present ? "present" : "cleared",
+      },
+    );
+  }
+
   Future<void> handleUpdateResponse(HazardUpdateModel hazardUpdate) async {
     // Show success notification
     showAlertBanner(

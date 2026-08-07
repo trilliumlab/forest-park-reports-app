@@ -68,16 +68,28 @@ class PanelPage extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(left: 20, right: 10),
                       child: TextButton(
+                        //REPORT CLEARED:
                         onPressed: () async {
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.COLLAPSED);
-                          // await createHazardUpdateModal(
-                          //     context, selectedHazard, false);
+
+                          final localId =
+                              selectedReport.properties?["localId"]?.toString();
+                          if (localId != null && localId.isNotEmpty) {
+                            await ref
+                                .read(activeHazardProvider.notifier)
+                                .updateReportState(
+                                  localId: localId,
+                                  present: false,
+                                );
+                          }
+
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.SNAPPED);
                         },
+
                         child: Text(
                           "Report Cleared",
                           style: TextStyle(
@@ -90,12 +102,23 @@ class PanelPage extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(left: 10, right: 20),
                       child: TextButton(
+                        //REPORT PRESENT:
                         onPressed: () async {
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.COLLAPSED);
-                          // await createHazardUpdateModal(
-                          //     context, selectedHazard, true);
+
+                          final localId =
+                              selectedReport.properties?["localId"]?.toString();
+                          if (localId != null && localId.isNotEmpty) {
+                            await ref
+                                .read(activeHazardProvider.notifier)
+                                .updateReportState(
+                                  localId: localId,
+                                  present: true,
+                                );
+                          }
+
                           ref
                               .read(panelPositionProvider.notifier)
                               .move(PanelState.SNAPPED);
@@ -129,7 +152,8 @@ class PanelPage extends ConsumerWidget {
                                 1.2 *
                                 PanelValues.snapHeight(context),
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.all(Radius.circular(8)),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(8)),
                           child: HazardImage(
                             reportImage,
                             blurHash: reportBlurHash,
