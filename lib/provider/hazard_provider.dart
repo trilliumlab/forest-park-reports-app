@@ -320,6 +320,8 @@ class ActiveHazard extends _$ActiveHazard {
         "state": present ? "present" : "cleared",
       },
     );
+
+    ref.invalidate(hazardUpdatesProvider(localId));
   }
 
   Future<void> handleUpdateResponse(HazardUpdateModel hazardUpdate) async {
@@ -341,46 +343,39 @@ class ActiveHazard extends _$ActiveHazard {
 @Riverpod(keepAlive: true)
 class HazardUpdates extends _$HazardUpdates {
   @override
-  Future<HazardUpdateList> build(String hazard) async {
-    final db = ref.watch(databaseProvider);
-    final hazardUpdates =
-        HazardUpdateList(await db.select(db.hazardUpdatesTable).get());
-    if (hazardUpdates.isNotEmpty) {
-      refresh();
-      return hazardUpdates;
-    }
-    return await _fetch();
+  Future<HazardUpdateList> build(String reportLocalId) async {
+    return await _fetch(reportLocalId);
   }
 
-  Future<HazardUpdateList> _fetch() async {
-    final res = await ref.read(dioProvider).get("/hazard/$hazard");
-    final updates = HazardUpdateList.fromJson(res.data);
+  Future<HazardUpdateList> _fetch(String reportLocalId) async {
+    final res = await ref
+        .read(dioProvider)
+        .get("/reports/report/$reportLocalId/updates");
+
+    final updates = HazardUpdateList([
+      for (final update in res.data)
+        HazardUpdateModel.fromReportUpdateJson(
+          Map<String, dynamic>.from(update as Map),
+        ),
+    ]);
+
     updates.sort((a, b) =>
         a.time.millisecondsSinceEpoch - b.time.millisecondsSinceEpoch);
-
-    final db = ref.read(databaseProvider);
-    await db.delete(db.hazardUpdatesTable).go();
-    await db.batch((batch) {
-      batch.insertAllOnConflictUpdate(db.hazardUpdatesTable, updates);
-    });
 
     return updates;
   }
 
-  Future<void> refresh() async {
-    state = AsyncData(await _fetch());
+  Future<void> refresh(String reportLocalId) async {
+    state = AsyncData(await _fetch(reportLocalId));
   }
 
   Future<void> addHazardUpdate(HazardUpdateModel hazardUpdate) async {
-    // Add HazardUpdateModel to state and db
     state = AsyncData(HazardUpdateList([
       if (state.hasValue)
         for (final HazardUpdateModel existing in state.value ?? [])
           if (existing.uuid != hazardUpdate.uuid) existing,
       hazardUpdate,
     ]));
-    final db = ref.read(databaseProvider);
-    await db.into(db.hazardUpdatesTable).insertOnConflictUpdate(hazardUpdate);
   }
 }
 

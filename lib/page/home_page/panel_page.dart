@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
@@ -38,19 +37,12 @@ class PanelPage extends ConsumerWidget {
         .firstWhereOrNull((route) =>
             route.id.toString() ==
             selectedReport?.properties?["route"].toString());
-    final selectedHazard =
-        ref.watch(selectedHazardProvider.select((h) => h.hazard));
-
-    HazardUpdateList? hazardUpdates;
-    //lastImage can be removed if it is not needed
-    String? lastImage;
+    final reportLocalId = selectedReport?.properties?["localId"]?.toString();
+    final hazardUpdates = reportLocalId == null || reportLocalId.isEmpty
+        ? null
+        : ref.watch(hazardUpdatesProvider(reportLocalId)).valueOrNull;
     final reportImage = selectedReport?.properties?["image"]?.toString();
     final reportBlurHash = selectedReport?.properties?["blurHash"]?.toString();
-    if (selectedHazard != null) {
-      hazardUpdates =
-          ref.watch(hazardUpdatesProvider(selectedHazard.uuid)).valueOrNull;
-      lastImage = hazardUpdates?.lastImage;
-    }
 
     return Panel(
       // panel for when a hazard is selected

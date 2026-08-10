@@ -16,30 +16,36 @@ class HazardUpdateList extends ListBase<HazardUpdateModel> {
   HazardUpdateList(this.l);
 
   @override
-  set length(int newLength) { l.length = newLength; }
+  set length(int newLength) {
+    l.length = newLength;
+  }
+
   @override
   int get length => l.length;
   @override
   HazardUpdateModel operator [](int index) => l[index];
   @override
-  void operator []=(int index, HazardUpdateModel value) { l[index] = value; }
+  void operator []=(int index, HazardUpdateModel value) {
+    l[index] = value;
+  }
 
   String? get lastImage => lastWhereOrNull((e) => e.image != null)?.image;
-  String? get lastBlurHash => lastWhereOrNull((e) => e.blurHash != null)?.blurHash;
+  String? get lastBlurHash =>
+      lastWhereOrNull((e) => e.blurHash != null)?.blurHash;
 
   factory HazardUpdateList.fromJson(dynamic json) => HazardUpdateList([
-    for (final update in json)
-      HazardUpdateModel.fromJson(update),
-  ]);
+        for (final update in json) HazardUpdateModel.fromJson(update),
+      ]);
 
   List<Map<String, dynamic>> toJson() => [
-    for (final update in this)
-      update.toJson(),
-  ];
+        for (final update in this) update.toJson(),
+      ];
 }
 
 @freezed
-class HazardUpdateModel with _$HazardUpdateModel implements drift.Insertable<HazardUpdateModel> {
+class HazardUpdateModel
+    with _$HazardUpdateModel
+    implements drift.Insertable<HazardUpdateModel> {
   const HazardUpdateModel._();
   const factory HazardUpdateModel({
     required String uuid,
@@ -57,15 +63,16 @@ class HazardUpdateModel with _$HazardUpdateModel implements drift.Insertable<Haz
     String? uuid,
     String? blurHash,
     String? image,
-  }) => HazardUpdateModel(
-    uuid: uuid ?? kUuidGen.v1(),
-    hazard: hazard,
-    time: DateTime.now().toUtc(),
-    active: active,
-    offline: true,
-    blurHash: blurHash,
-    image: image,
-  );
+  }) =>
+      HazardUpdateModel(
+        uuid: uuid ?? kUuidGen.v1(),
+        hazard: hazard,
+        time: DateTime.now().toUtc(),
+        active: active,
+        offline: true,
+        blurHash: blurHash,
+        image: image,
+      );
 
   /// Maps a [HazardUpdateModel] to a database [HazardUpdatesTable] row.
   @override
@@ -82,6 +89,20 @@ class HazardUpdateModel with _$HazardUpdateModel implements drift.Insertable<Haz
 
   factory HazardUpdateModel.fromJson(Map<String, dynamic> json) =>
       _$HazardUpdateModelFromJson(json);
+
+  factory HazardUpdateModel.fromReportUpdateJson(Map<String, dynamic> json) {
+    final state = json["state"]?.toString();
+
+    return HazardUpdateModel(
+      uuid: json["id"]?.toString() ?? kUuidGen.v1(),
+      hazard: json["reportLocalId"]?.toString() ?? "",
+      time: DateTime.parse(json["createdAt"].toString()).toUtc(),
+      active: state == "present",
+      offline: false,
+      blurHash: json["blurHash"] as String?,
+      image: json["image"] as String?,
+    );
+  }
 
   String timeString() => kDisplayDateFormat.format(time.toLocal());
 }
