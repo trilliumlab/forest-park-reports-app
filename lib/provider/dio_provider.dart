@@ -7,6 +7,6 @@ part 'dio_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 Dio dio(Ref ref) {
-  final options = BaseOptions(baseUrl: kApiUrl);
+  final options = BaseOptions(baseUrl: kBackendBaseUrl);
   return Dio(options);
 }

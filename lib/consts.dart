@@ -6,10 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 import 'package:forest_park_reports/env.dart';
 
-// const kApiUrl = "http://192.168.0.247:8000";
-// const kApiUrl = "http://localhost:8000";
-// changing this (this was the last one) const kApiUrl = "https://legacy.traileyes.net";
-final kApiUrl = kBackendUrl ?? "http://10.0.2.2:8000";
+final kBackendBaseUrl = kBackendUrl ?? "http://10.0.2.2:8000";
 
 final kMaterialAppPrimaryColor = Colors.green.shade700;
 

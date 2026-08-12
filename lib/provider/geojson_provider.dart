@@ -1,4 +1,3 @@
-import 'package:forest_park_reports/env.dart';
 import 'package:forest_park_reports/provider/dio_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -11,7 +10,7 @@ Future<FeatureCollection> route(Ref ref) async {
   final dio = ref.read(dioProvider);
 
   // Use the backend URL from env.dart for the routes endpoint
-  final response = await dio.get('$kBackendUrl/geojson/routes.json');
+  final response = await dio.get('/geojson/routes.json');
 
   if (response.statusCode == 200) {
     try {
@@ -49,7 +48,7 @@ Future<FeatureCollection> startMarker(Ref ref) async {
 Future<FeatureCollection> startMarker(Ref ref) async {
   final dio = ref.read(dioProvider);
 
-  final response = await dio.get('$kBackendUrl/geojson/start-markers.json');
+  final response = await dio.get('/geojson/start-markers.json');
 
   if (response.statusCode == 200) {
     try {
@@ -80,7 +79,7 @@ Future<FeatureCollection> report(Ref ref) async {
   final dio = ref.read(dioProvider);
 
   // Use the backend URL from env.dart for the reports endpoint
-  final response = await dio.get('$kBackendUrl/geojson/reports.json');
+  final response = await dio.get('/geojson/reports.json');
 
   if (response.statusCode == 200) {
     try {

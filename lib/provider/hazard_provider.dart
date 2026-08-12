@@ -229,80 +229,19 @@ class ActiveHazard extends _$ActiveHazard {
     await db.into(db.hazardsTable).insertOnConflictUpdate(hazard);
   }
 
-  Future updateHazard(
-      {required String uuid,
-      required String hazard,
-      required bool active,
-      XFile? imageFile}) async {
-    // Show alert that update queued
-    showAlertBanner(
-      key: Key(uuid),
-      child: const Text("Your report has been queued",
-          key: Key("Your report has been queued")),
-      color: Colors.green,
-    );
-
-    // If we're passed an image, decode it.
-    img.Image? image;
-    if (imageFile != null) {
-      final cmd = img.Command()
-        ..decodeNamedImage(imageFile.path, await imageFile.readAsBytes());
-      image = await cmd.getImageThread();
-    }
-
-    final hazardUpdateRequest = HazardUpdateModel.create(
-      uuid: uuid,
-      hazard: hazard,
-      active: active,
-      image: image != null ? kUuidGen.v1() : null,
-      blurHash: image != null ? await image.getBlurHash() : null,
-    );
-
-    // Add offline hazard update to app
-    await ref
-        .read(hazardUpdatesProvider(hazard).notifier)
-        .addHazardUpdate(hazardUpdateRequest);
-    // If it's a cleared report, remove hazard
-    if (!active) {
-      state = AsyncData([
-        if (state.hasValue)
-          for (final HazardModel existing in state.value ?? [])
-            if (existing.uuid != hazard) existing,
-      ]);
-    }
-
-    // Queue new hazard update request.
-    OfflineUploader().enqueueJson(
-      method: UploadMethod.POST,
-      requestType: QueuedRequestType.updateHazard,
-      associatedUuid: hazardUpdateRequest.uuid,
-      url: "$kApiUrl/hazard/update",
-      data: hazardUpdateRequest.toJson(),
-    );
-
-    // Now we try to upload the image if we have one
-    if (image == null) {
-      return;
-    }
-    // Compress and save image to file.
-    final imageDir =
-        (await ref.read(directoryProvider(kImageDirectory).future))!;
-    final imagePath = join(imageDir.path, "${hazardUpdateRequest.image!}.jpeg");
-    await image.compressToFile(filePath: imagePath);
-
-    // Queue image upload
-    await OfflineUploader().enqueueFile(
-      method: UploadMethod.PUT,
-      requestType: QueuedRequestType.imageUpload,
-      associatedUuid: hazardUpdateRequest.uuid,
-      url:
-          "$kApiUrl/reports/image/${hazardUpdateRequest.image!}", //update photo upload URLS
-      multipart: true,
-      filePath: imagePath,
+  Future updateHazard({
+    required String uuid,
+    required String hazard,
+    required bool active,
+    XFile? imageFile,
+  }) async {
+    await updateReportState(
+      localId: hazard,
+      present: active,
     );
   }
 
-//added this so it updates the report's status - REMOVE THIS IF IT DOESN'T WORK
+
   Future<void> updateReportState({
     required String localId,
     required bool present,
