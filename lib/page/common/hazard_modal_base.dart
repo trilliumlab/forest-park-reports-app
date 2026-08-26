@@ -38,6 +38,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
   final String _uuid = kUuidGen.v1();
   T? _selectedOption;
   XFile? _image;
+  bool _showPhotoRequiredError = false;
   bool _inProgress = false;
 
   @override
@@ -75,7 +76,10 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
       // check if camera is available
       final image = await _picker.pickImage(source: ImageSource.camera);
       if (image != null) {
-        setState(() => _image = image);
+        setState(() {
+          _image = image;
+          _showPhotoRequiredError = false;
+        });
       }
     } finally {
       //always remove the entry
@@ -94,33 +98,17 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
       return;
     }
 
-    if (_image != null) {
-      await _submit();
+    if (_image == null) {
+      setState(() => _showPhotoRequiredError = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please take a photo before submitting this report.'),
+        ),
+      );
       return;
     }
 
-    showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-              title: const Text('No photo submitted'),
-              content: const Text(
-                  'Are you sure you\'d like to submit this hazard without a photo?'),
-              actions: [
-                TextButton(
-                  child: const Text('Cancel'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-                TextButton(
-                  child: const Text('Yes'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _submit();
-                  },
-                ),
-              ],
-            ));
+    await _submit();
   }
 
   Future _submit() async {
@@ -256,7 +244,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Photo:',
+                      'Photo required:',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -267,7 +255,9 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                       height: 200,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: theme.colorScheme.outline,
+                          color: _showPhotoRequiredError
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.outline,
                           width: 1,
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -287,7 +277,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Tap to take photo',
+                                      'Tap to take required photo',
                                       style:
                                           theme.textTheme.bodyMedium?.copyWith(
                                         color:
@@ -305,6 +295,16 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                         ),
                       ),
                     ),
+                    if (_showPhotoRequiredError)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          'A photo is required before this report can be submitted.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
