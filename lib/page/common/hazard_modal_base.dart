@@ -62,8 +62,7 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
   }
 
   Future _cameraSelect() async {
-    // Create an overlay to block touches through camera picker.
-    // See https://github.com/flutter/flutter/issues/14720#issuecomment-2012942702
+
     final entry = OverlayEntry(
       builder: (context) => const AbsorbPointer(
         child: SizedBox.expand(),
@@ -73,7 +72,6 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
     Overlay.of(context).insert(entry);
 
     try {
-      // check if camera is available
       final image = await _picker.pickImage(source: ImageSource.camera);
       if (image != null) {
         setState(() {
@@ -82,7 +80,6 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
         });
       }
     } finally {
-      //always remove the entry
       entry.remove();
     }
   }
@@ -114,7 +111,6 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
   Future _submit() async {
     setState(() => _inProgress = true);
     if (widget.onSubmit != null) {
-      // A false result indicates a non-confirmation, while null or true represent confirmation
       if (await widget.onSubmit!(
               context,
               ref,
@@ -139,7 +135,6 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
     final theme = Theme.of(context);
     return SizedBox(
       height: 650,
-      // height: PanelValues.snapHeight(context),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -331,8 +326,6 @@ class _HazardModalState<T> extends ConsumerState<HazardModal<T>> {
                 onPressed: _close,
                 icon: const Icon(
                   Icons.close_rounded,
-                  // size: 20,
-                  // color: CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context),
                 ),
               ),
             ),
