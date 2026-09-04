@@ -80,6 +80,8 @@ dependencies:
     git:
       url: https://github.com/hayatkhan67/flutter_uploader_test.git
       ref: main
+  cookie_jar: ^4.0.9
+  dio_cookie_manager: ^3.5.0
 
 dependency_overrides:
   # Fork that sets compileSdkVersion to 34 - revert once fixed upstream

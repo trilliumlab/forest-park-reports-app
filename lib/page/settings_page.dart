@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_uploader/flutter_uploader.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/model/settings.dart';
+import 'package:forest_park_reports/page/login_page.dart';
 import 'package:forest_park_reports/page/settings_page/settings_page_scaffold.dart';
 import 'package:forest_park_reports/page/settings_page/selection_setting_widget.dart';
 import 'package:forest_park_reports/page/settings_page/toggle_setting_widget.dart';
 import 'package:forest_park_reports/page/settings_page/button_setting_widget.dart';
 import 'package:forest_park_reports/page/common/confirmation.dart';
 import 'package:forest_park_reports/page/settings_page/settings_section.dart';
+import 'package:forest_park_reports/provider/auth_provider.dart';
 import 'package:forest_park_reports/provider/database_provider.dart';
 import 'package:forest_park_reports/provider/directory_provider.dart';
 import 'package:forest_park_reports/provider/settings_provider.dart';
@@ -20,11 +22,30 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final session = ref.watch(sessionProvider);
 
     return SettingsPageScaffold(
       title: "Settings",
       previousPageTitle: "Home",
       children: [
+        SettingsSection(
+          label: "Account",
+          children: [
+            if (session.valueOrNull != null)
+              ButtonSettingWidget(
+                name: "Logged in",
+                buttonStyle: ButtonSettingStyle.none,
+                onTap: () {},
+              )
+            else
+              ButtonSettingWidget(
+                name: "Log In",
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const LoginPage(),
+                )),
+              ),
+          ],
+        ),
         SettingsSection(
           label: "Theme",
           children: [

@@ -27,7 +27,7 @@ class Trails extends _$Trails {
   }
 
   Future<TrailList> _fetch() async {
-    final res = await ref.read(dioProvider).get(
+    final res = await (await ref.read(dioProvider.future)).get(
       "/trail/all",
       options: Options(
           responseType: ResponseType.bytes

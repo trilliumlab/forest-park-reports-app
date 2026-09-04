@@ -8,7 +8,7 @@ part 'geojson_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 Future<FeatureCollection> route(Ref ref) async {
-  final dio = ref.read(dioProvider);
+  final dio = await ref.read(dioProvider.future);
 
   // Use the backend URL from env.dart for the routes endpoint
   final response = await dio.get('$kBackendUrl/geojson/routes.json');
@@ -27,7 +27,7 @@ Future<FeatureCollection> route(Ref ref) async {
 /*
 @Riverpod(keepAlive: true)
 Future<FeatureCollection> startMarker(Ref ref) async {
-  final dio = ref.read(dioProvider);
+  final dio = await ref.read(dioProvider.future);
 
   // Use the backend URL from env.dart for the start markers endpoint
   final response = await dio.get('$kBackendUrl/geojson/start-markers.json');
@@ -47,7 +47,7 @@ Future<FeatureCollection> startMarker(Ref ref) async {
 //replacement of the one above to see if this works better
 @Riverpod(keepAlive: true)
 Future<FeatureCollection> startMarker(Ref ref) async {
-  final dio = ref.read(dioProvider);
+  final dio = await ref.read(dioProvider.future);
 
   final response = await dio.get('$kBackendUrl/geojson/start-markers.json');
 
@@ -77,7 +77,7 @@ Future<FeatureCollection> startMarker(Ref ref) async {
 
 @Riverpod(keepAlive: true)
 Future<FeatureCollection> report(Ref ref) async {
-  final dio = ref.read(dioProvider);
+  final dio = await ref.read(dioProvider.future);
 
   // Use the backend URL from env.dart for the reports endpoint
   final response = await dio.get('$kBackendUrl/geojson/reports.json');

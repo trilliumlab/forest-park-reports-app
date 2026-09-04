@@ -21,7 +21,7 @@ class Relations extends _$Relations {
   }
 
   Future<List<RelationModel>> _fetch() async {
-    final res = await ref.read(dioProvider).get("/trail/relations",);
+    final res = await (await ref.read(dioProvider.future)).get("/trail/relations",);
 
     final relations = [
       for (final relation in res.data)

@@ -14,7 +14,9 @@ import 'package:forest_park_reports/util/offline_uploader.dart';
 import 'package:image/image.dart' as img;
 import 'package:forest_park_reports/model/hazard.dart';
 import 'package:forest_park_reports/model/hazard_update.dart';
+import 'package:forest_park_reports/provider/auth_provider.dart';
 import 'package:forest_park_reports/provider/database_provider.dart';
+import 'package:forest_park_reports/provider/device_id_provider.dart';
 import 'package:forest_park_reports/provider/dio_provider.dart';
 import 'package:forest_park_reports/provider/geojson_provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -44,7 +46,7 @@ class ActiveHazard extends _$ActiveHazard {
   }
 
   Future<List<HazardModel>> _fetch() async {
-    final res = await ref.read(dioProvider).get("/geojson/reports.json");
+    final res = await (await ref.read(dioProvider.future)).get("/geojson/reports.json");
 
     final data = Map<String, dynamic>.from(res.data as Map);
     final features = data["features"] as List? ?? [];
@@ -111,7 +113,8 @@ class ActiveHazard extends _$ActiveHazard {
       {required String uuid,
       required HazardType hazard,
       required SnappedLatLng location,
-      XFile? imageFile}) async {
+      XFile? imageFile,
+      String? description}) async {
     // Show alert that upload queued
     showAlertBanner(
       key: Key(uuid),
@@ -139,11 +142,16 @@ class ActiveHazard extends _$ActiveHazard {
     // Add offline hazard to app
     _addHazard(hazardRequest);
 
-    await ref.read(dioProvider).post(
+    final deviceId = await ref.read(deviceIdProvider.future);
+    final userId = await ref.read(sessionProvider.future);
+
+    await (await ref.read(dioProvider.future)).post(
       "/reports/report",
       data: {
         "localId": hazardRequest.uuid,
-        "creatorDeviceId": "flutter-dev",
+        "creatorDeviceId": deviceId,
+        "creatorUserId": userId,
+        "description": description,
         "category": hazardRequest.hazard.name == "flood"
             ? "drainage"
             : hazardRequest.hazard.name,
@@ -211,7 +219,7 @@ class ActiveHazard extends _$ActiveHazard {
       ),
     });
 
-    await ref.read(dioProvider).post(
+    await (await ref.read(dioProvider.future)).post(
           "/reports/image/$imageUuid",
           data: formData,
         );
@@ -333,7 +341,7 @@ class HazardUpdates extends _$HazardUpdates {
   }
 
   Future<HazardUpdateList> _fetch() async {
-    final res = await ref.read(dioProvider).get("/hazard/$hazard");
+    final res = await (await ref.read(dioProvider.future)).get("/hazard/$hazard");
     final updates = HazardUpdateList.fromJson(res.data);
     updates.sort((a, b) =>
         a.time.millisecondsSinceEpoch - b.time.millisecondsSinceEpoch);
