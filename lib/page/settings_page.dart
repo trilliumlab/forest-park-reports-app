@@ -3,6 +3,7 @@ import 'package:flutter_uploader/flutter_uploader.dart';
 import 'package:forest_park_reports/consts.dart';
 import 'package:forest_park_reports/model/settings.dart';
 import 'package:forest_park_reports/page/login_page.dart';
+import 'package:forest_park_reports/page/signup_page.dart';
 import 'package:forest_park_reports/page/settings_page/settings_page_scaffold.dart';
 import 'package:forest_park_reports/page/settings_page/selection_setting_widget.dart';
 import 'package:forest_park_reports/page/settings_page/toggle_setting_widget.dart';
@@ -33,17 +34,24 @@ class SettingsPage extends ConsumerWidget {
           children: [
             if (session.valueOrNull != null)
               ButtonSettingWidget(
-                name: "Logged in",
-                buttonStyle: ButtonSettingStyle.none,
-                onTap: () {},
+                name: "Log Out",
+                buttonStyle: ButtonSettingStyle.danger,
+                onTap: () => ref.read(authProvider.notifier).signOut(),
               )
-            else
+            else ...[
               ButtonSettingWidget(
                 name: "Log In",
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => const LoginPage(),
                 )),
               ),
+              ButtonSettingWidget(
+                name: "Sign Up",
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const SignupPage(),
+                )),
+              ),
+            ],
           ],
         ),
         SettingsSection(

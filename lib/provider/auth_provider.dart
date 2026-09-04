@@ -48,6 +48,13 @@ class Auth extends _$Auth {
     });
     ref.invalidate(sessionProvider);
   }
+
+  /// Signs out of the current session, if any.
+  Future<void> signOut() async {
+    final dio = await ref.read(dioProvider.future);
+    await dio.post('/auth/sign-out');
+    ref.invalidate(sessionProvider);
+  }
 }
 
 /// The currently logged-in user's id, or `null` if there is no session.
