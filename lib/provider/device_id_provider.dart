@@ -8,8 +8,8 @@ part 'device_id_provider.g.dart';
 const _kDeviceIdKey = 'device_id';
 
 /// A random id identifying this device/install, generated once and persisted
-/// locally. Used as `creatorDeviceId` when submitting reports to the new
-/// backend, which has no concept of user accounts yet.
+/// locally. Used as `creatorDeviceId` when submitting reports; independent of
+/// the (optional) logged-in account, see [sessionProvider].
 @Riverpod(keepAlive: true)
 Future<String> deviceId(Ref ref) async {
   final sp = await ref.read(sharedPreferencesProvider.future);

@@ -30,6 +30,7 @@ const kHazardRefreshPeriod = Duration(seconds: 10);
 const kDbName = "forest_park_reports";
 const kImageDirectory = "images";
 const kQueueDirectory = "queue";
+const kCookieDirectory = "cookies";
 
 const double kFabPadding = 10;
 

@@ -11,19 +11,22 @@ import 'package:forest_park_reports/page/common/platform_fab.dart';
 import 'package:forest_park_reports/page/settings_page.dart';
 import 'package:forest_park_reports/provider/panel_position_provider.dart';
 import 'package:forest_park_reports/page/home_page/map_fabs.dart';
+import 'package:forest_park_reports/model/onboarding.dart';
+import 'package:forest_park_reports/page/signup_page.dart';
+import 'package:forest_park_reports/provider/onboarding_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:forest_park_reports/page/home_page/map_page_libre.dart';
 import 'package:sliding_up_panel2/sliding_up_panel2.dart';
 import 'package:soft_edge_blur/soft_edge_blur.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final _panelController = PanelController();
 
   final _scrollController = ScrollController();
@@ -35,12 +38,30 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
   }
 
+  void _presentSignupPage() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).push(MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => const SignupPage(),
+      ));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // make the height of the panel when open 80% of the screen
     final theme = Theme.of(context);
 
     final statusBarHeight = MediaQuery.of(context).viewPadding.top;
+
+    // Present the signup page once, as soon as we know it hasn't already
+    // been completed (or skipped) on this device.
+    ref.listen<OnboardingModel>(onboardingProvider, (prev, next) {
+      if (next.loaded && !next.completed && (prev == null || !prev.loaded)) {
+        _presentSignupPage();
+      }
+    });
 
     return Scaffold(
       // FIXME: Breaks touch pass through on maplibre_gl

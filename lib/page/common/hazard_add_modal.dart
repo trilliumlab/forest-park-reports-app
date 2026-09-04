@@ -76,6 +76,7 @@ createHazardAddModal(BuildContext context) async {
               hazard: hazardType!,
               location: snappedLoc.location,
               imageFile: image,
+              description: comments,
             );
 
             return true;
